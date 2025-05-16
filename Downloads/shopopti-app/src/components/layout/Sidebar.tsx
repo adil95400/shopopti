@@ -1,6 +1,11 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, PackageCheck, BarChart3, Sparkles, Store, Import, MessageSquare, Bot, Truck, Share2, Settings, Building, Users, CreditCard, FileText, HelpCircle, Book, Palette, Globe, Mail, Bell } from 'lucide-react';
+import {
+  LayoutDashboard, ShoppingBag, PackageCheck, BarChart3, Sparkles, Store, Import, MessageSquare, Bot,
+  Truck, Share2, Settings, Building, Users, CreditCard, FileText, HelpCircle, Book, Palette, Globe,
+  Mail, Bell
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import Logo from './Logo';
 
@@ -51,31 +56,34 @@ const aiModulesNav = [
 
 const Sidebar: React.FC = () => {
   return (
-    <motion.aside 
+    <motion.aside
       initial={{ x: -280 }}
       animate={{ x: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
       className="hidden md:flex w-64 flex-col bg-secondary-500 shadow-md z-10"
     >
       <div className="flex h-16 items-center justify-center border-b border-accent-200/10">
         <Logo />
       </div>
-      
+
       <nav className="flex-1 overflow-y-auto p-4">
         <div className="space-y-8">
           <Section title="Principal" items={mainNavItems} />
           <Section title="Business" items={businessNavItems} />
           <Section title="Système" items={systemNavItems} />
           <Section title="Aide" items={helpNavItems} />
+
           <div>
-            <h3 className="px-3 text-xs font-semibold text-accent-200 uppercase tracking-wider">Modules IA</h3>
+            <h3 className="px-3 text-xs font-semibold text-accent-200 uppercase tracking-wider">
+              Modules IA
+            </h3>
             <ul className="mt-3 space-y-2">
               {aiModulesNav.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
-                    className={({ isActive }) => 
-                      \`sidebar-link \${isActive ? 'active' : ''}\`
+                    className={({ isActive }) =>
+                      `sidebar-link ${isActive ? 'active' : ''}`
                     }
                   >
                     <span>{item.label}</span>
@@ -90,13 +98,26 @@ const Sidebar: React.FC = () => {
   );
 };
 
-const Section = ({ title, items }: { title: string; items: { to: string, icon: React.ReactNode, label: string }[] }) => (
+const Section = ({
+  title,
+  items
+}: {
+  title: string;
+  items: { to: string; icon: React.ReactNode; label: string }[];
+}) => (
   <div>
-    <h3 className="px-3 text-xs font-semibold text-accent-200 uppercase tracking-wider">{title}</h3>
+    <h3 className="px-3 text-xs font-semibold text-accent-200 uppercase tracking-wider">
+      {title}
+    </h3>
     <ul className="mt-3 space-y-2">
       {items.map((item) => (
         <li key={item.to}>
-          <NavLink to={item.to} className={({ isActive }) => \`sidebar-link \${isActive ? 'active' : ''}\`}>
+          <NavLink
+            to={item.to}
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'active' : ''}`
+            }
+          >
             {item.icon}
             <span>{item.label}</span>
           </NavLink>

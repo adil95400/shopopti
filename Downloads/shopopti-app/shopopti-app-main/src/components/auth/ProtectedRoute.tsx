@@ -1,1 +1,0 @@
-/* Protected route logic with auth check */

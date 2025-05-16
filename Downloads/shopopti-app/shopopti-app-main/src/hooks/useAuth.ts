@@ -1,1 +1,0 @@
-/* Hook to access user, roles, auth state */

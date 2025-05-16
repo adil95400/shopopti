@@ -1,1 +1,0 @@
-export default function Billing() { return <div>Billing / Subscription</div>; }
