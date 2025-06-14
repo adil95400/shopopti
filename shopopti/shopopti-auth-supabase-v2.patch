@@ -1,0 +1,94 @@
+From abcdef1234567890 Mon Sep 17 00:00:00 2001
+From: ChatGPT <noreply@openai.com>
+Date: Sat, 14 Jun 2025 00:00:00 +0000
+Subject: ✨ Ajout de l'authentification Supabase (lib + login.tsx)
+
+---
+ src/lib/auth.ts        | 21 +++++++++++++++++++++
+ src/lib/supabase.ts    |  6 ++++++
+ src/pages/login.tsx    | 26 ++++++++++++++++++++++++++
+ .env.example           |  2 ++
+ 4 files changed, 55 insertions(+)
+
+diff --git a/src/lib/auth.ts b/src/lib/auth.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/src/lib/auth.ts
+@@
+import {{ supabase }} from './supabase'
+
+export async function signInWithEmail(email: string) {{
+  const {{ error }} = await supabase.auth.signInWithOtp({{ email }})
+  if (error) throw error
+}}
+
+export async function getSession() {{
+  const {{ data }} = await supabase.auth.getSession()
+  return data.session
+}}
+
+export async function getUser() {{
+  const {{ data }} = await supabase.auth.getUser()
+  return data.user
+}}
+diff --git a/src/lib/supabase.ts b/src/lib/supabase.ts
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/src/lib/supabase.ts
+@@
+import {{ createClient }} from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+diff --git a/src/pages/login.tsx b/src/pages/login.tsx
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/src/pages/login.tsx
+@@
+import {{ useState }} from 'react'
+import {{ signInWithEmail }} from '@/lib/auth'
+
+export default function LoginPage() {{
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+
+  const handleLogin = async () => {{
+    try {{
+      await signInWithEmail(email)
+      setMessage('Lien de connexion envoyé à votre adresse email.')
+    }} catch (err) {{
+      setMessage('Erreur de connexion.')
+    }}
+  }}
+
+  return (
+    <div className="p-4 max-w-md mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Connexion Shopopti+</h1>
+      <input
+        type="email"
+        value={{email}}
+        onChange={{e => setEmail(e.target.value)}}
+        className="border p-2 w-full mb-2"
+        placeholder="Entrez votre email"
+      />
+      <button onClick={{handleLogin}} className="bg-blue-500 text-white px-4 py-2 rounded">
+        Se connecter
+      </button>
+      {{message && <p className="mt-4 text-sm">{{message}}</p>}}
+    </div>
+  )
+}}
+diff --git a/.env.example b/.env.example
+index 1234567..7654321 100644
+--- a/.env.example
++++ b/.env.example
+@@
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
++VITE_OPENAI_API_KEY=
++VITE_17TRACK_API_KEY=
