@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { availableLanguages, useLanguage } from '../contexts/LanguageContext';
 import { availableCurrencies, useCurrency } from '../contexts/CurrencyContext';

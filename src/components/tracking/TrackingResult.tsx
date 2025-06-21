@@ -1,10 +1,13 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { TrackingResult as TrackingResultType } from '../../services/trackingService';
-import TrackingHistory from './TrackingHistory';
-import PackageStatusBadge from './PackageStatusBadge';
 import { useTranslation } from 'react-i18next';
 import { Printer, Phone } from 'lucide-react';
+
+import { TrackingResult as TrackingResultType } from '../../services/trackingService';
+
+import TrackingHistory from './TrackingHistory';
+import PackageStatusBadge from './PackageStatusBadge';
+
+import { Button } from '@/components/ui/button';
 
 interface TrackingResultProps {
   result: TrackingResultType;

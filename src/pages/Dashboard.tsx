@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
+
+import { supabase } from '../lib/supabase';
 import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
 import TrackingWidget from '../components/tracking/TrackingWidget';
 import MainNavbar from '../components/layout/MainNavbar';

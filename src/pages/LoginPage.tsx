@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ShoppingBag } from 'lucide-react';
+
 import LoginForm from '../components/auth/LoginForm';
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
-import { ShoppingBag } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   return (

@@ -1,5 +1,6 @@
-import { supabase } from '../lib/supabase';
 import axios from 'axios';
+
+import { supabase } from '../lib/supabase';
 import { ExternalSupplier, SupplierProduct, ImportFilter, ImportResult, OrderRequest, OrderResult } from '../types/supplier';
 
 export const supplierService = {

@@ -10,6 +10,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+
 import { Button } from '../ui/button';
 
 interface SyncHistoryProps {

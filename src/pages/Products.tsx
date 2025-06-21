@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+
+import { supabase } from '../lib/supabase';
 import { aiService } from '../services/aiService';
 
 const Products = () => {

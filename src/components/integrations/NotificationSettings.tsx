@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
 import { 
   Bell, 
   Mail, 
@@ -10,6 +9,8 @@ import {
   Loader2,
   AlertTriangle
 } from 'lucide-react';
+
+import { Button } from '../ui/button';
 
 interface NotificationSettingsProps {
   onSaveSettings: (settings: NotificationSettings) => Promise<void>;

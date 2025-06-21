@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { Loader2, CreditCard, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+
+import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 

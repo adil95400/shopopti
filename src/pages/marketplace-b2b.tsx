@@ -1,8 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { b2bService, B2BSupplier } from '@/services/b2bService';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, 
   Filter, 
@@ -18,8 +14,14 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { b2bService, B2BSupplier } from '@/services/b2bService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function MarketplaceB2B() {
   const [search, setSearch] = useState('');

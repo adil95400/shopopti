@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, AlertCircle, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { importService } from '../../services/importService';
 
 interface CSVImporterProps {

@@ -11,6 +11,7 @@ import {
   Check,
   X
 } from 'lucide-react';
+
 import { Button } from '../ui/button';
 
 interface Channel {

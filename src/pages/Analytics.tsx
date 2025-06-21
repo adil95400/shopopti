@@ -10,7 +10,6 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useShop } from '../contexts/ShopContext';
 import { 
   LineChart, 
   Line, 
@@ -26,6 +25,8 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts';
+
+import { useShop } from '../contexts/ShopContext';
 
 // Mock analytics data
 const salesData = [

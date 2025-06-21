@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Copy, Check, Loader2 } from 'lucide-react';
+
 import { Button } from '../ui/button';
 
 interface Message {

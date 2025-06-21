@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import IntegrationCard from '../components/integrations/IntegrationCard';
-import ApiIntegration from '../components/integrations/ApiIntegration';
 import { 
   ShoppingBag, CreditCard, Truck, BarChart, Mail, 
   Globe, Code, Zap, Search, MessageSquare, Database,
   Layers, Webhook, Settings, Plus, Filter
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import IntegrationCard from '../components/integrations/IntegrationCard';
+import ApiIntegration from '../components/integrations/ApiIntegration';
+import { Button } from '../components/ui/button';
+
 
 const Integrations: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');

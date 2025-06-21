@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Package, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import PackageStatusBadge from './PackageStatusBadge';
-import { trackingService } from '../../services/trackingService';
 import { useTranslation } from 'react-i18next';
+
+import { trackingService } from '../../services/trackingService';
+
+import PackageStatusBadge from './PackageStatusBadge';
+
+import { Button } from '@/components/ui/button';
+
 
 interface RecentTracking {
   id: string;

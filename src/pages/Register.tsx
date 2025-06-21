@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import Logo from '../components/layout/Logo';
 import { User, Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+
+import Logo from '../components/layout/Logo';
 import { supabase } from '../lib/supabase';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';

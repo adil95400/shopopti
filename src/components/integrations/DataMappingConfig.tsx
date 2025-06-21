@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
 import { 
   Save, 
   Plus, 
@@ -9,6 +8,8 @@ import {
   ArrowRight,
   ArrowDown
 } from 'lucide-react';
+
+import { Button } from '../ui/button';
 
 interface DataMappingConfigProps {
   onSaveMapping: (mapping: DataMapping[]) => Promise<void>;

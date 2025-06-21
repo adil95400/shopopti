@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
+
+import MainNavbar from '../components/layout/MainNavbar';
+import Footer from '../components/layout/Footer';
+
 import { askChatGPT } from '@/lib/openai';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
 
 export default function SEOAIPage() {
   const [productName, setProductName] = useState('');

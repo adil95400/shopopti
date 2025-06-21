@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Globe, 
   ShoppingBag, 
@@ -12,6 +11,8 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
 import MarketplaceCard from '../components/marketplace/MarketplaceCard';
 

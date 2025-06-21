@@ -1,9 +1,10 @@
 import React, { useState, useTransition } from 'react';
+import { Loader2, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Upload } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 interface BulkTrackingFormProps {
   onSubmit: (trackingNumbers: string[]) => void;

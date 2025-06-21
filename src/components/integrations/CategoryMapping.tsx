@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
 import { 
   Save, 
   Plus, 
@@ -8,6 +7,8 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
+
+import { Button } from '../ui/button';
 
 interface CategoryMappingProps {
   platforms: {

@@ -10,6 +10,7 @@ import {
   Truck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+
 import { useShop } from '../contexts/ShopContext';
 
 // Mock order data

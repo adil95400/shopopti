@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { inventoryService, StockAlert, InventorySettings } from '../../modules/inventory';
 import { Package, AlertTriangle, Settings, RefreshCw, Search, Filter, CheckCircle, XCircle, Bell } from 'lucide-react';
-import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+
+import { inventoryService, StockAlert, InventorySettings } from '../../modules/inventory';
+import { Button } from '../../components/ui/button';
+
 
 const InventoryPage: React.FC = () => {
   const [alerts, setAlerts] = useState<StockAlert[]>([]);

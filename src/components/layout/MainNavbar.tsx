@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
-import Logo from './Logo';
-import LoginModal from '../auth/LoginModal';
 import { 
   Menu, 
   Bell, 
@@ -26,7 +23,12 @@ import {
   Layers,
   X
 } from 'lucide-react';
+
+import { Button } from '../ui/button';
+import LoginModal from '../auth/LoginModal';
 import { supabase } from '../../lib/supabase';
+
+import Logo from './Logo';
 
 const MainNavbar: React.FC = () => {
   const { t } = useTranslation();

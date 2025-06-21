@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+import { supabase } from '../lib/supabase';
 
 const Success: React.FC = () => {
   const [searchParams] = useSearchParams();

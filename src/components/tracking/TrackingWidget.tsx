@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { useTracking } from '../../hooks/useTracking';
 import { Package, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+
+import { useTracking } from '../../hooks/useTracking';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
 
 interface TrackingWidgetProps {
   compact?: boolean;

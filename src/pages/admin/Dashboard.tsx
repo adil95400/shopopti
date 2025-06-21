@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+
 import { supabase } from '../../lib/supabase';
 import { useRole } from '../../context/RoleContext';
-import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Navigate } from 'react-router-dom';
+
 
 const AdminDashboard: React.FC = () => {
   const { isAdmin, loading } = useRole();

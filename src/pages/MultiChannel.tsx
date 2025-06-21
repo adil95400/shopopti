@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { Store, Share2, BarChart, Settings } from 'lucide-react';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import ChannelManager from '../components/multichannel/ChannelManager';
 import ProductPublisher from '../components/multichannel/ProductPublisher';
 import BulkActions from '../components/automation/BulkActions';
-import { Store, Share2, BarChart, Settings } from 'lucide-react';
 
 const MultiChannel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('channels');

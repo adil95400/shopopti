@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Loader2, ExternalLink, BarChart, TrendingUp, DollarSign, Eye } from 'lucide-react';
+
 import { Button } from '../ui/button';
 
 interface CompetitorAnalysisProps {

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { abTestingService, ABTest, ABTestResult } from '../../modules/ab-testing';
 import { SplitSquareVertical, Plus, BarChart3, Play, Pause, Archive, Edit, Trash2, Copy, Search, Filter, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+
+import { abTestingService, ABTest, ABTestResult } from '../../modules/ab-testing';
+import { Button } from '../../components/ui/button';
+
 
 const ABTestingPage: React.FC = () => {
   const [tests, setTests] = useState<ABTest[]>([]);

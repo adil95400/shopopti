@@ -1,7 +1,8 @@
 import React from 'react';
-import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+
+import { supabase } from '../../lib/supabase';
 
 interface SocialLoginButtonsProps {
   onLoginStart?: () => void;

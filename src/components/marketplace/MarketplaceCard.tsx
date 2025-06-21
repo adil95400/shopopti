@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ExternalLink, Check, Globe, DollarSign, AlertTriangle, Loader2 } from 'lucide-react';
+
 import { Button } from '../ui/button';
 
 interface MarketplaceCardProps {

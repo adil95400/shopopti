@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useShop } from '../contexts/ShopContext';
 import { Tab } from '@headlessui/react';
 import { 
   FileSpreadsheet, 
@@ -25,6 +24,9 @@ import {
   Zap,
   RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { useShop } from '../contexts/ShopContext';
 import { Button } from '../components/ui/button';
 import CSVImporter from '../components/import/CSVImporter';
 import JSONImporter from '../components/import/JSONImporter';
@@ -36,7 +38,7 @@ import MarketplaceImporter from '../components/import/MarketplaceImporter';
 import SupplierCatalogImporter from '../components/import/SupplierCatalogImporter';
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
-import { toast } from 'sonner';
+
 
 const importMethods = [
   {

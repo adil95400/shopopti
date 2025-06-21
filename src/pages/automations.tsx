@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { Loader2, Zap, ArrowRight, CheckCircle } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Zap, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function AutomationsPage() {
   const [payload, setPayload] = useState('{\n  "event": "product_added",\n  "name": "Chaussure AI",\n  "price": 49.99\n}');

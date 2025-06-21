@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Globe, DollarSign, Languages, Truck, Settings, Check, AlertTriangle } from 'lucide-react';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
 
 const InternationalSelling: React.FC = () => {

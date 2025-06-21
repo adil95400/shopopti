@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Menu, Bell, ChevronDown, Search, Settings, LogOut, CreditCard, User, HelpCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+
+import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 import LanguageSelector from '../LanguageSelector';
+
 import Logo from './Logo';
 
 interface HeaderProps {

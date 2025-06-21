@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+
 import { supplierService } from './supplierService';
 
 export const syncService = {

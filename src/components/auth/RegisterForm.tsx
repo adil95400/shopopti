@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import { 
   X, 
@@ -11,7 +10,10 @@ import {
   User,
   Loader2
 } from 'lucide-react';
+
+import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
+
 import SocialLoginButtons from './SocialLoginButtons';
 
 interface RegisterFormProps {

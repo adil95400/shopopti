@@ -25,6 +25,7 @@ import {
   BarChart,
   DollarSign
 } from 'lucide-react';
+
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
 import { Button } from '../components/ui/button';

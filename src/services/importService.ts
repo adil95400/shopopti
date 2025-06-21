@@ -1,9 +1,11 @@
-import { supabase } from '../lib/supabase';
 import Papa from 'papaparse';
 import { parseString } from 'xml2js';
-import { aiService } from './aiService';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+
+import { supabase } from '../lib/supabase';
+
+import { aiService } from './aiService';
 import { supplierService } from './supplierService';
 
 export interface ProductData {

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { 
   ShoppingBag, 
   Store, 
@@ -13,6 +11,9 @@ import {
   Lock,
   Link as LinkIcon
 } from 'lucide-react';
+
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 interface PlatformConnectorProps {
   platform: {

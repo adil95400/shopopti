@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Tag, DollarSign, Truck, Star, ShoppingBag } from 'lucide-react';
+
 import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 

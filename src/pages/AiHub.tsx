@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Sparkles, Bot, Search, TrendingUp, FileText } from 'lucide-react';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
 import ProductOptimizer from '../components/ai/ProductOptimizer';
 import AiAssistant from '../components/ai/AiAssistant';
 import CompetitorAnalysis from '../components/ai/CompetitorAnalysis';
-import { Sparkles, Bot, Search, TrendingUp, FileText } from 'lucide-react';
 
 const AiHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('assistant');

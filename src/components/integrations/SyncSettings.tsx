@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '../ui/button';
 import { 
   RefreshCw, 
   Clock, 
@@ -10,6 +9,8 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
+
+import { Button } from '../ui/button';
 
 interface SyncSettingsProps {
   platforms: {

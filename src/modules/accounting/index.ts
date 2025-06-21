@@ -1,7 +1,8 @@
-import { supabase } from '../../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
+
+import { supabase } from '../../lib/supabase';
 
 export interface Invoice {
   id?: string;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, MapPin, Star, Globe, TrendingUp, Check, ExternalLink } from 'lucide-react';
+
 import { Button } from '../ui/button';
 import { supabase } from '../../lib/supabase';
 

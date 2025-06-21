@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { ShoppingBag } from 'lucide-react';
+
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import { Badge } from '../components/ui/badge';
-import { ShoppingBag } from 'lucide-react';
 
 interface Platform {
   id: string;

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { templateService, Template } from '../../modules/templates';
 import { FileText, Plus, Search, Filter, Edit, Trash2, Copy, Eye, Sparkles } from 'lucide-react';
-import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+
+import { templateService, Template } from '../../modules/templates';
+import { Button } from '../../components/ui/button';
+
 
 const TemplatesPage: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);

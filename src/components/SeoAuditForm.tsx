@@ -1,8 +1,10 @@
 import { useState } from "react";
+
+import SeoAuditResult from "./SeoAuditResult";
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import SeoAuditResult from "./SeoAuditResult";
 import { auditSEOWithAI } from "@/lib/seoAI";
 
 export default function SeoAuditForm() {

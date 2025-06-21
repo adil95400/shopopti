@@ -1,10 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import PlatformConnector from '../components/integrations/PlatformConnector';
-import SyncSettings, { SyncSettings as SyncSettingsType } from '../components/integrations/SyncSettings';
-import CategoryMapping, { CategoryMapping as CategoryMappingType } from '../components/integrations/CategoryMapping';
-import SyncHistory from '../components/integrations/SyncHistory';
-import NotificationSettings, { NotificationSettings as NotificationSettingsType } from '../components/integrations/NotificationSettings';
 import { 
   Store, 
   RefreshCw, 
@@ -16,8 +10,16 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import PlatformConnector from '../components/integrations/PlatformConnector';
+import SyncSettings, { SyncSettings as SyncSettingsType } from '../components/integrations/SyncSettings';
+import CategoryMapping, { CategoryMapping as CategoryMappingType } from '../components/integrations/CategoryMapping';
+import SyncHistory from '../components/integrations/SyncHistory';
+import NotificationSettings, { NotificationSettings as NotificationSettingsType } from '../components/integrations/NotificationSettings';
+import { Button } from '../components/ui/button';
+
 
 const MultiPlatformIntegration: React.FC = () => {
   const [activeTab, setActiveTab] = useState('platforms');

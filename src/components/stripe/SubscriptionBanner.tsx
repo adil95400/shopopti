@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 import { Sparkles, X } from 'lucide-react';
+
+import { supabase } from '../../lib/supabase';
 
 const SubscriptionBanner: React.FC = () => {
   const [subscription, setSubscription] = useState<any>(null);

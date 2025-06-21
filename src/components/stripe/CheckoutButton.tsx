@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+
 import { createCheckoutSession } from '../../lib/stripe';
 import { supabase } from '../../lib/supabase';
-import { Loader2 } from 'lucide-react';
 
 interface CheckoutButtonProps {
   priceId: string;

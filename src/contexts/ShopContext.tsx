@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import axios from 'axios';
+
+import { supabase } from '../lib/supabase';
 
 type StoreType = 'shopify' | 'woocommerce' | 'etsy' | 'amazon' | 'tiktok';
 

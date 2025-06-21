@@ -1,6 +1,7 @@
 import React from 'react';
 import { HelpCircle, MessageSquare, Mail, Phone, Video, FileText, Book, CheckCircle, Clock, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+
 import { Button } from '../components/ui/button';
 
 const Support: React.FC = () => {

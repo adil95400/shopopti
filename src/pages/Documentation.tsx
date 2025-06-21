@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Search, Book, Code, ExternalLink, ArrowLeft, ChevronRight, Copy, Check } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 
 const DocumentationPage = () => {

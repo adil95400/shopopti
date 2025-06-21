@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
-import LoginForm from './LoginForm';
 import { motion, AnimatePresence } from 'framer-motion';
+
+import LoginForm from './LoginForm';
 
 interface LoginModalProps {
   isOpen: boolean;

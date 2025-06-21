@@ -34,6 +34,7 @@ import {
   HelpCircle,
   Star
 } from 'lucide-react';
+
 import Logo from './Logo';
 
 const sections = [

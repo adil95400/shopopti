@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { ArrowLeft, HelpCircle, Mail, BookOpen, MessageSquare, FileText, Phone, Video, Search } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 
 const HelpCenterPage = () => {
   const { t } = useTranslation();
