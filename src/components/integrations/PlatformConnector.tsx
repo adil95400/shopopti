@@ -62,6 +62,12 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
           { name: 'apiKey', label: 'API Key', placeholder: 'AKIA...', icon: <Key className="h-5 w-5 text-gray-400" /> },
           { name: 'apiSecret', label: 'API Secret', placeholder: 'Your API Secret', icon: <Lock className="h-5 w-5 text-gray-400" /> }
         ];
+      case 'ebay':
+        return [
+          { name: 'apiKey', label: 'App ID', placeholder: 'Your eBay App ID', icon: <Key className="h-5 w-5 text-gray-400" /> },
+          { name: 'apiSecret', label: 'Cert ID', placeholder: 'Your eBay Cert ID', icon: <Lock className="h-5 w-5 text-gray-400" /> },
+          { name: 'accessToken', label: 'OAuth Token', placeholder: 'Your OAuth Token', icon: <Key className="h-5 w-5 text-gray-400" /> }
+        ];
       case 'etsy':
         return [
           { name: 'apiKey', label: 'API Key', placeholder: 'Your Etsy API Key', icon: <Key className="h-5 w-5 text-gray-400" /> },
@@ -77,6 +83,16 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
         return [
           { name: 'storeUrl', label: 'Store URL', placeholder: 'your-store.squarespace.com', icon: <Globe className="h-5 w-5 text-gray-400" /> },
           { name: 'apiKey', label: 'API Key', placeholder: 'Your Squarespace API Key', icon: <Key className="h-5 w-5 text-gray-400" /> }
+        ];
+      case 'prestashop':
+        return [
+          { name: 'storeUrl', label: 'Store URL', placeholder: 'https://your-store.com', icon: <Globe className="h-5 w-5 text-gray-400" /> },
+          { name: 'apiKey', label: 'API Key', placeholder: 'Your PrestaShop API Key', icon: <Key className="h-5 w-5 text-gray-400" /> }
+        ];
+      case 'cdiscount':
+        return [
+          { name: 'apiKey', label: 'API Key', placeholder: 'Your Cdiscount API Key', icon: <Key className="h-5 w-5 text-gray-400" /> },
+          { name: 'accessToken', label: 'Token', placeholder: 'Your Cdiscount Token', icon: <Lock className="h-5 w-5 text-gray-400" /> }
         ];
       default:
         return [
@@ -276,4 +292,3 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
   );
 };
 
-export default PlatformConnector;
