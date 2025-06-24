@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
 
 import { supabase } from '../../lib/supabase';
+import { googleSheets } from '../googleSheets';
 
 export interface Invoice {
   id?: string;
@@ -485,6 +486,31 @@ export const accountingService = {
       return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     } catch (error) {
       console.error('Error exporting tax report to Excel:', error);
+      throw error;
+    }
+  },
+
+  async exportTaxReportToGoogleSheets(report: TaxReport): Promise<string> {
+    try {
+      const sheetData = [
+        ['Rapport de TVA'],
+        ['Période', report.period],
+        ['Date de début', report.startDate.toLocaleDateString('fr-FR')],
+        ['Date de fin', report.endDate.toLocaleDateString('fr-FR')],
+        [],
+        ['Taux de TVA', 'Montant imposable', 'TVA collectée'],
+        ...report.taxRates.map(rate => [
+          `${rate.rate}%`,
+          rate.taxableAmount,
+          rate.taxCollected
+        ]),
+        [],
+        ['Factures incluses'],
+        ...report.invoices.map(inv => [inv])
+      ];
+      return await googleSheets.exportData(sheetData, `Tax Report ${report.period}`);
+    } catch (error) {
+      console.error('Error exporting tax report to Google Sheets:', error);
       throw error;
     }
   }
