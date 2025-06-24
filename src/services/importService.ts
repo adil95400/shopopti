@@ -147,6 +147,12 @@ export const importService = {
                   features: row.features?.split(',') || []
                 });
 
+                const seoData = await aiService.optimizeForSEO({
+                  title: optimizedTitle,
+                  description: optimizedDescription,
+                  category: row.category || ''
+                });
+
                 return {
                   title: optimizedTitle,
                   description: optimizedDescription,
@@ -159,6 +165,11 @@ export const importService = {
                   metadata: {
                     source: 'csv',
                     importDate: new Date().toISOString()
+                  },
+                  seo: {
+                    title: seoData.metaTitle,
+                    description: seoData.metaDescription,
+                    keywords: seoData.keywords
                   }
                 };
               })
@@ -437,6 +448,12 @@ export const importService = {
         .get()
         .filter(Boolean);
 
+      const seoData = await aiService.optimizeForSEO({
+        title: optimizedTitle,
+        description: optimizedDescription,
+        category: 'Amazon'
+      });
+
       return {
         title: optimizedTitle,
         description: optimizedDescription,
@@ -448,7 +465,12 @@ export const importService = {
           sourceUrl: url,
           importDate: new Date().toISOString()
         },
-        reviews: reviews.length > 0 ? reviews : undefined
+        reviews: reviews.length > 0 ? reviews : undefined,
+        seo: {
+          title: seoData.metaTitle,
+          description: seoData.metaDescription,
+          keywords: seoData.keywords
+        }
       };
 
     } catch (error: any) {
@@ -533,16 +555,23 @@ export const importService = {
         
         const optimizedBatch = await Promise.all(
           batch.map(async (product) => {
-            const seoData = await aiService.optimizeForSEO({
-              title: product.title,
-              description: product.description,
-              category: product.category || ''
-            });
+            if (!product.seo) {
+              const seoData = await aiService.optimizeForSEO({
+                title: product.title,
+                description: product.description,
+                category: product.category || ''
+              });
+              return {
+                ...product,
+                seo: {
+                  title: seoData.metaTitle,
+                  description: seoData.metaDescription,
+                  keywords: seoData.keywords
+                }
+              };
+            }
 
-            return {
-              ...product,
-              seo: seoData
-            };
+            return product;
           })
         );
 
@@ -591,12 +620,23 @@ export const importService = {
             description: product.description,
             category: product.category || ''
           });
-          
+
+          const seoData = await aiService.optimizeForSEO({
+            title: optimized.title,
+            description: optimized.description_html,
+            category: product.category || ''
+          });
+
           return {
             ...product,
             title: optimized.title,
             description: optimized.description_html,
-            tags: optimized.tags
+            tags: optimized.tags,
+            seo: {
+              title: seoData.metaTitle,
+              description: seoData.metaDescription,
+              keywords: seoData.keywords
+            }
           };
         })
       );
