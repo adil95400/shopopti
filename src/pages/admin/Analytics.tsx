@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, DollarSign, Users, Calendar, Download, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { supabase } from '../../lib/supabase';
 import { useRole } from '../../context/RoleContext';
@@ -52,6 +53,7 @@ const AdminAnalytics: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching analytics data:', error);
+      toast.error('Failed to load analytics data');
     } finally {
       setLoading(false);
     }

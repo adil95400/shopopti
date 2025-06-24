@@ -142,7 +142,8 @@ async function importProduct(url) {
     console.log('Produit importé avec succès:', product.id);
     return product;
   } catch (error) {
-    console.error('Erreur lors de l\'importation:', error);
+    // eslint-disable-next-line no-useless-escape
+    console.error('Erreur lors de l'importation:', error);
   }
 }`
       }

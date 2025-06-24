@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
 
@@ -70,6 +71,7 @@ const AdvancedSuppliers: React.FC = () => {
       setFilteredSuppliers(data.suppliers);
     } catch (error) {
       console.error('Error fetching suppliers:', error);
+      toast.error('Failed to load suppliers');
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 
 import 'jspdf-autotable';
 import { Loader2, Download, Plus, Trash2, FileText, Calendar, DollarSign, User, Building } from 'lucide-react';
+import { toast } from 'sonner';
 
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
@@ -147,7 +148,7 @@ export default function GenerateInvoice() {
       doc.save(`facture-${invoiceNumber}.pdf`);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
-      alert("Une erreur est survenue lors de la génération de la facture");
+      toast.error('Erreur lors de la génération de la facture');
     } finally {
       setLoading(false);
     }

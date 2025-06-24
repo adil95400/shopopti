@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 import { supabase } from '../lib/supabase';
 
@@ -37,6 +38,7 @@ const Success: React.FC = () => {
         }, 5000);
       } catch (error) {
         console.error('Error verifying session:', error);
+        toast.error('Failed to verify payment');
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { supabase } from '../lib/supabase';
 import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
@@ -65,6 +66,7 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error('Erreur lors de la récupération des données du tableau de bord:', error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 import { supabase } from '../lib/supabase';
 import PricingCard from '../components/stripe/PricingCard';
@@ -29,6 +30,7 @@ const Pricing: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching subscription:', error);
+        toast.error('Failed to load subscription');
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { supabase } from '../../lib/supabase';
 import { useRole } from '../../context/RoleContext';
@@ -42,6 +43,7 @@ const AdminDashboard: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching admin stats:', error);
+      toast.error('Failed to load admin stats');
     } finally {
       setDataLoading(false);
     }

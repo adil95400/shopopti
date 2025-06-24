@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Globe, DollarSign, Languages, Truck, Settings, Check, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
@@ -38,6 +39,7 @@ const InternationalSelling: React.FC = () => {
       }
     } catch (error) {
       console.error('Error toggling market:', error);
+      toast.error('Failed to update market');
     } finally {
       setLoading(false);
     }
