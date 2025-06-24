@@ -17,6 +17,7 @@ interface PlatformStatusProps {
     name: string;
     connected: boolean;
     status?: 'active' | 'error' | 'warning' | 'maintenance';
+    syncStatus?: 'synced' | 'error' | 'pending';
     lastSync?: string;
     metrics?: {
       products: number;
@@ -41,6 +42,40 @@ const PlatformStatus: React.FC<PlatformStatusProps> = ({ platforms, onRefresh })
         return <Clock className="h-5 w-5 text-blue-500" />;
       default:
         return <XCircle className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  const getSyncStatusBadge = (syncStatus?: 'synced' | 'error' | 'pending') => {
+    switch (syncStatus) {
+      case 'synced':
+        return (
+          <span className="ml-2 flex items-center text-green-600 text-xs">
+            <svg className="mr-1 h-2 w-2" viewBox="0 0 8 8" fill="currentColor">
+              <circle cx="4" cy="4" r="3" />
+            </svg>
+            Synced
+          </span>
+        );
+      case 'error':
+        return (
+          <span className="ml-2 flex items-center text-red-600 text-xs">
+            <svg className="mr-1 h-2 w-2" viewBox="0 0 8 8" fill="currentColor">
+              <circle cx="4" cy="4" r="3" />
+            </svg>
+            Échec
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="ml-2 flex items-center text-yellow-600 text-xs">
+            <svg className="mr-1 h-2 w-2" viewBox="0 0 8 8" fill="currentColor">
+              <circle cx="4" cy="4" r="3" />
+            </svg>
+            En attente
+          </span>
+        );
+      default:
+        return null;
     }
   };
 
@@ -93,7 +128,10 @@ const PlatformStatus: React.FC<PlatformStatusProps> = ({ platforms, onRefresh })
                       {getStatusIcon(platform.status)}
                     </div>
                     <div>
-                      <h4 className="font-medium">{platform.name}</h4>
+                      <div className="flex items-center">
+                        <h4 className="font-medium">{platform.name}</h4>
+                        {getSyncStatusBadge(platform.syncStatus)}
+                      </div>
                       <p className="text-sm text-gray-500">
                         Last synced: {formatDate(platform.lastSync)}
                       </p>

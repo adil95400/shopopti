@@ -22,6 +22,7 @@ interface PlatformConnectorProps {
     logo: string;
     type: 'marketplace' | 'webstore' | 'social';
     connected: boolean;
+    syncStatus?: 'synced' | 'error' | 'pending';
   };
   onConnect: (platform: string, credentials: any) => Promise<boolean>;
   onDisconnect: (platform: string) => Promise<boolean>;
@@ -152,6 +153,40 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
     }
   };
 
+  const renderSyncStatus = () => {
+    switch (platform.syncStatus) {
+      case 'synced':
+        return (
+          <span className="ml-2 flex items-center text-green-600 text-xs">
+            <svg className="mr-1 h-2 w-2" viewBox="0 0 8 8" fill="currentColor">
+              <circle cx="4" cy="4" r="3" />
+            </svg>
+            Synced
+          </span>
+        );
+      case 'error':
+        return (
+          <span className="ml-2 flex items-center text-red-600 text-xs">
+            <svg className="mr-1 h-2 w-2" viewBox="0 0 8 8" fill="currentColor">
+              <circle cx="4" cy="4" r="3" />
+            </svg>
+            Échec
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="ml-2 flex items-center text-yellow-600 text-xs">
+            <svg className="mr-1 h-2 w-2" viewBox="0 0 8 8" fill="currentColor">
+              <circle cx="4" cy="4" r="3" />
+            </svg>
+            En attente
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <div className="flex items-center justify-between mb-4">
@@ -171,7 +206,10 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
             </div>
           )}
           <div>
-            <h3 className="font-medium text-gray-900">{platform.name}</h3>
+            <div className="flex items-center">
+              <h3 className="font-medium text-gray-900">{platform.name}</h3>
+              {renderSyncStatus()}
+            </div>
             <p className="text-sm text-gray-500 capitalize">{platform.type}</p>
           </div>
         </div>
