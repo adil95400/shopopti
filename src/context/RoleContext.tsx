@@ -3,12 +3,12 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 import { supabase } from '../lib/supabase';
 
 // Define user roles
-export type UserRole = 'user' | 'admin' | 'superadmin';
+export type UserRole = 'viewer' | 'manager' | 'admin';
 
 interface RoleContextType {
   role: UserRole;
   isAdmin: boolean;
-  isSuperAdmin: boolean;
+  isManager: boolean;
   hasPermission: (permission: string) => boolean;
   permissions: string[];
   loading: boolean;
@@ -18,20 +18,16 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 // Define permissions for each role
 const rolePermissions: Record<UserRole, string[]> = {
-  user: [
+  viewer: [
     'products.view',
-    'products.create',
-    'products.edit.own',
-    'orders.view.own',
-    'orders.create',
+    'orders.view.any',
     'suppliers.view',
     'analytics.view.basic'
   ],
-  admin: [
+  manager: [
     'products.view',
     'products.create',
     'products.edit.any',
-    'products.delete.any',
     'orders.view.any',
     'orders.create',
     'orders.update.any',
@@ -39,10 +35,9 @@ const rolePermissions: Record<UserRole, string[]> = {
     'suppliers.create',
     'suppliers.edit',
     'analytics.view.advanced',
-    'users.view',
-    'users.edit'
+    'users.view'
   ],
-  superadmin: [
+  admin: [
     'products.view',
     'products.create',
     'products.edit.any',
@@ -68,36 +63,37 @@ const rolePermissions: Record<UserRole, string[]> = {
 };
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<UserRole>('user');
+  const [role, setRole] = useState<UserRole>('viewer');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!session?.user) {
-          setRole('user');
+          setRole('viewer');
           setLoading(false);
           return;
         }
-        
-        // In a real app, you would fetch the user's role from your database
-        // For now, we'll check if the user's email contains 'admin' or 'superadmin'
-        const email = session.user.email || '';
-        
-        if (email.includes('superadmin')) {
-          setRole('superadmin');
-        } else if (email.includes('admin')) {
-          setRole('admin');
+
+        const { data, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error || !data) {
+          console.error('Error fetching user role:', error);
+          setRole('viewer');
         } else {
-          setRole('user');
+          setRole(data.role as UserRole);
         }
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching user role:', error);
-        setRole('user');
+        setRole('viewer');
         setLoading(false);
       }
     };
@@ -108,19 +104,21 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          const email = session.user.email || '';
-          
-          if (email.includes('superadmin')) {
-            setRole('superadmin');
-          } else if (email.includes('admin')) {
-            setRole('admin');
+          const { data, error } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error || !data) {
+            setRole('viewer');
           } else {
-            setRole('user');
+            setRole(data.role as UserRole);
           }
         } else {
-          setRole('user');
+          setRole('viewer');
         }
-        
+
         setLoading(false);
       }
     );
@@ -138,8 +136,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     <RoleContext.Provider
       value={{
         role,
-        isAdmin: role === 'admin' || role === 'superadmin',
-        isSuperAdmin: role === 'superadmin',
+        isAdmin: role === 'admin',
+        isManager: role === 'manager',
         hasPermission,
         permissions: rolePermissions[role],
         loading

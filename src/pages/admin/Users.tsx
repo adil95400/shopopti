@@ -20,17 +20,17 @@ interface User {
 }
 
 const UsersAdmin: React.FC = () => {
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, isManager, loading: roleLoading } = useRole();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isManager) {
       fetchUsers();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isManager]);
 
   const fetchUsers = async () => {
     try {
@@ -51,7 +51,7 @@ const UsersAdmin: React.FC = () => {
           name: `User ${i + 1}`
         },
         is_active: i < 8,
-        role: i === 0 ? 'superadmin' : i < 3 ? 'admin' : 'user'
+        role: i === 0 ? 'admin' : i < 3 ? 'manager' : 'viewer'
       }));
       
       setUsers(mockUsers);
@@ -100,7 +100,7 @@ const UsersAdmin: React.FC = () => {
     return <div className="flex justify-center p-8">Chargement...</div>;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isManager) {
     return <Navigate to="/app/dashboard" replace />;
   }
 
@@ -135,9 +135,9 @@ const UsersAdmin: React.FC = () => {
             onChange={(e) => setSelectedRole(e.target.value)}
           >
             <option value="">Tous les rôles</option>
-            <option value="user">Utilisateur</option>
+            <option value="viewer">Viewer</option>
+            <option value="manager">Manager</option>
             <option value="admin">Admin</option>
-            <option value="superadmin">Super Admin</option>
           </select>
           <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
@@ -198,12 +198,12 @@ const UsersAdmin: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.role === 'superadmin' ? 'bg-purple-100 text-purple-800' :
                         user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                        user.role === 'manager' ? 'bg-green-100 text-green-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {user.role === 'superadmin' ? 'Super Admin' :
-                         user.role === 'admin' ? 'Admin' : 'Utilisateur'}
+                        {user.role === 'admin' ? 'Admin' :
+                         user.role === 'manager' ? 'Manager' : 'Viewer'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
