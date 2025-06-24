@@ -1,6 +1,6 @@
 import React from 'react';
-import { Toaster } from 'sonner';
 
+import { Toaster } from './components/ui/toaster';
 import AppRoutes from './routes';
 import './App.css';
 import './i18n';
@@ -9,9 +9,9 @@ function App() {
   return (
     <>
       <AppRoutes />
-      <Toaster position="top-right" richColors />
+      <Toaster />
     </>
   );
 }
 
-export default App;
+export default App
