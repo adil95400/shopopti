@@ -18,6 +18,9 @@ build/
 .DS_Store
 *.swp
 *.swo
+
+# === TESTS ===
+test-results/
 *.swn
 *.tmp
 .vscode/
