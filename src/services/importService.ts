@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 
 import { aiService } from './aiService';
 import { supplierService } from './supplierService';
+import { translationService } from './translationService';
 
 export interface ProductData {
   id?: string;
@@ -127,7 +128,7 @@ export const findWorkingProxy = async (): Promise<string> => {
 };
 
 export const importService = {
-  async importFromCSV(file: File): Promise<ProductData[]> {
+  async importFromCSV(file: File, options?: { translate?: boolean }): Promise<ProductData[]> {
     return new Promise((resolve, reject) => {
       const config = {
         header: true,
@@ -164,7 +165,7 @@ export const importService = {
               })
             );
 
-            await this.saveProducts(products);
+            await this.saveProducts(products, options);
 
           } catch (error) {
             parser.abort();
@@ -183,7 +184,7 @@ export const importService = {
     });
   },
 
-  async importFromAmazon(url: string): Promise<ProductData> {
+  async importFromAmazon(url: string, options?: { translate?: boolean }): Promise<ProductData> {
     try {
       const amazonUrlPattern = /^https?:\/\/(?:www\.)?amazon\.(?:com|ca|co\.uk|de|fr|es|it|co\.jp|com\.au|in)(?:\/.*)?\/(?:dp|gp\/product)\/[A-Z0-9]{10}/i;
       
@@ -437,7 +438,7 @@ export const importService = {
         .get()
         .filter(Boolean);
 
-      return {
+      const product = {
         title: optimizedTitle,
         description: optimizedDescription,
         price,
@@ -449,7 +450,19 @@ export const importService = {
           importDate: new Date().toISOString()
         },
         reviews: reviews.length > 0 ? reviews : undefined
-      };
+      } as ProductData;
+
+      if (options?.translate) {
+        for (const lang of translationService.languages) {
+          const [title, description] = await Promise.all([
+            translationService.translate(product.title, lang),
+            translationService.translate(product.description, lang)
+          ]);
+          translationService.updateLocaleFile(lang, product.title, { title, description });
+        }
+      }
+
+      return product;
 
     } catch (error: any) {
       console.error('Erreur lors de l\'importation depuis Amazon:', error);
@@ -525,7 +538,7 @@ export const importService = {
     }
   },
 
-  async saveProducts(products: ProductData[]): Promise<void> {
+  async saveProducts(products: ProductData[], options?: { translate?: boolean }): Promise<void> {
     try {
       const batchSize = 50;
       for (let i = 0; i < products.length; i += batchSize) {
@@ -551,6 +564,21 @@ export const importService = {
           .insert(optimizedBatch);
 
         if (error) throw error;
+
+        if (options?.translate) {
+          for (const product of optimizedBatch) {
+            for (const lang of translationService.languages) {
+              const [title, description] = await Promise.all([
+                translationService.translate(product.title, lang),
+                translationService.translate(product.description, lang)
+              ]);
+              translationService.updateLocaleFile(lang, product.title, {
+                title,
+                description
+              });
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des produits:', error);
@@ -558,7 +586,7 @@ export const importService = {
     }
   },
 
-  async importFromSupplier(supplierId: string, productIds: string[]): Promise<ProductData[]> {
+  async importFromSupplier(supplierId: string, productIds: string[], options?: { translate?: boolean }): Promise<ProductData[]> {
     try {
       // Récupérer les informations du fournisseur
       const supplier = await supplierService.getSupplierById(supplierId);
@@ -602,7 +630,7 @@ export const importService = {
       );
       
       // Sauvegarder les produits dans la base de données
-      await this.saveProducts(optimizedProducts);
+      await this.saveProducts(optimizedProducts, options);
       
       return optimizedProducts;
     } catch (error) {
