@@ -4,11 +4,13 @@ import { Navigate } from 'react-router-dom';
 
 import { supabase } from '../../lib/supabase';
 import { useRole } from '../../context/RoleContext';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { Button } from '../../components/ui/button';
 
 
 const AdminAnalytics: React.FC = () => {
   const { isAdmin, loading: roleLoading } = useRole();
+  const { workspace } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30days');
   const [stats, setStats] = useState({
@@ -98,7 +100,12 @@ const AdminAnalytics: React.FC = () => {
               <DollarSign className="h-5 w-5 text-blue-500" />
             </div>
           </div>
-          <p className="text-2xl font-bold">{stats.revenue.toLocaleString()}€</p>
+          <p className="text-2xl font-bold">
+            {stats.revenue.toLocaleString(undefined, {
+              style: 'currency',
+              currency: workspace?.currency || 'EUR'
+            })}
+          </p>
           <div className="flex items-center mt-2">
             <span className={`flex items-center text-sm ${stats.revenueGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {stats.revenueGrowth >= 0 ? (
@@ -157,7 +164,12 @@ const AdminAnalytics: React.FC = () => {
           </div>
           <p className="text-2xl font-bold">{stats.conversionRate}%</p>
           <div className="flex items-center mt-2">
-            <span className="text-sm text-gray-600">Panier moyen: {stats.averageOrderValue.toFixed(2)}€</span>
+            <span className="text-sm text-gray-600">
+              Panier moyen: {stats.averageOrderValue.toLocaleString(undefined, {
+                style: 'currency',
+                currency: workspace?.currency || 'EUR'
+              })}
+            </span>
           </div>
         </div>
       </div>
@@ -191,7 +203,10 @@ const AdminAnalytics: React.FC = () => {
                     <div className="h-10 w-10 bg-gray-200 rounded-md mr-3"></div>
                     <div>
                       <div className="font-medium text-gray-900">Produit {i + 1}</div>
-                      <div className="text-xs text-gray-500">{(99.99 - i * 10).toFixed(2)}€</div>
+                      <div className="text-xs text-gray-500">{(99.99 - i * 10).toLocaleString(undefined, {
+                        style: 'currency',
+                        currency: workspace?.currency || 'EUR'
+                      })}</div>
                     </div>
                   </div>
                   <div className="text-sm font-medium">{100 - i * 15} ventes</div>

@@ -4,9 +4,11 @@ import { toast } from 'sonner';
 
 import { accountingService, Invoice } from '../../modules/accounting';
 import { Button } from '../../components/ui/button';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 
 
 const AccountingPage: React.FC = () => {
+  const { workspace } = useWorkspace();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -138,11 +140,11 @@ const AccountingPage: React.FC = () => {
   };
   
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('fr-FR', { timeZone: workspace?.timezone });
   };
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: workspace?.currency || 'EUR' }).format(amount);
   };
   
   return (

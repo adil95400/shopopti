@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
 import TrackingWidget from '../components/tracking/TrackingWidget';
 import MainNavbar from '../components/layout/MainNavbar';
@@ -10,6 +11,7 @@ import Footer from '../components/layout/Footer';
 import { Button } from '../components/ui/button';
 
 export default function Dashboard() {
+  const { workspace } = useWorkspace();
   const [stats, setStats] = useState({
     revenue: { value: 1060, change: 25 },
     orders: { value: 98, change: 12 },
@@ -84,7 +86,12 @@ export default function Dashboard() {
                 <DollarSign className="h-5 w-5 text-blue-500" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.revenue.value.toLocaleString()}€</p>
+            <p className="text-2xl font-bold">
+              {stats.revenue.value.toLocaleString(undefined, {
+                style: 'currency',
+                currency: workspace?.currency || 'EUR'
+              })}
+            </p>
             <div className="flex items-center mt-2">
               <span className={`flex items-center text-sm ${stats.revenue.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {stats.revenue.change >= 0 ? (
@@ -264,7 +271,7 @@ export default function Dashboard() {
               <Calendar className="h-6 w-6 text-blue-500 mr-3" />
               <div>
                 <h3 className="font-medium">Aujourd'hui</h3>
-                <p className="text-sm text-gray-600">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-sm text-gray-600">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: workspace?.timezone })}</p>
               </div>
             </div>
             <div className="flex space-x-2">
