@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Tag, DollarSign, Truck, Star, ShoppingBag } from 'lucide-react';
+import { Search, Filter, Tag, DollarSign, Truck, Star, ShoppingBag, Zap } from 'lucide-react';
+import { aiService } from '../../services/aiService';
+import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 
@@ -98,6 +100,30 @@ const SupplierCatalogImporter: React.FC = () => {
       setSelectedProducts([]);
     } catch (error) {
       console.error('Error importing products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOptimizeSelected = async () => {
+    if (selectedProducts.length === 0) return;
+
+    try {
+      setLoading(true);
+      const toOptimize = products.filter(p => selectedProducts.includes(p.id));
+
+      for (const product of toOptimize) {
+        await aiService.optimizeProduct({
+          name: product.name,
+          description: product.description,
+          category: product.category
+        });
+      }
+
+      toast.success(`Optimisation IA terminée pour ${selectedProducts.length} produits`);
+    } catch (error) {
+      console.error('Error optimizing products:', error);
+      toast.error("Erreur lors de l'optimisation");
     } finally {
       setLoading(false);
     }
@@ -263,10 +289,16 @@ const SupplierCatalogImporter: React.FC = () => {
             </h3>
             
             {selectedProducts.length > 0 && (
-              <Button onClick={handleImportSelected}>
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                Import Selected ({selectedProducts.length})
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleOptimizeSelected} variant="outline">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Optimiser via IA
+                </Button>
+                <Button onClick={handleImportSelected}>
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Import Selected ({selectedProducts.length})
+                </Button>
+              </div>
             )}
           </div>
           

@@ -127,6 +127,11 @@ const ImportProducts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showMarketplaceSelector, setShowMarketplaceSelector] = useState(false);
   const [activeTab, setActiveTab] = useState('import');
+  const [showHistoryFilters, setShowHistoryFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
 
   if (!isConnected) {
     return (
@@ -219,12 +224,29 @@ const ImportProducts: React.FC = () => {
     );
   }
 
-  const filteredMethods = searchTerm 
-    ? importMethods.filter(method => 
+  const filteredMethods = searchTerm
+    ? importMethods.filter(method =>
         method.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         method.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : importMethods;
+
+  const allImports = [
+    ...recentImports,
+    { id: 4, source: 'Shopify', date: '2025-05-20', count: 45, status: 'completed' },
+    { id: 5, source: 'WooCommerce', date: '2025-05-15', count: 78, status: 'completed' },
+    { id: 6, source: 'Catalogue Fournisseur', date: '2025-05-10', count: 32, status: 'completed' }
+  ];
+
+  const filteredHistory = allImports.filter(item => {
+    const matchesStatus = statusFilter ? item.status === statusFilter : true;
+    const matchesSource = sourceFilter
+      ? item.source.toLowerCase().includes(sourceFilter.toLowerCase())
+      : true;
+    const matchesStart = startDateFilter ? new Date(item.date) >= new Date(startDateFilter) : true;
+    const matchesEnd = endDateFilter ? new Date(item.date) <= new Date(endDateFilter) : true;
+    return matchesStatus && matchesSource && matchesStart && matchesEnd;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -472,7 +494,7 @@ const ImportProducts: React.FC = () => {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-medium">Historique d'importation</h2>
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => setShowHistoryFilters(true)}>
                       <Filter className="h-4 w-4 mr-2" />
                       Filtrer
                     </Button>
@@ -505,11 +527,7 @@ const ImportProducts: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {[...recentImports, 
-                        { id: 4, source: 'Shopify', date: '2025-05-20', count: 45, status: 'completed' },
-                        { id: 5, source: 'WooCommerce', date: '2025-05-15', count: 78, status: 'completed' },
-                        { id: 6, source: 'Catalogue Fournisseur', date: '2025-05-10', count: 32, status: 'completed' }
-                      ].map((item) => (
+                      {filteredHistory.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">{item.source}</div>
@@ -745,6 +763,65 @@ const ImportProducts: React.FC = () => {
               </div>
             )}
           </div>
+
+          {showHistoryFilters && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-50">
+              <div className="bg-white w-80 h-full p-6 overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Filtres</h3>
+                  <button onClick={() => setShowHistoryFilters(false)} className="text-gray-400 hover:text-gray-500">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={sourceFilter}
+                      onChange={(e) => setSourceFilter(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="">Tous</option>
+                      <option value="completed">Complété</option>
+                      <option value="pending">En cours</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date début</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={startDateFilter}
+                      onChange={(e) => setStartDateFilter(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date fin</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={endDateFilter}
+                      onChange={(e) => setEndDateFilter(e.target.value)}
+                    />
+                  </div>
+                  <Button className="w-full" onClick={() => setShowHistoryFilters(false)}>
+                    Appliquer les filtres
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {showMarketplaceSelector && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
