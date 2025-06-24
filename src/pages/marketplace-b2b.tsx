@@ -360,6 +360,7 @@ export default function MarketplaceB2B() {
       setCategories(uniqueCategories);
     } catch (error) {
       console.error('Error fetching filter options:', error);
+      toast.error('Erreur lors du chargement des filtres');
     }
   };
 

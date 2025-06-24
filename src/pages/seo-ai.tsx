@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
@@ -62,6 +63,7 @@ Génère un JSON SEO complet avec :
         setSeo(parsed);
       } catch (parseError) {
         console.error("Erreur de parsing JSON:", parseError);
+        toast.error("Erreur de parsing JSON");
         // Tentative de récupération du JSON dans la réponse
         const jsonMatch = raw.match(/```json\n([\s\S]*?)\n```/) || raw.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -78,7 +80,7 @@ Génère un JSON SEO complet avec :
       }
     } catch (error) {
       console.error("Erreur IA SEO", error);
-      alert("Erreur lors de la génération SEO. Veuillez réessayer.");
+      toast.error("Erreur lors de la génération SEO");
     } finally {
       setLoading(false);
     }
