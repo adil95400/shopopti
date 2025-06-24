@@ -24,3 +24,20 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+
+## Google Sheets Integration
+
+The application can export accounting and reporting data directly to Google Sheets.
+To enable this feature:
+
+1. Create a project on the [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the **Google Sheets API** and configure an OAuth consent screen.
+3. Generate OAuth client credentials for a web application and obtain an API key.
+4. Add the following variables to your `.env` file (see `.env.example`):
+
+   ```bash
+   VITE_GOOGLE_API_KEY=your_google_api_key
+   VITE_GOOGLE_CLIENT_ID=your_google_client_id
+   ```
+
+When exporting reports you will be prompted to sign in with your Google account so the data can be written to your spreadsheet.

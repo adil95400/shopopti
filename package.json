@@ -20,6 +20,7 @@
     "cheerio": "^1.1.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.18.1",
+    "gapi-script": "^1.2.0",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",

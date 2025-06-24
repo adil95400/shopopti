@@ -3,6 +3,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { FileText, Download, Filter, Calendar, RefreshCw, Plus, Trash2, Settings, Loader2 } from 'lucide-react';
 
 import { Button } from '../components/ui/button';
+import { googleSheets } from '../modules/googleSheets';
 
 const CustomReports: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -58,11 +59,37 @@ const CustomReports: React.FC = () => {
     }
   };
   
-  const handleExport = (format: 'pdf' | 'csv' | 'excel') => {
-    // In a real app, you would generate and download the report
+  const handleExport = async (format: 'pdf' | 'csv' | 'excel' | 'sheets') => {
     console.log(`Exporting ${activeReport} report as ${format}`);
-    
-    // Simulate download
+    if (format === 'sheets') {
+      let data: any[] = [];
+      switch (activeReport) {
+        case 'sales':
+          data = salesData;
+          break;
+        case 'products':
+          data = productData;
+          break;
+        case 'customers':
+          data = customerData;
+          break;
+        default:
+          data = [];
+      }
+      if (data.length) {
+        const headers = Object.keys(data[0]);
+        const values = [headers, ...data.map(d => headers.map(h => d[h]))];
+        try {
+          await googleSheets.exportData(values, `${activeReport} report`);
+          alert(`${activeReport} report exported to Google Sheets`);
+        } catch (error) {
+          console.error('Google Sheets export failed:', error);
+          alert('Failed to export to Google Sheets');
+        }
+      }
+      return;
+    }
+
     setTimeout(() => {
       alert(`${activeReport} report exported as ${format}`);
     }, 1000);
@@ -201,6 +228,13 @@ const CustomReports: React.FC = () => {
                         onClick={() => handleExport('excel')}
                       >
                         Export as Excel
+                      </button>
+                      <button
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        onClick={() => handleExport('sheets')}
+                      >
+                        Export to Google Sheets
                       </button>
                     </div>
                   </div>
