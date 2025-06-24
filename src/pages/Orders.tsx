@@ -12,63 +12,16 @@ import {
 import { motion } from 'framer-motion';
 
 import { useShop } from '../contexts/ShopContext';
+import { useOrders } from '../hooks/useOrders';
 
-// Mock order data
-const mockOrders = [
-  {
-    id: '#2301',
-    customer: 'Michael Johnson',
-    email: 'michael.j@example.com',
-    date: '2023-06-15T14:23:54Z',
-    amount: 129.99,
-    status: 'delivered',
-    items: 2,
-  },
-  {
-    id: '#2302',
-    customer: 'Sarah Williams',
-    email: 'sarahw@example.com',
-    date: '2023-06-14T09:12:11Z',
-    amount: 89.95,
-    status: 'shipped',
-    items: 1,
-  },
-  {
-    id: '#2303',
-    customer: 'David Brown',
-    email: 'david.brown@example.com',
-    date: '2023-06-13T18:45:30Z',
-    amount: 204.50,
-    status: 'processing',
-    items: 3,
-  },
-  {
-    id: '#2304',
-    customer: 'Emily Davis',
-    email: 'edavis@example.com',
-    date: '2023-06-12T10:33:22Z',
-    amount: 59.99,
-    status: 'delivered',
-    items: 1,
-  },
-  {
-    id: '#2305',
-    customer: 'James Wilson',
-    email: 'jwilson@example.com',
-    date: '2023-06-11T15:19:45Z',
-    amount: 149.98,
-    status: 'processing',
-    items: 2,
-  },
-];
 
 const Orders: React.FC = () => {
   const { isConnected } = useShop();
-  const [orders] = useState(mockOrders);
+  const { orders, loading } = useOrders();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter orders based on search query
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter(order =>
     order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -191,8 +144,15 @@ const Orders: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 bg-white">
-              {filteredOrders.map((order) => (
-                <motion.tr 
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-sm text-neutral-500">
+                    Loading orders...
+                  </td>
+                </tr>
+              )}
+              {!loading && filteredOrders.map((order) => (
+                <motion.tr
                   key={order.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -210,12 +170,12 @@ const Orders: React.FC = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm text-neutral-900">
-                      {formatDate(order.date)}
+                      {formatDate(order.created_at || order.date)}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm font-medium text-neutral-900">
-                      ${order.amount.toFixed(2)}
+                      ${Number(order.total_amount ?? order.amount).toFixed(2)}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
@@ -231,7 +191,7 @@ const Orders: React.FC = () => {
                   </td>
                 </motion.tr>
               ))}
-              {filteredOrders.length === 0 && (
+              {!loading && filteredOrders.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center">

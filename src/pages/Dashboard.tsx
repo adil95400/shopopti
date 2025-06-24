@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
 
-import { supabase } from '../lib/supabase';
+import { useStats } from '../hooks/useStats';
 import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
 import TrackingWidget from '../components/tracking/TrackingWidget';
 import MainNavbar from '../components/layout/MainNavbar';
@@ -10,13 +10,11 @@ import Footer from '../components/layout/Footer';
 import { Button } from '../components/ui/button';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    revenue: { value: 1060, change: 25 },
-    orders: { value: 98, change: 12 },
+  const { data: metrics, loading } = useStats();
+  const [stats] = useState({
     visitors: { value: 4521, change: 15.3 },
     conversion: { value: 3.2, change: -0.5 }
   });
-  const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState([
     {
       id: 1,
@@ -44,31 +42,6 @@ export default function Dashboard() {
     }
   ]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      // Dans une application réelle, récupérez les données depuis Supabase
-      // Pour l'instant, nous utilisons des données statiques
-      
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStats({
-        revenue: { value: 1060, change: 25 },
-        orders: { value: 98, change: 12 },
-        visitors: { value: 4521, change: 15.3 },
-        conversion: { value: 3.2, change: -0.5 }
-      });
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données du tableau de bord:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -84,15 +57,10 @@ export default function Dashboard() {
                 <DollarSign className="h-5 w-5 text-blue-500" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.revenue.value.toLocaleString()}€</p>
+            <p className="text-2xl font-bold">{metrics ? `${metrics.revenue.toLocaleString()}€` : '0€'}</p>
             <div className="flex items-center mt-2">
-              <span className={`flex items-center text-sm ${stats.revenue.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {stats.revenue.change >= 0 ? (
-                  <ArrowUpRight className="h-4 w-4 mr-1" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 mr-1" />
-                )}
-                {Math.abs(stats.revenue.change)}%
+              <span className="flex items-center text-sm text-gray-500">
+                <ArrowUpRight className="h-4 w-4 mr-1" />0%
               </span>
               <span className="text-xs text-gray-500 ml-2">vs période précédente</span>
             </div>
@@ -105,15 +73,10 @@ export default function Dashboard() {
                 <ShoppingBag className="h-5 w-5 text-purple-500" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.orders.value}</p>
+            <p className="text-2xl font-bold">{metrics ? metrics.orders : 0}</p>
             <div className="flex items-center mt-2">
-              <span className={`flex items-center text-sm ${stats.orders.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {stats.orders.change >= 0 ? (
-                  <ArrowUpRight className="h-4 w-4 mr-1" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 mr-1" />
-                )}
-                {Math.abs(stats.orders.change)}%
+              <span className="flex items-center text-sm text-gray-500">
+                <ArrowUpRight className="h-4 w-4 mr-1" />0%
               </span>
               <span className="text-xs text-gray-500 ml-2">vs période précédente</span>
             </div>

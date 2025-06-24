@@ -3,8 +3,8 @@ import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
 
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
+import { useSEO } from '../hooks/useSEO';
 
-import { askChatGPT } from '@/lib/openai';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,7 @@ export default function SEOAIPage() {
   const [productName, setProductName] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [seo, setSeo] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: seo, loading, analyze } = useSEO();
   const [copied, setCopied] = useState<string | null>(null);
 
   const generateSEO = async () => {
@@ -23,64 +22,15 @@ export default function SEOAIPage() {
       return;
     }
 
-    setLoading(true);
     try {
-      const prompt = `
-Produit : ${productName}
-Description : ${productDescription}
-Catégorie : ${category}
-
-Génère un JSON SEO complet avec :
-{
-  "metaTitle": "Titre SEO optimisé (max 60 caractères)",
-  "metaDescription": "Description méta optimisée (max 160 caractères)",
-  "h1": "Titre H1 optimisé",
-  "tags": ["tag1", "tag2", "tag3", ...],
-  "jsonLD": { 
-    "@context": "https://schema.org", 
-    "@type": "Product",
-    "name": "...",
-    "description": "...",
-    "brand": { "@type": "Brand", "name": "..." },
-    "offers": {
-      "@type": "Offer",
-      "availability": "https://schema.org/InStock",
-      "price": "...",
-      "priceCurrency": "EUR"
-    }
-  },
-  "recommendations": [
-    "Recommandation SEO 1",
-    "Recommandation SEO 2",
-    "Recommandation SEO 3"
-  ]
-}
-`;
-      const raw = await askChatGPT(prompt);
-      try {
-        const parsed = JSON.parse(raw);
-        setSeo(parsed);
-      } catch (parseError) {
-        console.error("Erreur de parsing JSON:", parseError);
-        // Tentative de récupération du JSON dans la réponse
-        const jsonMatch = raw.match(/```json\n([\s\S]*?)\n```/) || raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            const jsonContent = jsonMatch[1] || jsonMatch[0];
-            const parsed = JSON.parse(jsonContent);
-            setSeo(parsed);
-          } catch (e) {
-            throw new Error("Impossible de parser la réponse JSON");
-          }
-        } else {
-          throw new Error("Format de réponse invalide");
-        }
-      }
+      await analyze({
+        title: productName,
+        description: productDescription,
+        tags: category
+      });
     } catch (error) {
       console.error("Erreur IA SEO", error);
-      alert("Erreur lors de la génération SEO. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
+      alert("Erreur lors de la generation SEO. Veuillez reessayer.");
     }
   };
 
