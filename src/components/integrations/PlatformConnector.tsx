@@ -22,6 +22,7 @@ interface PlatformConnectorProps {
     logo: string;
     type: 'marketplace' | 'webstore' | 'social';
     connected: boolean;
+    dashboardUrl?: string;
   };
   onConnect: (platform: string, credentials: any) => Promise<boolean>;
   onDisconnect: (platform: string) => Promise<boolean>;
@@ -241,10 +242,10 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
         <div className="mt-4">
           {platform.connected ? (
             <div className="flex justify-between items-center">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => window.open(`https://${platform.id}.com/admin`, '_blank')}
+                onClick={() => window.open(platform.dashboardUrl ?? `https://${platform.id}.com/admin`, '_blank')}
               >
                 <LinkIcon className="h-4 w-4 mr-2" />
                 Open Dashboard
