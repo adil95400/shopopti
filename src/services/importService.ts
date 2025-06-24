@@ -147,6 +147,15 @@ export const importService = {
                   features: row.features?.split(',') || []
                 });
 
+                let variants = row.variants ? JSON.parse(row.variants) : undefined;
+                if (!variants || variants.length === 0) {
+                  variants = await aiService.generateVariants({
+                    title: optimizedTitle,
+                    description: optimizedDescription,
+                    category: row.category
+                  });
+                }
+
                 return {
                   title: optimizedTitle,
                   description: optimizedDescription,
@@ -155,7 +164,7 @@ export const importService = {
                   sku: row.sku,
                   stock: parseInt(row.stock, 10) || 0,
                   category: row.category,
-                  variants: row.variants ? JSON.parse(row.variants) : undefined,
+                  variants,
                   metadata: {
                     source: 'csv',
                     importDate: new Date().toISOString()
@@ -416,6 +425,15 @@ export const importService = {
         features: []
       });
 
+      let finalVariants = variants.length > 0 ? variants : undefined;
+      if (!finalVariants) {
+        finalVariants = await aiService.generateVariants({
+          title: optimizedTitle,
+          description: optimizedDescription,
+          category: 'Amazon'
+        });
+      }
+
       const reviews = $('.review')
         .map((_, review) => {
           try {
@@ -442,7 +460,7 @@ export const importService = {
         description: optimizedDescription,
         price,
         images: uniqueImages,
-        variants: variants.length > 0 ? variants : undefined,
+        variants: finalVariants,
         metadata: {
           source: 'amazon',
           sourceUrl: url,
@@ -567,21 +585,33 @@ export const importService = {
       const products = await supplierService.getProductsByIds(supplierId, productIds);
       
       // Transformer les produits au format Shopopti+
-      const transformedProducts = products.map(product => ({
-        title: product.name,
-        description: product.description,
-        price: product.price,
-        images: product.images,
-        sku: product.sku,
-        stock: product.stock,
-        category: product.category,
-        variants: product.variants,
-        metadata: {
-          source: supplier.type,
-          sourceId: product.id,
-          importDate: new Date().toISOString()
-        }
-      }));
+      const transformedProducts = await Promise.all(
+        products.map(async product => {
+          let variants = product.variants;
+          if (!variants || variants.length === 0) {
+            variants = await aiService.generateVariants({
+              title: product.name,
+              description: product.description,
+              category: product.category
+            });
+          }
+          return {
+            title: product.name,
+            description: product.description,
+            price: product.price,
+            images: product.images,
+            sku: product.sku,
+            stock: product.stock,
+            category: product.category,
+            variants,
+            metadata: {
+              source: supplier.type,
+              sourceId: product.id,
+              importDate: new Date().toISOString()
+            }
+          };
+        })
+      );
       
       // Optimiser les produits avec l'IA
       const optimizedProducts = await Promise.all(
