@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Request
 import stripe
 import os
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
@@ -26,4 +28,5 @@ async def create_checkout_session(request: Request):
         )
         return { "url": session.url }
     except Exception as e:
+        logger.exception("Failed to create Stripe checkout session")
         return { "error": str(e) }
