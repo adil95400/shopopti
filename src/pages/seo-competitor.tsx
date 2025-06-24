@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ export default function SeoCompetitorPage() {
   const [loading, setLoading] = useState(false);
 
   const analyzeSEO = async () => {
-    if (!url.trim()) return alert("Merci d'entrer une URL valide.");
+    if (!url.trim()) return toast.error("Merci d'entrer une URL valide.");
     setLoading(true);
     setResult(null);
 
@@ -32,7 +33,7 @@ Retourne un JSON avec :
       const data = JSON.parse(response);
       setResult(data);
     } catch (error) {
-      alert("Erreur lors de l'analyse SEO.");
+      toast.error("Erreur lors de l'analyse SEO.");
       console.error(error);
     } finally {
       setLoading(false);

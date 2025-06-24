@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
@@ -19,7 +20,7 @@ export default function SEOAIPage() {
 
   const generateSEO = async () => {
     if (!productName.trim()) {
-      alert('Veuillez entrer au moins un nom de produit');
+      toast.error('Veuillez entrer au moins un nom de produit');
       return;
     }
 
@@ -78,7 +79,7 @@ Génère un JSON SEO complet avec :
       }
     } catch (error) {
       console.error("Erreur IA SEO", error);
-      alert("Erreur lors de la génération SEO. Veuillez réessayer.");
+      toast.error("Erreur lors de la génération SEO. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
