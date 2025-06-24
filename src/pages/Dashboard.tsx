@@ -1,22 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
+import {
+  BarChart3,
+  ShoppingBag,
+  TrendingUp,
+  Users,
+  ArrowUpRight,
+  ArrowDownRight,
+  Package,
+  Calendar,
+  Bell,
+  Settings,
+  FileText,
+  Bot,
+  Database,
+  Code,
+  Layers,
+  Webhook
+} from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer
+} from 'recharts';
 
-import { supabase } from '../lib/supabase';
 import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
 import TrackingWidget from '../components/tracking/TrackingWidget';
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
-import { Button } from '../components/ui/button';
+import { useStats } from '../hooks/useStats';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    revenue: { value: 1060, change: 25 },
-    orders: { value: 98, change: 12 },
-    visitors: { value: 4521, change: 15.3 },
-    conversion: { value: 3.2, change: -0.5 }
-  });
-  const [loading, setLoading] = useState(true);
+  const { stats, loading } = useStats();
   const [recentActivity, setRecentActivity] = useState([
     {
       id: 1,
@@ -44,31 +63,6 @@ export default function Dashboard() {
     }
   ]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      // Dans une application réelle, récupérez les données depuis Supabase
-      // Pour l'instant, nous utilisons des données statiques
-      
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStats({
-        revenue: { value: 1060, change: 25 },
-        orders: { value: 98, change: 12 },
-        visitors: { value: 4521, change: 15.3 },
-        conversion: { value: 3.2, change: -0.5 }
-      });
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données du tableau de bord:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -161,7 +155,34 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Revenu (7 derniers jours)</h3>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={stats.revenueData}>
+                  <XAxis dataKey="date" hide />
+                  <YAxis hide />
+                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Commandes (7 derniers jours)</h3>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.ordersData}>
+                  <XAxis dataKey="date" hide />
+                  <YAxis hide />
+                  <Bar dataKey="value" fill="#8b5cf6" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-lg font-medium mb-4">Activité récente</h2>
