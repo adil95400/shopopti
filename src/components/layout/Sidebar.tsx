@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom';
 import {
   Menu,
   X,
+  ChevronsLeft,
+  ChevronsRight,
   LayoutDashboard,
   FileText,
   Bot,
@@ -36,6 +38,11 @@ import {
 } from 'lucide-react';
 
 import Logo from './Logo';
+
+interface SidebarProps {
+  collapsed: boolean;
+  toggleSidebar: () => void;
+}
 
 const sections = [
   {
@@ -122,7 +129,7 @@ const sections = [
     ]
   }
 ];
-export default function Sidebar() {
+export default function Sidebar({ collapsed, toggleSidebar }: SidebarProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -167,24 +174,34 @@ export default function Sidebar() {
       )}
 
       {/* Desktop sidebar */}
-      <aside className="w-64 hidden md:block bg-muted p-4 border-r min-h-screen overflow-y-auto">
-        <div className="mb-6">
-          <Logo />
+      <aside
+        className={`${collapsed ? 'w-20 p-2' : 'w-64 p-4'} hidden md:block bg-muted border-r min-h-screen overflow-y-auto transition-all duration-300`}
+      >
+        <div className={`mb-6 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          {collapsed ? <Logo size="sm" /> : <Logo />}
+          <button onClick={toggleSidebar} className="ml-auto rounded p-1 hover:bg-muted/50">
+            {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
+          </button>
         </div>
         <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-100px)]">
           {sections.map((section, i) => (
             <div key={i} className="mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
+              {!collapsed && (
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2">
+                  {section.title}
+                </h3>
+              )}
               <div className="flex flex-col gap-1">
                 {section.links.map(link => (
                   <NavLink
                     key={link.path}
                     to={link.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 ${isActive ? 'bg-primary/20 font-semibold' : ''}`
+                      `flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 ${collapsed ? 'justify-center' : ''} ${isActive ? 'bg-primary/20 font-semibold' : ''}`
                     }
                   >
-                    {link.icon} {link.label}
+                    {link.icon}
+                    {!collapsed && <span>{link.label}</span>}
                   </NavLink>
                 ))}
               </div>
