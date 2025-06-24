@@ -46,6 +46,7 @@ const sections = [
       { path: '/app/orders', label: 'Commandes', icon: <Package size={18} /> },
       { path: '/app/import-products', label: 'Import produits', icon: <Import size={18} /> },
       { path: '/app/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
+      { path: '/app/analytics/products', label: 'Product Analytics', icon: <FileBarChart2 size={18} /> },
       { path: '/app/reviews', label: 'Reviews', icon: <Star size={18} /> },
       { path: '/app/suppliers', label: 'Fournisseurs', icon: <Building size={18} /> },
       { path: '/app/settings', label: 'Param\u00e8tres', icon: <Settings size={18} /> },
