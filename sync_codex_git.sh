@@ -1,15 +1,32 @@
 #!/bin/bash
 
-BRANCHE="main"
-REMOTE="origin"
-MESSAGE_COMMIT="🔄 Sync Codex $(date '+%Y-%m-%d %H:%M:%S')"
+echo "🔄 Synchronisation Codex → GitHub en cours..."
 
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 
-echo "📂 Préparation Git..."
+if [ ! -d ".git" ]; then
+  echo "🆕 Dépôt Git non initialisé. Initialisation..."
+  git init
+  git remote add origin git@github.com:VOTRE_UTILISATEUR/VOTRE_REPO.git
+fi
+
 git add .
-git commit -m "$MESSAGE_COMMIT"
-git push $REMOTE $BRANCHE
 
-echo "✅ Synchronisation terminée avec succès !"
+if git diff-index --quiet HEAD --; then
+  echo "✅ Aucun changement à committer."
+else
+  TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+  git commit -m "🚀 Sync Codex update - $TIMESTAMP"
+  echo "✅ Modifications commit."
 
+  git branch -M main
+  git push -u origin main
+  echo "📦 Pushed to GitHub ✅"
+fi
+
+if [ -f ".trigger-vercel.txt" ]; then
+  touch .trigger-vercel.txt
+  echo "🧪 Fichier trigger-vercel.txt mis à jour pour déclencher un déploiement Vercel."
+fi
+
+echo "🎉 Synchronisation terminée."

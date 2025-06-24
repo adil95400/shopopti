@@ -1,0 +1,21 @@
+TASK: Uniformiser les composants UI
+
+1. Déplacer tous les composants suivants vers `components/ui/` :
+   - Button.tsx
+   - Input.tsx
+   - Card.tsx
+   - Tabs.tsx
+   - Textarea.tsx
+
+2. Ajouter le composant <Toaster /> globalement dans App.tsx
+
+3. Ajouter icônes Sidebar : utiliser `lucide-react` pour chaque item
+
+4. Vérifier responsive mobile/tablette : adapter Sidebar + Navbar
+
+5. Générer theme Tailwind personnalisé :
+   - primary: #6366f1
+   - secondary: #3b82f6
+   - background: #f9fafb
+   - text: #111827
+
