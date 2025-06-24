@@ -1,0 +1,5 @@
+fastapi
+httpx
+stripe
+supabase
+sentry-sdk
