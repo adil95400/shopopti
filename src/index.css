@@ -28,6 +28,15 @@
   --secondary-800: #0f0d15;
   --secondary-900: #0c0a10;
 
+  /* Generic colors */
+  --background: #ffffff;
+  --foreground: #1f2937;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --text-muted: #6b7280;
+
   /* Accent colors - Light Gray */
   --accent-50: #fafafa;
   --accent-100: #f5f5f5;

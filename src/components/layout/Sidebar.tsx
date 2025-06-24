@@ -122,7 +122,12 @@ const sections = [
     ]
   }
 ];
-export default function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+  toggleCollapsed: () => void;
+}
+
+export default function Sidebar({ collapsed, toggleCollapsed }: SidebarProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -167,24 +172,30 @@ export default function Sidebar() {
       )}
 
       {/* Desktop sidebar */}
-      <aside className="w-64 hidden md:block bg-muted p-4 border-r min-h-screen overflow-y-auto">
-        <div className="mb-6">
-          <Logo />
+      <aside className={`hidden md:flex flex-col bg-muted p-4 border-r min-h-screen overflow-y-auto transition-all ${collapsed ? 'w-20' : 'w-64'}`}>
+        <div className={`mb-6 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          {!collapsed && <Logo />}
+          <button onClick={toggleCollapsed} className="p-1 rounded hover:bg-primary/10">
+            {collapsed ? <Menu size={18} /> : <X size={18} />}
+          </button>
         </div>
         <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-100px)]">
           {sections.map((section, i) => (
             <div key={i} className="mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
+              {!collapsed && (
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
+              )}
               <div className="flex flex-col gap-1">
                 {section.links.map(link => (
                   <NavLink
                     key={link.path}
                     to={link.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 ${isActive ? 'bg-primary/20 font-semibold' : ''}`
+                      `flex items-center gap-2 px-3 py-2 rounded hover:bg-primary/10 ${collapsed ? 'justify-center' : ''} ${isActive ? 'bg-primary/20 font-semibold' : ''}`
                     }
                   >
-                    {link.icon} {link.label}
+                    {link.icon}
+                    {!collapsed && link.label}
                   </NavLink>
                 ))}
               </div>
@@ -194,4 +205,5 @@ export default function Sidebar() {
       </aside>
     </>
   );
+
 }

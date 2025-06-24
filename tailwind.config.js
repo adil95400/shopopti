@@ -29,6 +29,17 @@ export default {
           800: 'var(--secondary-800)',
           900: 'var(--secondary-900)',
         },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)'
+        },
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)'
+        },
+        'text-muted': 'var(--text-muted)',
         accent: {
           50: 'var(--accent-50)',
           100: 'var(--accent-100)',
@@ -87,4 +98,5 @@ export default {
     },
   },
   plugins: [],
-};
+}
+
