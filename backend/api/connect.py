@@ -39,9 +39,64 @@ async def validate_woocommerce(creds: dict) -> tuple[bool, str | None]:
     except Exception as e:
         return False, str(e)
 
+async def validate_ebay(creds: dict) -> tuple[bool, str | None]:
+    token = creds.get("access_token")
+    if not token:
+        return False, "access_token required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://api.ebay.com/",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
+            )
+        if resp.status_code in {200, 401}:
+            return True, None
+        return False, f"eBay responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
+async def validate_prestashop(creds: dict) -> tuple[bool, str | None]:
+    url = creds.get("store_url")
+    key = creds.get("api_key")
+    if not url or not key:
+        return False, "store_url and api_key required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{url}/api/orders",
+                params={"ws_key": key},
+                timeout=10,
+            )
+        if resp.status_code in {200, 401, 403}:
+            return True, None
+        return False, f"PrestaShop responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
+async def validate_cdiscount(creds: dict) -> tuple[bool, str | None]:
+    token = creds.get("access_token") or creds.get("api_key")
+    if not token:
+        return False, "api_key or access_token required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://api.cdiscount.com/OpenApi/json/GetSellerInformation",
+                headers={"Authorization": token},
+                timeout=10,
+            )
+        if resp.status_code == 200:
+            return True, None
+        return False, f"Cdiscount responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
 validators = {
     "shopify": validate_shopify,
     "woocommerce": validate_woocommerce,
+    "ebay": validate_ebay,
+    "prestashop": validate_prestashop,
+    "cdiscount": validate_cdiscount,
 }
 
 @router.post("/api/connect/{platform}")
@@ -67,3 +122,4 @@ async def connect_platform(platform: str, request: Request):
         "credentials": credentials,
     }).execute()
     return {"status": "connected"}
+

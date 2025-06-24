@@ -72,6 +72,27 @@ const MultiPlatformIntegration: React.FC = () => {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Squarespace_logo.svg/1280px-Squarespace_logo.svg.png',
       type: 'webstore' as const,
       connected: false
+    },
+    {
+      id: 'ebay',
+      name: 'eBay',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg',
+      type: 'marketplace' as const,
+      connected: false
+    },
+    {
+      id: 'prestashop',
+      name: 'PrestaShop',
+      logo: 'https://upload.wikimedia.org/wikipedia/fr/thumb/5/59/PrestaShop_logo.svg/1280px-PrestaShop_logo.svg.png',
+      type: 'webstore' as const,
+      connected: false
+    },
+    {
+      id: 'cdiscount',
+      name: 'Cdiscount',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Cdiscount_2018_logo.svg/512px-Cdiscount_2018_logo.svg.png',
+      type: 'marketplace' as const,
+      connected: false
     }
   ]);
 
