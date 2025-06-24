@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 
 import SocialLoginButtons from './SocialLoginButtons';
+import OtpPrompt from './OtpPrompt';
 
 interface LoginFormProps {
   onClose?: () => void;
@@ -26,6 +27,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, isModal = false }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [mfaChallenge, setMfaChallenge] = useState<{ factorId: string; challengeId: string } | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -38,16 +41,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, isModal = false }) => {
     
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
-      
+
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const verified = [...(factors?.totp ?? []), ...(factors?.phone ?? [])];
+      if (verified.length > 0) {
+        const factor = verified[0];
+        const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({
+          factorId: factor.id,
+          ...(factor.factor_type === 'phone' ? { channel: 'sms' as const } : {})
+        });
+        if (cErr) throw cErr;
+        setMfaChallenge({ factorId: factor.id, challengeId: challenge.id });
+        return;
+      }
+
       toast.success('Connexion réussie');
-      
+
       if (isModal && onClose) {
         onClose();
       } else {
@@ -58,6 +74,31 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, isModal = false }) => {
       toast.error(error.message || 'Identifiants incorrects');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (code: string) => {
+    if (!mfaChallenge) return;
+    try {
+      setOtpLoading(true);
+      const { error } = await supabase.auth.mfa.verify({
+        factorId: mfaChallenge.factorId,
+        challengeId: mfaChallenge.challengeId,
+        code
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success('Connexion réussie');
+      if (isModal && onClose) {
+        onClose();
+      } else {
+        navigate('/app/dashboard');
+      }
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -103,7 +144,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, isModal = false }) => {
         <div className="flex-grow h-px bg-gray-300"></div>
       </div>
       
-      <form onSubmit={handleLogin} className="space-y-4">
+      {mfaChallenge ? (
+        <OtpPrompt onSubmit={handleVerifyOtp} loading={otpLoading} />
+      ) : (
+        <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <div className="relative">
             <input
@@ -174,7 +218,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onClose, isModal = false }) => {
             "Sign in"
           )}
         </Button>
-      </form>
+        </form>
+      )}
     </div>
   );
 };

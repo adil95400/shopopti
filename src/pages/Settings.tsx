@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { availableLanguages, useLanguage } from '../contexts/LanguageContext';
 import { availableCurrencies, useCurrency } from '../contexts/CurrencyContext';
+import TwoFactorSettings from '../components/auth/TwoFactorSettings';
 
 const Settings = () => {
   const { currentLanguage, setLanguage } = useLanguage();
@@ -70,6 +71,15 @@ const Settings = () => {
                 </select>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Two-Factor Authentication</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TwoFactorSettings />
           </CardContent>
         </Card>
       </div>
