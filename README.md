@@ -24,3 +24,13 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+
+```
+
+### Environment Variables
+
+Additional keys are required for webhook integrations:
+
+- `ZAPIER_WEBHOOK_SECRET` – secret token used to validate incoming Zapier hooks
+- `AIRTABLE_API_KEY` and `AIRTABLE_BASE_ID` – credentials for Airtable
+- `NOTION_API_KEY` – access token for Notion API

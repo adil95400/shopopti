@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Copy, Check, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
 import { Button } from '../components/ui/button';
+import { supabase } from '../lib/supabase';
 
 interface Webhook {
   id: string;
@@ -36,10 +37,33 @@ const Webhooks: React.FC = () => {
     url: '',
     events: [] as string[]
   });
-  
+
+  const [zapierUrl, setZapierUrl] = useState('');
+  const [airtableUrl, setAirtableUrl] = useState('');
+  const [notionUrl, setNotionUrl] = useState('');
+  const [userId, setUserId] = useState<string>('');
+
   const [isAddingWebhook, setIsAddingWebhook] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchIntegrations = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+      const { data } = await supabase
+        .from('webhook_subscriptions')
+        .select('*')
+        .eq('user_id', user.id);
+      data?.forEach((sub: any) => {
+        if (sub.service === 'zapier') setZapierUrl(sub.target_url);
+        if (sub.service === 'airtable') setAirtableUrl(sub.target_url);
+        if (sub.service === 'notion') setNotionUrl(sub.target_url);
+      });
+    };
+    fetchIntegrations();
+  }, []);
   
   const availableEvents = [
     { value: 'order.created', label: 'Order Created' },
@@ -129,6 +153,15 @@ const Webhooks: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveIntegration = async (service: string, url: string) => {
+    if (!userId || !url) return;
+    await fetch(`/api/${service}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, target_url: url })
+    });
   };
   
   const copyToClipboard = (text: string, id: string) => {
@@ -384,7 +417,49 @@ const Webhooks: React.FC = () => {
           </div>
         </div>
       )}
-      
+
+      <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+        <h3 className="text-lg font-medium">Integrations</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Zapier Webhook URL</label>
+            <div className="flex space-x-2">
+              <input
+                type="url"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                value={zapierUrl}
+                onChange={(e) => setZapierUrl(e.target.value)}
+              />
+              <Button onClick={() => saveIntegration('zapier', zapierUrl)} disabled={!zapierUrl}>Save</Button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Airtable Webhook URL</label>
+            <div className="flex space-x-2">
+              <input
+                type="url"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                value={airtableUrl}
+                onChange={(e) => setAirtableUrl(e.target.value)}
+              />
+              <Button onClick={() => saveIntegration('airtable', airtableUrl)} disabled={!airtableUrl}>Save</Button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notion Webhook URL</label>
+            <div className="flex space-x-2">
+              <input
+                type="url"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                value={notionUrl}
+                onChange={(e) => setNotionUrl(e.target.value)}
+              />
+              <Button onClick={() => saveIntegration('notion', notionUrl)} disabled={!notionUrl}>Save</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-blue-50 p-4 rounded-md">
         <div className="flex items-start">
           <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
