@@ -24,3 +24,11 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+```
+
+2. 🚀 Deployer la nouvelle version sur Vercel :
+```bash
+vercel --prod
+```
+
+3. 🔄 Poursuivre le développement sur la branche `v6.9`.
