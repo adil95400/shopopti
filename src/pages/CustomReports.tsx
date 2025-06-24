@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Filter, Calendar, RefreshCw, Plus, Trash2, Settings, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
 
@@ -64,7 +65,7 @@ const CustomReports: React.FC = () => {
     
     // Simulate download
     setTimeout(() => {
-      alert(`${activeReport} report exported as ${format}`);
+      toast.success(`${activeReport} report exported as ${format}`);
     }, 1000);
   };
   

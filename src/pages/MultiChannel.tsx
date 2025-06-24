@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Store, Share2, BarChart, Settings } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import ChannelManager from '../components/multichannel/ChannelManager';
@@ -16,8 +17,8 @@ const MultiChannel: React.FC = () => {
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    alert(`${action} completed successfully!`);
+
+    toast.success(`${action} completed successfully!`);
   };
 
   // Sample product for the ProductPublisher component

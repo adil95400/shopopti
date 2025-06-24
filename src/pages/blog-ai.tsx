@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
@@ -20,7 +21,7 @@ export default function BlogAIPage() {
 
   const generateBlog = async () => {
     if (!productName.trim()) {
-      alert('Veuillez entrer un nom de produit');
+      toast.error('Veuillez entrer un nom de produit');
       return;
     }
 
@@ -47,7 +48,7 @@ Format : Article complet en HTML simple (utilise des balises h1, h2, p, ul, li, 
       setBlogContent(content);
     } catch (error) {
       console.error("Erreur lors de la génération du blog:", error);
-      alert("Une erreur est survenue lors de la génération du contenu. Veuillez réessayer.");
+      toast.error("Une erreur est survenue lors de la génération du contenu. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
