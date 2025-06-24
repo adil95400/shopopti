@@ -7,6 +7,7 @@ export interface Platform {
   name: string;
   type: 'marketplace' | 'webstore' | 'social';
   connected: boolean;
+  syncStatus?: 'synced' | 'error' | 'pending';
   credentials?: Record<string, string>;
   lastSync?: string;
   settings?: Record<string, any>;
