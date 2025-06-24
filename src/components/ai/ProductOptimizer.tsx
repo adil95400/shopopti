@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Check, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
 
+import { aiService } from '../../services/aiService';
 import { Button } from '../ui/button';
 
 interface ProductOptimizerProps {
@@ -24,39 +25,49 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
     pricing: false
   });
   const [optimizedProduct, setOptimizedProduct] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOptimize = async () => {
     try {
       setLoading(true);
-      
-      // Simulate API call to AI service
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const optimized = {
-        title: optimizationOptions.title 
-          ? `Premium ${product.title} - Professional Grade` 
-          : product.title,
-        description: optimizationOptions.description 
-          ? `${product.description}\n\nThis high-quality product offers exceptional performance and durability. Perfect for both professional and personal use, it features premium materials and expert craftsmanship.` 
+      setError(null);
+
+      const result = await aiService.optimizeProduct({
+        name: product.title,
+        description: product.description,
+        category: product.category || ''
+      });
+
+      const optimized: any = {
+        title: optimizationOptions.title ? result.title : product.title,
+        description: optimizationOptions.description
+          ? result.description_html
           : product.description,
-        price: optimizationOptions.pricing 
-          ? Math.round(product.price * 1.15 * 100) / 100 
+        price: optimizationOptions.pricing
+          ? Math.round(product.price * 1.15 * 100) / 100
           : product.price,
-        seo: optimizationOptions.seo 
-          ? {
-              title: `Buy ${product.title} | Best Quality | Fast Shipping`,
-              description: `Shop for the best ${product.title} with premium features. Free shipping, 30-day returns, and exceptional customer service.`,
-              keywords: ['premium', 'high-quality', product.category || '', 'best seller']
-            } 
-          : null,
-        tags: optimizationOptions.tags 
-          ? [...(product.tags || []), 'trending', 'best-seller', 'premium'] 
-          : product.tags
+        tags: optimizationOptions.tags ? result.tags : product.tags,
+        seo: null
       };
-      
+
+      if (optimizationOptions.seo) {
+        const seoData = await aiService.optimizeForSEO({
+          title: optimized.title,
+          description: optimized.description,
+          category: product.category || ''
+        });
+
+        optimized.seo = {
+          metaTitle: seoData.metaTitle,
+          metaDescription: seoData.metaDescription,
+          keywords: seoData.keywords
+        };
+      }
+
       setOptimizedProduct(optimized);
-    } catch (error) {
-      console.error('Error optimizing product:', error);
+    } catch (err: any) {
+      console.error('Error optimizing product:', err);
+      setError(err.message || 'Failed to optimize product');
     } finally {
       setLoading(false);
     }
@@ -239,10 +250,16 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
           </div>
         </div>
       </div>
-      
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
       {!optimizedProduct ? (
-        <Button 
-          onClick={handleOptimize} 
+        <Button
+          onClick={handleOptimize}
           disabled={loading || (!optimizationOptions.title && !optimizationOptions.description && !optimizationOptions.seo && !optimizationOptions.tags && !optimizationOptions.pricing)}
           className="w-full"
         >
@@ -269,13 +286,57 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
               Your product has been optimized for better performance.
             </p>
           </div>
-          
+
+          <div className="space-y-2">
+            {optimizationOptions.title && (
+              <div>
+                <h5 className="font-medium">Title</h5>
+                <p className="text-sm">{optimizedProduct.title}</p>
+              </div>
+            )}
+            {optimizationOptions.description && (
+              <div>
+                <h5 className="font-medium">Description</h5>
+                <div
+                  className="text-sm prose"
+                  dangerouslySetInnerHTML={{ __html: optimizedProduct.description }}
+                />
+              </div>
+            )}
+            {optimizationOptions.tags && optimizedProduct.tags && (
+              <div>
+                <h5 className="font-medium">Tags</h5>
+                <p className="text-sm">{optimizedProduct.tags.join(', ')}</p>
+              </div>
+            )}
+            {optimizationOptions.pricing && optimizedProduct.price && (
+              <div>
+                <h5 className="font-medium">Price</h5>
+                <p className="text-sm">{optimizedProduct.price} €</p>
+              </div>
+            )}
+            {optimizationOptions.seo && optimizedProduct.seo && (
+              <div>
+                <h5 className="font-medium">SEO</h5>
+                <p className="text-sm">{optimizedProduct.seo.metaTitle}</p>
+                <p className="text-sm">{optimizedProduct.seo.metaDescription}</p>
+                <p className="text-sm">
+                  Keywords: {optimizedProduct.seo.keywords.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button onClick={handleApply} className="w-full">
               <Check className="h-4 w-4 mr-2" />
               Apply Changes
             </Button>
-            <Button variant="outline" onClick={() => setOptimizedProduct(null)} className="w-full">
+            <Button
+              variant="outline"
+              onClick={() => setOptimizedProduct(null)}
+              className="w-full"
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Start Over
             </Button>
@@ -287,3 +348,4 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
 };
 
 export default ProductOptimizer;
+
