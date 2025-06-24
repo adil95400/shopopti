@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT,
   name TEXT,
   avatar_url TEXT,
-  role TEXT DEFAULT 'user',
+  role TEXT DEFAULT 'viewer' CHECK (role IN ('admin', 'manager', 'viewer')),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -43,3 +43,30 @@ GRANT USAGE ON SCHEMA public TO authenticated;
 
 -- Grant SELECT on users table to authenticated role
 GRANT SELECT ON users TO authenticated;
+
+-- Admins can manage all users
+CREATE POLICY "Admins manage all users"
+  ON users
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users u WHERE u.id = auth.uid() AND u.role = 'admin'
+    )
+  );
+
+-- Managers can update users
+CREATE POLICY "Managers can update users"
+  ON users
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users u WHERE u.id = auth.uid() AND u.role IN ('manager', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users u WHERE u.id = auth.uid() AND u.role IN ('manager', 'admin')
+    )
+  );

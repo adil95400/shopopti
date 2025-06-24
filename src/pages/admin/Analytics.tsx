@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/button';
 
 
 const AdminAnalytics: React.FC = () => {
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, isManager, loading: roleLoading } = useRole();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30days');
   const [stats, setStats] = useState({
@@ -24,10 +24,10 @@ const AdminAnalytics: React.FC = () => {
   });
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isManager) {
       fetchAnalyticsData();
     }
-  }, [isAdmin, period]);
+  }, [isAdmin, isManager, period]);
 
   const fetchAnalyticsData = async () => {
     try {
@@ -61,7 +61,7 @@ const AdminAnalytics: React.FC = () => {
     return <div className="flex justify-center p-8">Chargement...</div>;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isManager) {
     return <Navigate to="/app/dashboard" replace />;
   }
 

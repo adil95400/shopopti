@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 
 
 const AdminDashboard: React.FC = () => {
-  const { isAdmin, loading } = useRole();
+  const { isAdmin, isManager, loading } = useRole();
   const [stats, setStats] = useState({
     users: { total: 0, growth: 0 },
     revenue: { total: 0, growth: 0 },
@@ -19,10 +19,10 @@ const AdminDashboard: React.FC = () => {
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isManager) {
       fetchAdminStats();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isManager]);
 
   const fetchAdminStats = async () => {
     try {
@@ -51,7 +51,7 @@ const AdminDashboard: React.FC = () => {
     return <div className="flex justify-center p-8">Chargement...</div>;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isManager) {
     return <Navigate to="/app/dashboard" replace />;
   }
 
