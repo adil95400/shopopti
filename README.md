@@ -24,3 +24,12 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+```
+
+### Testing
+
+Run Playwright end-to-end tests:
+
+```bash
+npm run test
+```
