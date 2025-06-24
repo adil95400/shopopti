@@ -6,6 +6,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const functionsBase = supabaseUrl.replace('.supabase.co', '.functions.supabase.co')
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -107,14 +108,26 @@ Deno.serve(async (req) => {
     
     for (const platform of platformsToSync) {
       try {
-        // Simulate platform-specific synchronization
-        // In a real implementation, you would make actual API calls to each platform
-        
-        // Simulate some random success/failure
-        const success = Math.random() > 0.2
-        const itemsProcessed = Math.floor(Math.random() * 100) + 10
-        const itemsSucceeded = success ? itemsProcessed : Math.floor(itemsProcessed * 0.7)
-        const itemsFailed = itemsProcessed - itemsSucceeded
+        let itemsProcessed = 0
+        let success = false
+
+        const resp = await fetch(
+          `${functionsBase}/platforms/${platform.platform_id}/products`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(platform.credentials)
+          }
+        )
+
+        if (resp.ok) {
+          const data = await resp.json()
+          itemsProcessed = (data.products || []).length
+          success = true
+        }
+
+        const itemsSucceeded = success ? itemsProcessed : 0
+        const itemsFailed = success ? 0 : 1
         
         totalProcessed += itemsProcessed
         totalSucceeded += itemsSucceeded
@@ -145,7 +158,7 @@ Deno.serve(async (req) => {
           details: error.message
         })
         
-        totalFailed += 10 // Assume some failures
+        totalFailed += 1
       }
     }
     

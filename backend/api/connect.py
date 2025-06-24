@@ -39,9 +39,47 @@ async def validate_woocommerce(creds: dict) -> tuple[bool, str | None]:
     except Exception as e:
         return False, str(e)
 
+async def validate_ebay(creds: dict) -> tuple[bool, str | None]:
+    token = creds.get("auth_token")
+    app = creds.get("app_id")
+    cert = creds.get("cert_id")
+    dev = creds.get("dev_id")
+    if not token or not app or not cert or not dev:
+        return False, "auth_token, app_id, cert_id and dev_id required"
+    try:
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+async def validate_prestashop(creds: dict) -> tuple[bool, str | None]:
+    url = creds.get("store_url")
+    key = creds.get("api_key")
+    if not url or not key:
+        return False, "store_url and api_key required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{url}/api", params={"ws_key": key}, timeout=10)
+        if resp.status_code in {200, 401, 403}:
+            return True, None
+        return False, f"PrestaShop responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
+async def validate_cdiscount_pro(creds: dict) -> tuple[bool, str | None]:
+    api_key = creds.get("api_key")
+    if not api_key:
+        return False, "api_key required"
+    try:
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
 validators = {
     "shopify": validate_shopify,
     "woocommerce": validate_woocommerce,
+    "ebay": validate_ebay,
+    "prestashop": validate_prestashop,
+    "cdiscount-pro": validate_cdiscount_pro,
 }
 
 @router.post("/api/connect/{platform}")
