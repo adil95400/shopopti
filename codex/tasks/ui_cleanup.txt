@@ -1,11 +1,11 @@
 TASK: Uniformiser les composants UI
 
-1. Déplacer tous les composants suivants vers `components/ui/` :
-   - Button.tsx
-   - Input.tsx
-   - Card.tsx
-   - Tabs.tsx
-   - Textarea.tsx
+1. Vérifier que les composants suivants se trouvent bien dans `src/components/ui/` :
+   - button.tsx
+   - input.tsx
+   - card.tsx
+   - tabs.tsx
+   - textarea.tsx
 
 2. Ajouter le composant <Toaster /> globalement dans App.tsx
 
