@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, User, Bot, Loader2, Clock, ArrowLeft, MoreVertical } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 import { chatService, ChatMessage, ChatSession } from '../../modules/chat';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/button';
+
+import { toast } from '@/components/ui/alert';
 
 
 const ChatSupportPage: React.FC = () => {

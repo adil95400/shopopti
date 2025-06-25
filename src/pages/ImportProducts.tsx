@@ -24,7 +24,7 @@ import {
   Zap,
   RefreshCw
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 import { useShop } from '../contexts/ShopContext';
 import { Button } from '../components/ui/button';
@@ -38,6 +38,8 @@ import MarketplaceImporter from '../components/import/MarketplaceImporter';
 import SupplierCatalogImporter from '../components/import/SupplierCatalogImporter';
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
+
+import { toast } from '@/components/ui/alert';
 
 
 const importMethods = [

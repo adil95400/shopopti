@@ -8,6 +8,7 @@ import { askChatGPT } from '@/lib/openai';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
 export default function BlogAIPage() {
   const [productName, setProductName] = useState('');
@@ -17,12 +18,15 @@ export default function BlogAIPage() {
   const [blogContent, setBlogContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
 
   const generateBlog = async () => {
     if (!productName.trim()) {
-      alert('Veuillez entrer un nom de produit');
+      setError('Veuillez entrer un nom de produit');
       return;
     }
+
+    setError('');
 
     setLoading(true);
     try {
@@ -46,8 +50,8 @@ Format : Article complet en HTML simple (utilise des balises h1, h2, p, ul, li, 
       const content = await askChatGPT(prompt);
       setBlogContent(content);
     } catch (error) {
-      console.error("Erreur lors de la génération du blog:", error);
-      alert("Une erreur est survenue lors de la génération du contenu. Veuillez réessayer.");
+      console.error('Erreur lors de la génération du blog:', error);
+      setError("Une erreur est survenue lors de la génération du contenu. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +84,8 @@ Format : Article complet en HTML simple (utilise des balises h1, h2, p, ul, li, 
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
           <h2 className="text-lg font-medium mb-4">Paramètres de l'article</h2>
-          
+          {error && <Alert variant="error" className="mb-4">{error}</Alert>}
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

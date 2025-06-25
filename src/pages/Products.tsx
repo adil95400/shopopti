@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { aiService } from '../services/aiService';
 
+import { toast } from '@/components/ui/alert';
+
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [category, setCategory] = useState('');
@@ -26,7 +28,7 @@ const Products = () => {
   );
 
   const optimizeAndImportToShopify = async (p: any) => {
-    alert(`🤖 Optimisation AI en cours pour "${p.title}"...`);
+    toast.info(`🤖 Optimisation AI en cours pour "${p.title}"...`);
     try {
       const optimized = await aiService.optimizeProduct({
         name: p.title,
@@ -55,9 +57,9 @@ const Products = () => {
         throw new Error(err.errors || "Erreur Shopify");
       }
 
-      alert(`✅ Produit "${optimized.title}" importé dans Shopify avec succès !`);
+      toast.success(`✅ Produit "${optimized.title}" importé dans Shopify avec succès !`);
     } catch (e: any) {
-      alert("❌ Échec : " + e.message);
+      toast.error('❌ Échec : ' + e.message);
     }
   };
 

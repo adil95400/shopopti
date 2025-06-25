@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { 
   X, 
   Eye, 
@@ -14,6 +13,8 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 
 import SocialLoginButtons from './SocialLoginButtons';
+
+import { toast } from '@/components/ui/alert';
 
 interface LoginFormProps {
   onClose?: () => void;

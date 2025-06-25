@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { SplitSquareVertical, Plus, BarChart3, Play, Pause, Archive, Edit, Trash2, Copy, Search, Filter, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 import { abTestingService, ABTest, ABTestResult } from '../../modules/ab-testing';
 import { Button } from '../../components/ui/button';
+
+import { toast } from '@/components/ui/alert';
 
 
 const ABTestingPage: React.FC = () => {

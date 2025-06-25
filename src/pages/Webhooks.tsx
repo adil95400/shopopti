@@ -3,6 +3,8 @@ import { Plus, Trash2, Copy, Check, RefreshCw, Loader2, AlertCircle } from 'luci
 
 import { Button } from '../components/ui/button';
 
+import { toast } from '@/components/ui/alert';
+
 interface Webhook {
   id: string;
   url: string;
@@ -55,7 +57,7 @@ const Webhooks: React.FC = () => {
   
   const handleAddWebhook = async () => {
     if (!newWebhook.url || newWebhook.events.length === 0) {
-      alert('Please enter a URL and select at least one event');
+      toast.error('Please enter a URL and select at least one event');
       return;
     }
     
@@ -118,14 +120,14 @@ const Webhooks: React.FC = () => {
   const handleTestWebhook = async (id: string) => {
     try {
       setLoading(true);
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      alert('Webhook test successful!');
+
+      toast.success('Webhook test successful!');
     } catch (error) {
       console.error('Error testing webhook:', error);
-      alert('Webhook test failed. Please check your URL and try again.');
+      toast.error('Webhook test failed. Please check your URL and try again.');
     } finally {
       setLoading(false);
     }

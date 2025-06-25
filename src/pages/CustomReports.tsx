@@ -4,6 +4,8 @@ import { FileText, Download, Filter, Calendar, RefreshCw, Plus, Trash2, Settings
 
 import { Button } from '../components/ui/button';
 
+import { toast } from '@/components/ui/alert';
+
 const CustomReports: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [activeReport, setActiveReport] = useState('sales');
@@ -64,7 +66,7 @@ const CustomReports: React.FC = () => {
     
     // Simulate download
     setTimeout(() => {
-      alert(`${activeReport} report exported as ${format}`);
+      toast.success(`${activeReport} report exported as ${format}`);
     }, 1000);
   };
   

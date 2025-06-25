@@ -8,6 +8,7 @@ import { askChatGPT } from '@/lib/openai';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
 export default function SEOAIPage() {
   const [productName, setProductName] = useState('');
@@ -16,12 +17,15 @@ export default function SEOAIPage() {
   const [seo, setSeo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   const generateSEO = async () => {
     if (!productName.trim()) {
-      alert('Veuillez entrer au moins un nom de produit');
+      setError('Veuillez entrer au moins un nom de produit');
       return;
     }
+
+    setError('');
 
     setLoading(true);
     try {
@@ -78,7 +82,7 @@ Génère un JSON SEO complet avec :
       }
     } catch (error) {
       console.error("Erreur IA SEO", error);
-      alert("Erreur lors de la génération SEO. Veuillez réessayer.");
+      setError("Erreur lors de la génération SEO. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -113,6 +117,7 @@ Génère un JSON SEO complet avec :
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
           <h2 className="text-lg font-medium mb-4">Informations produit</h2>
+          {error && <Alert variant="error" className="mb-4">{error}</Alert>}
           
           <div className="space-y-4">
             <div>

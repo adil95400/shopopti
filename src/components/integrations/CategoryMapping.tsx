@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 import { 
   Save, 
   Plus, 
@@ -9,6 +8,8 @@ import {
 } from 'lucide-react';
 
 import { Button } from '../ui/button';
+
+import { toast } from '@/components/ui/alert';
 
 interface CategoryMappingProps {
   platforms: {

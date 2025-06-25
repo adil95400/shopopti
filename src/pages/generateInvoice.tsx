@@ -9,6 +9,7 @@ import Footer from '../components/layout/Footer';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Alert } from '@/components/ui/alert';
 
 interface InvoiceItem {
   id: string;
@@ -34,6 +35,7 @@ export default function GenerateInvoice() {
   ]);
   const [notes, setNotes] = useState('Merci pour votre confiance !');
   const [taxRate, setTaxRate] = useState(20);
+  const [error, setError] = useState('');
 
   const addItem = () => {
     setItems([...items, { 
@@ -74,9 +76,11 @@ export default function GenerateInvoice() {
 
   const generatePDF = () => {
     if (!clientName) {
-      alert('Veuillez entrer le nom du client');
+      setError('Veuillez entrer le nom du client');
       return;
     }
+
+    setError('');
 
     setLoading(true);
 
@@ -147,7 +151,7 @@ export default function GenerateInvoice() {
       doc.save(`facture-${invoiceNumber}.pdf`);
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
-      alert("Une erreur est survenue lors de la génération de la facture");
+      setError("Une erreur est survenue lors de la génération de la facture");
     } finally {
       setLoading(false);
     }
@@ -179,6 +183,7 @@ export default function GenerateInvoice() {
             <FileText className="mr-2 h-5 w-5 text-primary" />
             Informations de la facture
           </h2>
+          {error && <Alert variant="error" className="mb-4">{error}</Alert>}
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
