@@ -24,3 +24,14 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+```
+
+## 📋 Tests
+
+Execute the test suite with:
+
+```bash
+npm test
+```
+
+This runs Jest with the examples located in `src/**/__tests__`.
