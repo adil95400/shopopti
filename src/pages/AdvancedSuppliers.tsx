@@ -13,6 +13,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import suppliersData from '../data/verified-suppliers.json';
 
 interface Supplier {
   id: string;
@@ -56,19 +57,18 @@ const AdvancedSuppliers: React.FC = () => {
     applyFilters();
   }, [searchTerm, filters, suppliers]);
 
-  const fetchSuppliers = async () => {
+  const fetchSuppliers = () => {
     try {
       setLoading(true);
-      
+
       // In a real app, fetch from API
-      const response = await fetch('/src/data/verified-suppliers.json');
-      const data = await response.json();
-      
+      const data = suppliersData;
+
       // Only showing 5 suppliers from the JSON for demo, but indicating we have 400+ total
       setSuppliers(data.suppliers);
       setFilteredSuppliers(data.suppliers);
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      console.error('Error loading suppliers:', error);
     } finally {
       setLoading(false);
     }
