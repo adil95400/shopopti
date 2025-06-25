@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import MfaSettings from '../components/auth/MfaSettings';
 import { availableLanguages, useLanguage } from '../contexts/LanguageContext';
 import { availableCurrencies, useCurrency } from '../contexts/CurrencyContext';
 
@@ -70,6 +71,15 @@ const Settings = () => {
                 </select>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Two-Factor Authentication</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MfaSettings />
           </CardContent>
         </Card>
       </div>
