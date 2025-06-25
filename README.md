@@ -5,6 +5,7 @@
 - Séparation claire des composants, pages, modules, services et contextes
 - Ajout d’un `.env.example` pour la configuration environnementale sécurisée
 - Nettoyage des fichiers inutiles et suppression des dossiers corrompus
+- Ajout de pages placeholders en français pour `/dashboard` et `/orders` avec routage simplifié
 
 ## 🛠️ Corrections
 - Correction des erreurs de build liées aux fichiers `.DS_Store`, `node_modules`, `package.json` mal positionné
