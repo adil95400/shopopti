@@ -227,7 +227,7 @@ export const supplierService = {
     }
   },
 
-  async importProducts(supplierId: string, productIds: string[]): Promise<ImportResult> {
+  async importProducts(supplierId: string, productIds: string[], withReviews: boolean = false): Promise<ImportResult> {
     try {
       // Get the supplier details first
       const supplier = await this.getSupplierById(supplierId);
@@ -240,7 +240,8 @@ export const supplierService = {
         apiKey: supplier.apiKey,
         apiSecret: supplier.apiSecret,
         baseUrl: supplier.baseUrl,
-        productIds
+        productIds,
+        withReviews
       }, {
         headers: {
           'Content-Type': 'application/json',

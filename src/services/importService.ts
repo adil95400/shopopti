@@ -556,53 +556,31 @@ export const importService = {
     }
   },
 
-  async importFromSupplier(supplierId: string, productIds: string[]): Promise<ProductData[]> {
+  async importFromSupplier(supplierId: string, productIds: string[], withReviews: boolean = false): Promise<ProductData[]> {
     try {
-      // Récupérer les informations du fournisseur
-      const supplier = await supplierService.getSupplierById(supplierId);
-      
-      // Récupérer les produits du fournisseur
+      const result = await supplierService.importProducts(supplierId, productIds, withReviews);
+
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+
+      // Fetch the newly imported products
       const products = await supplierService.getProductsByIds(supplierId, productIds);
-      
-      // Transformer les produits au format Shopopti+
-      const transformedProducts = products.map(product => ({
-        title: product.name,
-        description: product.description,
-        price: product.price,
-        images: product.images,
-        sku: product.sku,
-        stock: product.stock,
-        category: product.category,
-        variants: product.variants,
+      return products.map(p => ({
+        title: p.name,
+        description: p.description,
+        price: p.price,
+        images: p.images,
+        sku: p.sku,
+        stock: p.stock,
+        category: p.category,
+        variants: p.variants,
         metadata: {
-          source: supplier.type,
-          sourceId: product.id,
+          source: p.supplier_type,
+          sourceId: p.id,
           importDate: new Date().toISOString()
         }
       }));
-      
-      // Optimiser les produits avec l'IA
-      const optimizedProducts = await Promise.all(
-        transformedProducts.map(async product => {
-          const optimized = await aiService.optimizeProduct({
-            name: product.title,
-            description: product.description,
-            category: product.category || ''
-          });
-          
-          return {
-            ...product,
-            title: optimized.title,
-            description: optimized.description_html,
-            tags: optimized.tags
-          };
-        })
-      );
-      
-      // Sauvegarder les produits dans la base de données
-      await this.saveProducts(optimizedProducts);
-      
-      return optimizedProducts;
     } catch (error) {
       console.error('Error importing from supplier:', error);
       throw error;
