@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --fix"
+    "lint": "eslint src --fix",
+    "docs:api": "python backend/generate_openapi.py"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
