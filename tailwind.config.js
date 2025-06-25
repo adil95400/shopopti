@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#f97316',
+          DEFAULT: '#6366f1',
           50: 'var(--primary-50)',
           100: 'var(--primary-100)',
           200: 'var(--primary-200)',
@@ -18,6 +18,7 @@ export default {
           900: 'var(--primary-900)',
         },
         secondary: {
+          DEFAULT: '#3b82f6',
           50: 'var(--secondary-50)',
           100: 'var(--secondary-100)',
           200: 'var(--secondary-200)',
@@ -62,6 +63,14 @@ export default {
           800: 'var(--neutral-800)',
           900: 'var(--neutral-900)',
         },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
+        },
+        background: 'var(--background)',
+        muted: 'var(--muted)',
+        'muted-foreground': 'var(--muted-foreground)',
+        foreground: 'var(--text)',
       },
       boxShadow: {
         'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
