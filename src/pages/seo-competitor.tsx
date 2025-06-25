@@ -1,22 +1,18 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
+import { useSEO } from '../hooks/useSEO';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { askChatGPT } from '@/lib/openai';
 
 export default function SeoCompetitorPage() {
   const [url, setUrl] = useState('');
-  const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const { result, loading, error, analyze } = useSEO();
 
   const analyzeSEO = async () => {
     if (!url.trim()) return alert("Merci d'entrer une URL valide.");
-    setLoading(true);
-    setResult(null);
-
     const prompt = `
 Analyse SEO d'une page concurrente : ${url}
 Retourne un JSON avec :
@@ -28,14 +24,9 @@ Retourne un JSON avec :
 }`;
 
     try {
-      const response = await askChatGPT(prompt);
-      const data = JSON.parse(response);
-      setResult(data);
-    } catch (error) {
+      await analyze(prompt);
+    } catch {
       alert("Erreur lors de l'analyse SEO.");
-      console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -53,6 +44,10 @@ Retourne un JSON avec :
           {loading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Analyser'}
         </Button>
       </div>
+
+      {error && (
+        <p className="text-red-500">{error}</p>
+      )}
 
       {result && (
         <Card>

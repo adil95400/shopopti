@@ -12,63 +12,16 @@ import {
 import { motion } from 'framer-motion';
 
 import { useShop } from '../contexts/ShopContext';
+import { useOrders } from '../hooks/useOrders';
 
-// Mock order data
-const mockOrders = [
-  {
-    id: '#2301',
-    customer: 'Michael Johnson',
-    email: 'michael.j@example.com',
-    date: '2023-06-15T14:23:54Z',
-    amount: 129.99,
-    status: 'delivered',
-    items: 2,
-  },
-  {
-    id: '#2302',
-    customer: 'Sarah Williams',
-    email: 'sarahw@example.com',
-    date: '2023-06-14T09:12:11Z',
-    amount: 89.95,
-    status: 'shipped',
-    items: 1,
-  },
-  {
-    id: '#2303',
-    customer: 'David Brown',
-    email: 'david.brown@example.com',
-    date: '2023-06-13T18:45:30Z',
-    amount: 204.50,
-    status: 'processing',
-    items: 3,
-  },
-  {
-    id: '#2304',
-    customer: 'Emily Davis',
-    email: 'edavis@example.com',
-    date: '2023-06-12T10:33:22Z',
-    amount: 59.99,
-    status: 'delivered',
-    items: 1,
-  },
-  {
-    id: '#2305',
-    customer: 'James Wilson',
-    email: 'jwilson@example.com',
-    date: '2023-06-11T15:19:45Z',
-    amount: 149.98,
-    status: 'processing',
-    items: 2,
-  },
-];
 
 const Orders: React.FC = () => {
   const { isConnected } = useShop();
-  const [orders] = useState(mockOrders);
+  const { orders, loading, error } = useOrders();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter orders based on search query
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter(order =>
     order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -123,6 +76,14 @@ const Orders: React.FC = () => {
         <p className="mt-1 text-neutral-500">Connect your store to manage orders</p>
       </div>
     );
+  }
+
+  if (loading) {
+    return <div className="p-6 text-center">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-red-500">{error}</div>;
   }
 
   return (
