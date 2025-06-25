@@ -109,7 +109,8 @@ const sections = [
     title: 'Utilitaires',
     links: [
       { path: '/tracking', label: 'Suivi de livraison', icon: <Truck size={18} /> },
-      { path: '/generate-invoice', label: 'Factures PDF', icon: <FileText size={18} /> }
+      { path: '/generate-invoice', label: 'Factures PDF', icon: <FileText size={18} /> },
+      { path: '/app/scraping-tester', label: 'Testeur de scraping', icon: <Search size={18} /> }
     ]
   },
   {

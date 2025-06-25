@@ -24,3 +24,10 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+```
+
+### Tester le scraping
+
+1. Connectez-vous puis accédez à `/app/scraping-tester`.
+2. Entrez l'URL d'un produit Shopify, AliExpress, Temu ou Shein.
+3. Cliquez sur **Scraper** pour afficher les informations récupérées.
