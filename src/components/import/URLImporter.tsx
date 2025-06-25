@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Link as LinkIcon, AlertCircle, ArrowRight, Loader2, Star } from 'lucide-react';
+import { Link as LinkIcon, AlertCircle, ArrowRight, Star } from 'lucide-react';
+import { toast } from 'sonner';
+import Spinner from '../ui/spinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { importService } from '../../services/importService';
 import { scrapingService } from '../../services/scrapingService';
@@ -41,8 +43,10 @@ const URLImporter: React.FC<URLImporterProps> = ({ marketplace }) => {
       }
 
       setPreview(product);
+      toast.success('Produit chargé avec succès');
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'importation du produit');
+      setError(err.message || "Erreur lors de l'importation du produit");
+      toast.error(err.message || 'Erreur lors de l\'importation');
     } finally {
       setLoading(false);
     }
@@ -220,7 +224,7 @@ const URLImporter: React.FC<URLImporterProps> = ({ marketplace }) => {
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Spinner className="h-4 w-4 mr-2" />
                 Importation...
               </>
             ) : (

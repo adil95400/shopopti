@@ -120,11 +120,18 @@ const ImportProducts: React.FC = () => {
   const { isConnected, connectShopify } = useShop();
   const [selectedMethod, setSelectedMethod] = useState(importMethods[0]);
   const [recentImports, setRecentImports] = useState([
-    { id: 1, source: 'AliExpress', date: '2025-06-01', count: 15, status: 'completed' },
-    { id: 2, source: 'CSV Import', date: '2025-05-28', count: 120, status: 'completed' },
-    { id: 3, source: 'Amazon', date: '2025-05-25', count: 5, status: 'completed' }
+    { id: 1, source: 'AliExpress', date: '2025-06-01', count: 15, status: 'completed', supplier: 'AliExpress', stock: 120, category: 'Gadgets' },
+    { id: 2, source: 'CSV Import', date: '2025-05-28', count: 120, status: 'completed', supplier: 'Internal', stock: 40, category: 'Accessories' },
+    { id: 3, source: 'Amazon', date: '2025-05-25', count: 5, status: 'completed', supplier: 'Amazon', stock: 0, category: 'Books' },
+    { id: 4, source: 'Shopify', date: '2025-05-20', count: 45, status: 'completed', supplier: 'Shopify', stock: 70, category: 'Clothing' },
+    { id: 5, source: 'WooCommerce', date: '2025-05-15', count: 78, status: 'completed', supplier: 'WooCommerce', stock: 10, category: 'Home' },
+    { id: 6, source: 'Catalogue Fournisseur', date: '2025-05-10', count: 32, status: 'completed', supplier: 'B2B', stock: 200, category: 'Tools' }
   ]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [historySearch, setHistorySearch] = useState('');
+  const [filterSupplier, setFilterSupplier] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterInStock, setFilterInStock] = useState(false);
   const [showMarketplaceSelector, setShowMarketplaceSelector] = useState(false);
   const [activeTab, setActiveTab] = useState('import');
 
@@ -219,12 +226,20 @@ const ImportProducts: React.FC = () => {
     );
   }
 
-  const filteredMethods = searchTerm 
-    ? importMethods.filter(method => 
+  const filteredMethods = searchTerm
+    ? importMethods.filter(method =>
         method.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         method.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : importMethods;
+
+  const filteredImports = recentImports.filter((imp) => {
+    if (historySearch && !imp.source.toLowerCase().includes(historySearch.toLowerCase())) return false;
+    if (filterSupplier && imp.supplier !== filterSupplier) return false;
+    if (filterCategory && imp.category !== filterCategory) return false;
+    if (filterInStock && imp.stock <= 0) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -393,7 +408,7 @@ const ImportProducts: React.FC = () => {
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                       <h2 className="text-lg font-medium mb-4">Imports récents</h2>
                       <div className="space-y-4">
-                        {recentImports.map((item) => (
+                        {filteredImports.map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
                             <div>
                               <h3 className="font-medium">{item.source}</h3>
@@ -473,14 +488,53 @@ const ImportProducts: React.FC = () => {
                   <h2 className="text-lg font-medium">Historique d'importation</h2>
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filtrer
-                    </Button>
-                    <Button variant="outline" size="sm">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Actualiser
                     </Button>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <div className="relative md:col-span-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Rechercher..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
+                      value={historySearch}
+                      onChange={(e) => setHistorySearch(e.target.value)}
+                    />
+                  </div>
+                  <select
+                    className="border border-gray-300 rounded-md px-3 py-2"
+                    value={filterSupplier}
+                    onChange={(e) => setFilterSupplier(e.target.value)}
+                  >
+                    <option value="">Tous fournisseurs</option>
+                    {[...new Set(recentImports.map((r) => r.supplier))].map((sup) => (
+                      <option key={sup} value={sup}>{sup}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="border border-gray-300 rounded-md px-3 py-2"
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                  >
+                    <option value="">Toutes catégories</option>
+                    {[...new Set(recentImports.map((r) => r.category))].map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <label className="flex items-center text-sm gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      checked={filterInStock}
+                      onChange={(e) => setFilterInStock(e.target.checked)}
+                    />
+                    En stock
+                  </label>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -505,11 +559,7 @@ const ImportProducts: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {[...recentImports, 
-                        { id: 4, source: 'Shopify', date: '2025-05-20', count: 45, status: 'completed' },
-                        { id: 5, source: 'WooCommerce', date: '2025-05-15', count: 78, status: 'completed' },
-                        { id: 6, source: 'Catalogue Fournisseur', date: '2025-05-10', count: 32, status: 'completed' }
-                      ].map((item) => (
+                      {filteredImports.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">{item.source}</div>

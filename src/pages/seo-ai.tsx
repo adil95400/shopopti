@@ -3,7 +3,8 @@ import { askChatGPT } from '@/lib/openai';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Copy, Check, Download, ArrowRight } from 'lucide-react';
+import { Copy, Check, Download, ArrowRight } from 'lucide-react';
+import Spinner from '@/components/ui/spinner';
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
 
@@ -154,7 +155,7 @@ Génère un JSON SEO complet avec :
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner className="mr-2 h-4 w-4" />
                   Génération en cours...
                 </>
               ) : (
