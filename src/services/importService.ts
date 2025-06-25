@@ -7,6 +7,13 @@ import { supabase } from '../lib/supabase';
 
 import { aiService } from './aiService';
 import { supplierService } from './supplierService';
+import { translationService } from './translationService';
+import i18n from '../i18n';
+
+const defaultLang = import.meta.env.VITE_DEFAULT_LANGUAGE || 'fr';
+
+const slugify = (str: string) =>
+  str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 export interface ProductData {
   id?: string;
@@ -127,7 +134,7 @@ export const findWorkingProxy = async (): Promise<string> => {
 };
 
 export const importService = {
-  async importFromCSV(file: File): Promise<ProductData[]> {
+  async importFromCSV(file: File, options?: { translate?: boolean }): Promise<ProductData[]> {
     return new Promise((resolve, reject) => {
       const config = {
         header: true,
@@ -164,7 +171,7 @@ export const importService = {
               })
             );
 
-            await this.saveProducts(products);
+            await this.saveProducts(products, options);
 
           } catch (error) {
             parser.abort();
@@ -183,7 +190,7 @@ export const importService = {
     });
   },
 
-  async importFromAmazon(url: string): Promise<ProductData> {
+  async importFromAmazon(url: string, options?: { translate?: boolean }): Promise<ProductData> {
     try {
       const amazonUrlPattern = /^https?:\/\/(?:www\.)?amazon\.(?:com|ca|co\.uk|de|fr|es|it|co\.jp|com\.au|in)(?:\/.*)?\/(?:dp|gp\/product)\/[A-Z0-9]{10}/i;
       
@@ -437,7 +444,7 @@ export const importService = {
         .get()
         .filter(Boolean);
 
-      return {
+      const product = {
         title: optimizedTitle,
         description: optimizedDescription,
         price,
@@ -449,7 +456,10 @@ export const importService = {
           importDate: new Date().toISOString()
         },
         reviews: reviews.length > 0 ? reviews : undefined
-      };
+      } as ProductData;
+
+      await this.saveProducts([product], options);
+      return product;
 
     } catch (error: any) {
       console.error('Erreur lors de l\'importation depuis Amazon:', error);
@@ -525,7 +535,7 @@ export const importService = {
     }
   },
 
-  async saveProducts(products: ProductData[]): Promise<void> {
+  async saveProducts(products: ProductData[], options?: { translate?: boolean }): Promise<void> {
     try {
       const batchSize = 50;
       for (let i = 0; i < products.length; i += batchSize) {
@@ -546,11 +556,34 @@ export const importService = {
           })
         );
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
-          .insert(optimizedBatch);
+          .insert(optimizedBatch)
+          .select('id,title,description');
 
         if (error) throw error;
+
+        if (options?.translate && data) {
+          for (const inserted of data) {
+            const slug = slugify(inserted.title);
+            const languages = (i18n.options.supportedLngs as string[]) || [];
+            const titleTranslations: Record<string, string> = {};
+            const descTranslations: Record<string, string> = {};
+
+            for (const lng of languages) {
+              if (lng === defaultLang) {
+                titleTranslations[lng] = inserted.title;
+                descTranslations[lng] = inserted.description;
+              } else {
+                titleTranslations[lng] = await translationService.translate(inserted.title, lng);
+                descTranslations[lng] = await translationService.translate(inserted.description, lng);
+              }
+            }
+
+            await translationService.updateI18nFiles(`products.${slug}.title`, titleTranslations);
+            await translationService.updateI18nFiles(`products.${slug}.description`, descTranslations);
+          }
+        }
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des produits:', error);
@@ -558,7 +591,11 @@ export const importService = {
     }
   },
 
-  async importFromSupplier(supplierId: string, productIds: string[]): Promise<ProductData[]> {
+  async importFromSupplier(
+    supplierId: string,
+    productIds: string[],
+    options?: { translate?: boolean }
+  ): Promise<ProductData[]> {
     try {
       // Récupérer les informations du fournisseur
       const supplier = await supplierService.getSupplierById(supplierId);
@@ -602,7 +639,7 @@ export const importService = {
       );
       
       // Sauvegarder les produits dans la base de données
-      await this.saveProducts(optimizedProducts);
+      await this.saveProducts(optimizedProducts, options);
       
       return optimizedProducts;
     } catch (error) {
