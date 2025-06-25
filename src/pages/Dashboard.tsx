@@ -1,8 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
+import {
+  BarChart3,
+  ShoppingBag,
+  TrendingUp,
+  Users,
+  ArrowUpRight,
+  ArrowDownRight,
+  Package,
+  Calendar,
+  Bell,
+  Settings,
+  FileText,
+  Bot,
+  Code,
+  Webhook,
+} from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
-import { supabase } from '../lib/supabase';
+import { useStats } from '../hooks/useStats';
 import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
 import TrackingWidget from '../components/tracking/TrackingWidget';
 import MainNavbar from '../components/layout/MainNavbar';
@@ -10,13 +36,7 @@ import Footer from '../components/layout/Footer';
 import { Button } from '../components/ui/button';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    revenue: { value: 1060, change: 25 },
-    orders: { value: 98, change: 12 },
-    visitors: { value: 4521, change: 15.3 },
-    conversion: { value: 3.2, change: -0.5 }
-  });
-  const [loading, setLoading] = useState(true);
+  const { stats, loading } = useStats();
   const [recentActivity, setRecentActivity] = useState([
     {
       id: 1,
@@ -44,31 +64,6 @@ export default function Dashboard() {
     }
   ]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      // Dans une application réelle, récupérez les données depuis Supabase
-      // Pour l'instant, nous utilisons des données statiques
-      
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStats({
-        revenue: { value: 1060, change: 25 },
-        orders: { value: 98, change: 12 },
-        visitors: { value: 4521, change: 15.3 },
-        conversion: { value: 3.2, change: -0.5 }
-      });
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données du tableau de bord:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,21 +142,67 @@ export default function Dashboard() {
                 <TrendingUp className="h-5 w-5 text-orange-500" />
               </div>
             </div>
-            <p className="text-2xl font-bold">{stats.conversion.value}%</p>
-            <div className="flex items-center mt-2">
-              <span className={`flex items-center text-sm ${stats.conversion.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {stats.conversion.change >= 0 ? (
-                  <ArrowUpRight className="h-4 w-4 mr-1" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 mr-1" />
-                )}
-                {Math.abs(stats.conversion.change)}%
-              </span>
-              <span className="text-xs text-gray-500 ml-2">vs période précédente</span>
+          <p className="text-2xl font-bold">{stats.conversion.value}%</p>
+          <div className="flex items-center mt-2">
+            <span className={`flex items-center text-sm ${stats.conversion.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {stats.conversion.change >= 0 ? (
+                <ArrowUpRight className="h-4 w-4 mr-1" />
+              ) : (
+                <ArrowDownRight className="h-4 w-4 mr-1" />
+              )}
+              {Math.abs(stats.conversion.change)}%
+            </span>
+            <span className="text-xs text-gray-500 ml-2">vs période précédente</span>
+          </div>
+        </div>
+      </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h3 className="text-sm font-medium mb-2">Revenu (7 derniers jours)</h3>
+            <div className="h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={stats.revenue.daily}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '0.375rem',
+                      padding: '8px 12px',
+                    }}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h3 className="text-sm font-medium mb-2">Commandes (7 derniers jours)</h3>
+            <div className="h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.orders.daily}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '0.375rem',
+                      padding: '8px 12px',
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#8B5CF6" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-lg font-medium mb-4">Activité récente</h2>
