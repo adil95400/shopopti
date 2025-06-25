@@ -35,14 +35,16 @@ const MultiPlatformIntegration: React.FC = () => {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png',
       type: 'webstore' as const,
       connected: true,
-      lastSync: '2025-06-15T14:30:00Z'
+      lastSync: '2025-06-15T14:30:00Z',
+      syncStatus: 'synced' as const
     },
     {
       id: 'woocommerce',
       name: 'WooCommerce',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Woocommerce_logo.svg/2560px-Woocommerce_logo.svg.png',
       type: 'webstore' as const,
-      connected: false
+      connected: false,
+      syncStatus: 'pending' as const
     },
     {
       id: 'amazon',
@@ -50,28 +52,32 @@ const MultiPlatformIntegration: React.FC = () => {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/1024px-Amazon_logo.svg.png',
       type: 'marketplace' as const,
       connected: true,
-      lastSync: '2025-06-14T10:15:00Z'
+      lastSync: '2025-06-14T10:15:00Z',
+      syncStatus: 'error' as const
     },
     {
       id: 'etsy',
       name: 'Etsy',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Etsy_logo.svg/2560px-Etsy_logo.svg.png',
       type: 'marketplace' as const,
-      connected: false
+      connected: false,
+      syncStatus: 'pending' as const
     },
     {
       id: 'bigcommerce',
       name: 'BigCommerce',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Bigcommerce_logo.svg/1280px-Bigcommerce_logo.svg.png',
       type: 'webstore' as const,
-      connected: false
+      connected: false,
+      syncStatus: 'pending' as const
     },
     {
       id: 'squarespace',
       name: 'Squarespace',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Squarespace_logo.svg/1280px-Squarespace_logo.svg.png',
       type: 'webstore' as const,
-      connected: false
+      connected: false,
+      syncStatus: 'pending' as const
     }
   ]);
 

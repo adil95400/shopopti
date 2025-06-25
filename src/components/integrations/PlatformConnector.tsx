@@ -22,6 +22,7 @@ interface PlatformConnectorProps {
     logo: string;
     type: 'marketplace' | 'webstore' | 'social';
     connected: boolean;
+    syncStatus?: 'synced' | 'error' | 'pending';
   };
   onConnect: (platform: string, credentials: any) => Promise<boolean>;
   onDisconnect: (platform: string) => Promise<boolean>;
@@ -171,7 +172,27 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
             </div>
           )}
           <div>
-            <h3 className="font-medium text-gray-900">{platform.name}</h3>
+            <div className="flex items-center space-x-2">
+              <h3 className="font-medium text-gray-900">{platform.name}</h3>
+              {platform.syncStatus && (
+                <span className="flex items-center text-xs font-medium">
+                  <span
+                    className={`h-2 w-2 rounded-full mr-1 ${
+                      platform.syncStatus === 'synced'
+                        ? 'bg-green-500'
+                        : platform.syncStatus === 'error'
+                        ? 'bg-red-500'
+                        : 'bg-yellow-500'
+                    }`}
+                  />
+                  {platform.syncStatus === 'synced'
+                    ? 'Synced'
+                    : platform.syncStatus === 'error'
+                    ? 'Échec'
+                    : 'En attente'}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500 capitalize">{platform.type}</p>
           </div>
         </div>

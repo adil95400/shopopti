@@ -17,6 +17,7 @@ interface PlatformStatusProps {
     name: string;
     connected: boolean;
     status?: 'active' | 'error' | 'warning' | 'maintenance';
+    syncStatus?: 'synced' | 'error' | 'pending';
     lastSync?: string;
     metrics?: {
       products: number;
@@ -93,7 +94,27 @@ const PlatformStatus: React.FC<PlatformStatusProps> = ({ platforms, onRefresh })
                       {getStatusIcon(platform.status)}
                     </div>
                     <div>
-                      <h4 className="font-medium">{platform.name}</h4>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-medium">{platform.name}</h4>
+                        {platform.syncStatus && (
+                          <span className="flex items-center text-xs font-medium">
+                            <span
+                              className={`h-2 w-2 rounded-full mr-1 ${
+                                platform.syncStatus === 'synced'
+                                  ? 'bg-green-500'
+                                  : platform.syncStatus === 'error'
+                                  ? 'bg-red-500'
+                                  : 'bg-yellow-500'
+                              }`}
+                            />
+                            {platform.syncStatus === 'synced'
+                              ? 'Synced'
+                              : platform.syncStatus === 'error'
+                              ? 'Échec'
+                              : 'En attente'}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500">
                         Last synced: {formatDate(platform.lastSync)}
                       </p>
@@ -155,7 +176,27 @@ const PlatformStatus: React.FC<PlatformStatusProps> = ({ platforms, onRefresh })
                       <XCircle className="h-5 w-5 text-gray-400" />
                     </div>
                     <div>
-                      <h4 className="font-medium">{platform.name}</h4>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-medium">{platform.name}</h4>
+                        {platform.syncStatus && (
+                          <span className="flex items-center text-xs font-medium">
+                            <span
+                              className={`h-2 w-2 rounded-full mr-1 ${
+                                platform.syncStatus === 'synced'
+                                  ? 'bg-green-500'
+                                  : platform.syncStatus === 'error'
+                                  ? 'bg-red-500'
+                                  : 'bg-yellow-500'
+                              }`}
+                            />
+                            {platform.syncStatus === 'synced'
+                              ? 'Synced'
+                              : platform.syncStatus === 'error'
+                              ? 'Échec'
+                              : 'En attente'}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500">Not connected</p>
                     </div>
                   </div>
