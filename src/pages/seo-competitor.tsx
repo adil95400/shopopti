@@ -6,14 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { askChatGPT } from '@/lib/openai';
+import { Alert } from '@/components/ui/alert';
 
 export default function SeoCompetitorPage() {
   const [url, setUrl] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const analyzeSEO = async () => {
-    if (!url.trim()) return alert("Merci d'entrer une URL valide.");
+    if (!url.trim()) {
+      setError("Merci d'entrer une URL valide.");
+      return;
+    }
+    setError('');
     setLoading(true);
     setResult(null);
 
@@ -32,7 +38,7 @@ Retourne un JSON avec :
       const data = JSON.parse(response);
       setResult(data);
     } catch (error) {
-      alert("Erreur lors de l'analyse SEO.");
+      setError("Erreur lors de l'analyse SEO.");
       console.error(error);
     } finally {
       setLoading(false);
@@ -53,6 +59,7 @@ Retourne un JSON avec :
           {loading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Analyser'}
         </Button>
       </div>
+      {error && <Alert variant="error">{error}</Alert>}
 
       {result && (
         <Card>

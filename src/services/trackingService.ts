@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { toast } from 'sonner';
+
+import { toast } from '@/components/ui/alert';
 
 export interface TrackingResult {
   trackingNumber: string;

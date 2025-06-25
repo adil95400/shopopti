@@ -6,6 +6,8 @@ import ChannelManager from '../components/multichannel/ChannelManager';
 import ProductPublisher from '../components/multichannel/ProductPublisher';
 import BulkActions from '../components/automation/BulkActions';
 
+import { toast } from '@/components/ui/alert';
+
 const MultiChannel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('channels');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -17,7 +19,7 @@ const MultiChannel: React.FC = () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    alert(`${action} completed successfully!`);
+    toast.success(`${action} completed successfully!`);
   };
 
   // Sample product for the ProductPublisher component

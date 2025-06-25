@@ -16,12 +16,14 @@ import {
   ArrowRight, 
   X 
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 import { supabase } from '../../lib/supabase';
 import { supplierService } from '../../services/supplierService';
 import { ExternalSupplier, SupplierProduct, ImportFilter } from '../../types/supplier';
 import { Button } from '../../components/ui/button';
+
+import { toast } from '@/components/ui/alert';
 
 
 const Imports: React.FC = () => {

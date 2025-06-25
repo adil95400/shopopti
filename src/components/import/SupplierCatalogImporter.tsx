@@ -4,6 +4,8 @@ import { Search, Filter, Tag, DollarSign, Truck, Star, ShoppingBag } from 'lucid
 import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 
+import { toast } from '@/components/ui/alert';
+
 interface Supplier {
   id: string;
   name: string;
@@ -95,7 +97,7 @@ const SupplierCatalogImporter: React.FC = () => {
       // For now, we'll just simulate a delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      alert(`Successfully imported ${selectedProducts.length} products`);
+      toast.success(`Successfully imported ${selectedProducts.length} products`);
       setSelectedProducts([]);
     } catch (error) {
       console.error('Error importing products:', error);

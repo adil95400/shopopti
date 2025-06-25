@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useTransition } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Package, AlertTriangle } from 'lucide-react';
 
@@ -11,6 +10,8 @@ import RecentTrackings from '../components/tracking/RecentTrackings';
 import BulkTrackingForm from '../components/tracking/BulkTrackingForm';
 import MainNavbar from '../components/layout/MainNavbar';
 import Footer from '../components/layout/Footer';
+
+import { toast } from '@/components/ui/alert';
 
 export default function TrackingPage() {
   const { t } = useTranslation('tracking');

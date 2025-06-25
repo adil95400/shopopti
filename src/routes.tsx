@@ -1,6 +1,6 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
+
 
 // Providers
 import { ShopProvider } from './contexts/ShopContext';
@@ -82,6 +82,8 @@ import AccountingPage from './pages/accounting';
 import FunnelsPage from './pages/funnels';
 import TemplatesPage from './pages/templates';
 import ABTestingPage from './pages/ab-testing';
+
+import { Toaster } from '@/components/ui/toaster';
 
 const AppRoutes = () => {
   return (
@@ -182,7 +184,7 @@ const AppRoutes = () => {
                 <Route path="*" element={<Navigate to="/\" replace />} />
               </Routes>
               
-              <Toaster position="top-right" expand={true} richColors />
+              <Toaster />
               <ChatbotWidget />
             </ShopProvider>
           </RoleProvider>

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, CreditCard, Calendar, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import SubscriptionStatus from '../../components/stripe/SubscriptionStatus';
+
+import { toast } from '@/components/ui/alert';
 
 const Subscription: React.FC = () => {
   return (

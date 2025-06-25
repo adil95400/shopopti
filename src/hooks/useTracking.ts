@@ -1,7 +1,9 @@
 import { useState, useTransition } from 'react';
-import { toast } from 'sonner';
 
 import { trackingService, TrackingResult } from '../services/trackingService';
+
+import { toast } from '@/components/ui/alert';
+
 
 export function useTracking() {
   const [trackingNumber, setTrackingNumber] = useState('');

@@ -10,7 +10,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import PlatformConnector from '../components/integrations/PlatformConnector';
@@ -19,6 +19,8 @@ import CategoryMapping, { CategoryMapping as CategoryMappingType } from '../comp
 import SyncHistory from '../components/integrations/SyncHistory';
 import NotificationSettings, { NotificationSettings as NotificationSettingsType } from '../components/integrations/NotificationSettings';
 import { Button } from '../components/ui/button';
+
+import { toast } from '@/components/ui/alert';
 
 
 const MultiPlatformIntegration: React.FC = () => {

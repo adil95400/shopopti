@@ -4,12 +4,14 @@ import {
   Globe, Code, Zap, Search, MessageSquare, Database,
   Layers, Webhook, Settings, Plus, Filter
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import ApiIntegration from '../components/integrations/ApiIntegration';
 import { Button } from '../components/ui/button';
+
+import { toast } from '@/components/ui/alert';
 
 
 const Integrations: React.FC = () => {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { toast } from 'sonner';
 import { 
   ShoppingBag, 
   Store, 
@@ -14,6 +13,8 @@ import {
 
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+
+import { toast } from '@/components/ui/alert';
 
 interface PlatformConnectorProps {
   platform: {
