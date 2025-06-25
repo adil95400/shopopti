@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
+// Exported for easier mocking in tests
+export const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
@@ -260,6 +261,42 @@ export const aiService = {
       return content.split(',').map(tag => tag.trim());
     } catch (error) {
       console.error('Error generating hashtags:', error);
+      return [];
+    }
+  },
+
+  async generateVariants({
+    title,
+    attributes
+  }: {
+    title: string;
+    attributes?: Record<string, string[]>;
+  }): Promise<{ title: string; price?: number; options: Record<string, string> }[]> {
+    try {
+      const attrDescription = attributes
+        ? Object.entries(attributes)
+            .map(([key, values]) => `${key}: ${values.join(', ')}`)
+            .join('\n')
+        : 'No attributes provided';
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an e-commerce assistant that suggests product variant combinations in JSON.'
+          },
+          {
+            role: 'user',
+            content: `Suggest variant combinations for "${title}" based on these attributes:\n${attrDescription}.\nReturn a JSON array of objects with title, options and optional price.`
+          }
+        ]
+      });
+
+      const content = completion.choices[0].message.content || '[]';
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('Error generating variants:', error);
       return [];
     }
   },
