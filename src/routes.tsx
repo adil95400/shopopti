@@ -53,6 +53,7 @@ import MarketingHub from './pages/MarketingHub';
 import GlobalMarketplaces from './pages/GlobalMarketplaces';
 import AdvancedSuppliers from './pages/AdvancedSuppliers';
 import WinningProducts from './pages/WinningProducts';
+import SupplierDetail from './pages/supplier/[id]';
 
 // Dashboard pages
 import Dashboard from './pages/Dashboard';
@@ -132,6 +133,7 @@ const AppRoutes = () => {
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="reviews" element={<Reviews />} />
                   <Route path="suppliers" element={<Suppliers />} />
+                  <Route path="supplier/:id" element={<SupplierDetail />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="support" element={<Support />} />
                   <Route path="contact" element={<Contact />} />
