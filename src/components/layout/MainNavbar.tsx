@@ -26,13 +26,13 @@ import {
   Layers,
   X
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { useUserContext } from '../../contexts/UserContext';
 
 const MainNavbar: React.FC = () => {
   const { t } = useTranslation();
+  const { user, isAuthenticated, logout } = useUserContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -42,43 +42,15 @@ const MainNavbar: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is logged in
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
-      
-      if (data.session?.user) {
-        // In a real app, you would fetch user data from Supabase
-        setUserProfile({
-          name: 'Shopopti+ User',
-          email: data.session.user.email,
-          plan: 'pro'
-        });
-      }
-    };
-    
-    checkAuth();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setIsAuthenticated(!!session);
-        if (session?.user) {
-          setUserProfile({
-            name: 'Shopopti+ User',
-            email: session.user.email,
-            plan: 'pro'
-          });
-        } else {
-          setUserProfile(null);
-        }
-      }
-    );
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    if (user) {
+      setUserProfile({
+        name: user.user_metadata?.name || 'Shopopti+ User',
+        plan: 'pro'
+      });
+    } else {
+      setUserProfile(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -99,7 +71,7 @@ const MainNavbar: React.FC = () => {
   }, [location]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await logout();
     navigate('/login');
   };
 
@@ -402,7 +374,7 @@ const MainNavbar: React.FC = () => {
                       >
                         <div className="border-b border-gray-200 px-4 py-3">
                           <p className="text-sm font-medium">{userProfile?.name || 'User'}</p>
-                          <p className="text-xs text-gray-500">{userProfile?.email || 'user@example.com'}</p>
+                          <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
                           {userProfile?.plan && (
                             <div className="mt-1 flex items-center">
                               <span className="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary">
