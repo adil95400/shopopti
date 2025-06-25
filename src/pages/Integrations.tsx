@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import ApiIntegration from '../components/integrations/ApiIntegration';
 import { Button } from '../components/ui/button';
+import logger from '../lib/logger';
 
 
 const Integrations: React.FC = () => {
@@ -223,7 +224,7 @@ const Integrations: React.FC = () => {
     try {
       setLoading(true);
       // In a real app, you would connect to the integration
-      console.log(`Connecting to ${id}...`);
+      logger.info(`Connecting to ${id}...`);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -241,7 +242,7 @@ const Integrations: React.FC = () => {
     try {
       setLoading(true);
       // In a real app, you would disconnect from the integration
-      console.log(`Disconnecting from ${id}...`);
+      logger.info(`Disconnecting from ${id}...`);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -257,7 +258,7 @@ const Integrations: React.FC = () => {
   
   const handleConfigure = (id: string) => {
     // In a real app, you would open configuration modal
-    console.log(`Configuring ${id}...`);
+    logger.info(`Configuring ${id}...`);
     toast.info(`Opening configuration for ${id}`);
   };
   

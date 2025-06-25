@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Search, Book, Code, ExternalLink, ArrowLeft, ChevronRight, Copy, Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import logger from '@/lib/logger';
 
 const DocumentationPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,7 +140,7 @@ async function importProduct(url) {
       url: url,
       optimize: true
     });
-    console.log('Produit importé avec succès:', product.id);
+    logger.info('Produit importé avec succès:', product.id);
     return product;
   } catch (error) {
     console.error('Erreur lors de l\'importation:', error);

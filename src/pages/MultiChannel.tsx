@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Store, Share2, BarChart, Settings } from 'lucide-react';
+import logger from '../lib/logger';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import ChannelManager from '../components/multichannel/ChannelManager';
@@ -12,7 +13,7 @@ const MultiChannel: React.FC = () => {
 
   const handleBulkAction = async (action: string, value?: any) => {
     // In a real app, you would perform the action on the selected products
-    console.log(`Performing ${action} on ${selectedProducts.length} products with value:`, value);
+    logger.info(`Performing ${action} on ${selectedProducts.length} products with value:`, value);
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));

@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { b2bService, B2BSupplier } from '@/services/b2bService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import logger from '@/lib/logger';
 
 export default function MarketplaceB2B() {
   const [search, setSearch] = useState('');
@@ -427,7 +428,7 @@ export default function MarketplaceB2B() {
     
     try {
       // In a real app, you would send this to your backend
-      console.log('Quote request:', {
+      logger.info('Quote request:', {
         supplier: selectedSupplier.name,
         ...quoteForm
       });

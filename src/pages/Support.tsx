@@ -1,5 +1,6 @@
 import React from 'react';
 import { HelpCircle, MessageSquare, Mail, Phone, Video, FileText, Book, CheckCircle, Clock, Calendar } from 'lucide-react';
+import logger from '../lib/logger';
 import { motion } from 'framer-motion';
 
 import { Button } from '../components/ui/button';
@@ -13,7 +14,7 @@ const Support: React.FC = () => {
       action: 'Démarrer une conversation',
       availability: '24h/24, 7j/7',
       responseTime: 'Moins de 5 minutes',
-      onClick: () => console.log('Open chat')
+      onClick: () => logger.info('Open chat')
     },
     {
       title: 'Email',
@@ -40,7 +41,7 @@ const Support: React.FC = () => {
       action: 'Planifier',
       availability: 'Lun-Ven, 9h-18h CET',
       responseTime: 'Sur rendez-vous',
-      onClick: () => console.log('Schedule call')
+      onClick: () => logger.info('Schedule call')
     }
   ];
 

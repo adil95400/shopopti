@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Image as ImageIcon, AlertCircle, Loader2, X } from 'lucide-react';
+import logger from '../../lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ImageImporterProps {
@@ -203,7 +204,7 @@ const ImageImporter: React.FC<ImageImporterProps> = () => {
           className="w-full btn btn-primary"
           onClick={() => {
             // Handle image processing
-            console.log('Processing images...');
+            logger.info('Processing images...');
           }}
         >
           Traiter {preview.length} image{preview.length > 1 ? 's' : ''}

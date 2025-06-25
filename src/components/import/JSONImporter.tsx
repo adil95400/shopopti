@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, AlertCircle, FileJson } from 'lucide-react';
+import logger from '../../lib/logger';
 
 interface JSONImporterProps {
   marketplace?: string;
@@ -135,7 +136,7 @@ const JSONImporter: React.FC<JSONImporterProps> = () => {
           className="w-full btn btn-primary"
           onClick={() => {
             // Handle import
-            console.log('Importing data...');
+            logger.info('Importing data...');
           }}
         >
           Importer les produits

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { supabase } from '../lib/supabase';
+import logger from '../lib/logger';
 
 export interface Platform {
   id: string;
@@ -276,7 +277,7 @@ export const platformService = {
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Category mappings saved:', mappings);
+      logger.info('Category mappings saved:', mappings);
     } catch (error) {
       console.error('Error saving category mappings:', error);
       throw error;
@@ -334,7 +335,7 @@ export const platformService = {
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Notification settings saved:', settings);
+      logger.info('Notification settings saved:', settings);
     } catch (error) {
       console.error('Error saving notification settings:', error);
       throw error;
@@ -348,7 +349,7 @@ export const platformService = {
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('Sync settings saved:', settings);
+      logger.info('Sync settings saved:', settings);
     } catch (error) {
       console.error('Error saving sync settings:', error);
       throw error;

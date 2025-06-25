@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, ShoppingBag } from 'lucide-react';
+import logger from '../../lib/logger';
 
 interface MarketplaceImporterProps {
   marketplace?: string;
@@ -32,7 +33,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
         className="px-4 py-2 bg-primary-400 text-white rounded-lg hover:bg-primary-500 transition-colors"
         onClick={() => {
           // Handle marketplace search
-          console.log(searchTerm);
+          logger.info(searchTerm);
         }}
       >
         Rechercher

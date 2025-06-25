@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, AlertCircle, FileCode } from 'lucide-react';
 import { parseString } from 'xml2js';
+import logger from '../../lib/logger';
 
 interface XMLImporterProps {
   marketplace?: string;
@@ -142,7 +143,7 @@ const XMLImporter: React.FC<XMLImporterProps> = () => {
           className="w-full btn btn-primary"
           onClick={() => {
             // Handle import
-            console.log('Importing data...');
+            logger.info('Importing data...');
           }}
         >
           Importer les produits
