@@ -2,8 +2,10 @@ from fastapi import APIRouter, Request
 from supabase import create_client
 import httpx
 import os
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 supabase_url = os.getenv("SUPABASE_URL") or ""
 supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or ""
@@ -22,6 +24,7 @@ async def validate_shopify(creds: dict) -> tuple[bool, str | None]:
             return True, None
         return False, f"Shopify responded with status {resp.status_code}"
     except Exception as e:
+        logger.exception("Shopify validation failed")
         return False, str(e)
 
 async def validate_woocommerce(creds: dict) -> tuple[bool, str | None]:
@@ -37,6 +40,7 @@ async def validate_woocommerce(creds: dict) -> tuple[bool, str | None]:
             return True, None
         return False, f"WooCommerce responded with status {resp.status_code}"
     except Exception as e:
+        logger.exception("WooCommerce validation failed")
         return False, str(e)
 
 validators = {
@@ -61,9 +65,13 @@ async def connect_platform(platform: str, request: Request):
     if not valid:
         return {"error": error or "invalid credentials"}
 
-    supabase.table("connected_integrations").insert({
-        "user_id": user_id,
-        "platform": platform,
-        "credentials": credentials,
-    }).execute()
-    return {"status": "connected"}
+    try:
+        supabase.table("connected_integrations").insert({
+            "user_id": user_id,
+            "platform": platform,
+            "credentials": credentials,
+        }).execute()
+        return {"status": "connected"}
+    except Exception as e:
+        logger.exception("Failed to save integration")
+        return {"error": str(e)}
