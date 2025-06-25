@@ -41,6 +41,7 @@ module.exports = {
     'jsx-a11y',
     '@typescript-eslint',
     'import',
+    'prettier',
   ],
   extends: [
     'eslint:recommended',
@@ -51,7 +52,7 @@ module.exports = {
     'plugin:import/errors',
     'plugin:import/warnings',
     'plugin:import/typescript',
-    'prettier',
+    'plugin:prettier/recommended',
   ],
   rules: {
     // ✅ Personnalisation des règles
