@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 import LanguageSelector from '../LanguageSelector';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 
 import Logo from './Logo';
 
@@ -17,6 +18,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const { workspace } = useWorkspace();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -96,6 +98,11 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
 
         <div className="flex items-center space-x-4">
           <LanguageSelector />
+          {workspace && (
+            <span className="hidden md:block text-sm text-gray-600">
+              {workspace.currency || ''} - {workspace.timezone || ''}
+            </span>
+          )}
           
           <motion.div 
             className="relative"
