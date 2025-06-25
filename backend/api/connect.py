@@ -39,9 +39,66 @@ async def validate_woocommerce(creds: dict) -> tuple[bool, str | None]:
     except Exception as e:
         return False, str(e)
 
+async def validate_ebay(creds: dict) -> tuple[bool, str | None]:
+    key = creds.get("api_key")
+    token = creds.get("access_token")
+    if not key or not token:
+        return False, "api_key and access_token required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://api.ebay.com/ws/api.dll",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
+            )
+        if resp.status_code in {200,401}:
+            return True, None
+        return False, f"eBay responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
+async def validate_prestashop(creds: dict) -> tuple[bool, str | None]:
+    url = creds.get("store_url")
+    key = creds.get("api_key")
+    if not url or not key:
+        return False, "store_url and api_key required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{url}/api/products?limit=1",
+                auth=(key, ""),
+                timeout=10,
+            )
+        if resp.status_code in {200,401}:
+            return True, None
+        return False, f"PrestaShop responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
+async def validate_cdiscount(creds: dict) -> tuple[bool, str | None]:
+    key = creds.get("api_key")
+    secret = creds.get("api_secret")
+    if not key or not secret:
+        return False, "api_key and api_secret required"
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://api.cdiscount.com/OpenApi/json/Service.svc/GetCdiscountVersion",
+                headers={"Api-Key": key, "Api-Secret": secret},
+                timeout=10,
+            )
+        if resp.status_code in {200,401}:
+            return True, None
+        return False, f"Cdiscount responded with status {resp.status_code}"
+    except Exception as e:
+        return False, str(e)
+
 validators = {
     "shopify": validate_shopify,
     "woocommerce": validate_woocommerce,
+    "ebay": validate_ebay,
+    "prestashop": validate_prestashop,
+    "cdiscount": validate_cdiscount,
 }
 
 @router.post("/api/connect/{platform}")
