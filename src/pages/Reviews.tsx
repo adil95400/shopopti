@@ -2,6 +2,7 @@ import React from 'react';
 import { MessageSquare, Search, Filter, SlidersHorizontal, Star, ThumbsUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useShop } from '../contexts/ShopContext';
+import ReviewForm from '../components/reviews/ReviewForm';
 
 // Mock reviews data
 const mockReviews = [
@@ -15,7 +16,8 @@ const mockReviews = [
     date: '2024-03-10T14:23:54Z',
     source: 'aliexpress',
     helpful: 12,
-    verified: true
+    verified: true,
+    images: []
   },
   {
     id: '2',
@@ -27,7 +29,8 @@ const mockReviews = [
     date: '2024-03-09T09:12:11Z',
     source: 'amazon',
     helpful: 8,
-    verified: true
+    verified: true,
+    images: []
   },
   {
     id: '3',
@@ -39,16 +42,32 @@ const mockReviews = [
     date: '2024-03-08T18:45:30Z',
     source: 'google',
     helpful: 15,
-    verified: true
+    verified: true,
+    images: []
   }
 ];
+
+interface Review {
+  id: string;
+  productName: string;
+  productImage: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  date: string;
+  source: string;
+  helpful: number;
+  verified: boolean;
+  images: string[];
+}
 
 const Reviews: React.FC = () => {
   const { isConnected } = useShop();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [reviews, setReviews] = React.useState<Review[]>(mockReviews);
 
   // Filter reviews based on search query
-  const filteredReviews = mockReviews.filter(review =>
+  const filteredReviews = reviews.filter(review =>
     review.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     review.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     review.comment.toLowerCase().includes(searchQuery.toLowerCase())
@@ -111,6 +130,7 @@ const Reviews: React.FC = () => {
           </div>
         </div>
 
+        <ReviewForm onAdd={(r) => setReviews([r, ...reviews])} />
         <div className="space-y-4">
           {filteredReviews.map((review) => (
             <motion.div
@@ -155,6 +175,18 @@ const Reviews: React.FC = () => {
                   <div className="mt-2">
                     <p className="text-sm text-neutral-700">{review.comment}</p>
                   </div>
+                  {review.images && review.images.length > 0 && (
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {review.images.map((img, i) => (
+                        <img
+                          key={i}
+                          src={img}
+                          alt="review"
+                          className="h-20 w-full object-cover rounded"
+                        />
+                      ))}
+                    </div>
+                  )}
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center text-sm text-neutral-500">
