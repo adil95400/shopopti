@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Bell, ChevronDown, Search, Settings, LogOut, CreditCard, User, HelpCircle } from 'lucide-react';
+import { Bell, ChevronDown, Search, Settings, LogOut, CreditCard, User, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -9,11 +9,7 @@ import LanguageSelector from '../LanguageSelector';
 
 import Logo from './Logo';
 
-interface HeaderProps {
-  toggleSidebar: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
+const Header: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -68,12 +64,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
     <header className="border-b border-gray-200 bg-white shadow-sm z-10">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center">
-          <button 
-            onClick={toggleSidebar}
-            className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
-          >
-            <Menu size={24} />
-          </button>
           
           <div className="hidden lg:block ml-4">
             <Logo />
