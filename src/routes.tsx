@@ -53,6 +53,8 @@ import MarketingHub from './pages/MarketingHub';
 import GlobalMarketplaces from './pages/GlobalMarketplaces';
 import AdvancedSuppliers from './pages/AdvancedSuppliers';
 import WinningProducts from './pages/WinningProducts';
+import DashboardFr from './pages/DashboardFr';
+import OrdersFr from './pages/OrdersFr';
 
 // Dashboard pages
 import Dashboard from './pages/Dashboard';
@@ -114,6 +116,10 @@ const AppRoutes = () => {
                 <Route path="/tracking" element={<TrackingPage />} />
                 <Route path="/generate-invoice" element={<GenerateInvoice />} />
                 <Route path="/marketplace-b2b" element={<MarketplaceB2B />} />
+
+                {/* French placeholder pages */}
+                <Route path="/dashboard" element={<DashboardFr />} />
+                <Route path="/orders" element={<OrdersFr />} />
 
                 {/* Protected pages (require login) */}
                 <Route
