@@ -24,3 +24,8 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+```
+
+### Licence
+
+Ce projet est distribué sous la licence [MIT](LICENSE).
