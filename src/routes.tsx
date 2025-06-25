@@ -62,6 +62,7 @@ import ImportProducts from './pages/ImportProducts';
 import Analytics from './pages/Analytics';
 import Reviews from './pages/Reviews';
 import Suppliers from './pages/Suppliers';
+import SupplierDetail from './pages/SupplierDetail';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Contact from './pages/Contact';
@@ -132,6 +133,7 @@ const AppRoutes = () => {
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="reviews" element={<Reviews />} />
                   <Route path="suppliers" element={<Suppliers />} />
+                  <Route path="suppliers/:id" element={<SupplierDetail />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="support" element={<Support />} />
                   <Route path="contact" element={<Contact />} />

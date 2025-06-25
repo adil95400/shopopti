@@ -1,5 +1,6 @@
 import React from 'react';
 import { MessageSquare, Search, Filter, SlidersHorizontal, Star, ThumbsUp } from 'lucide-react';
+import Avatar from '../components/ui/avatar';
 import { motion } from 'framer-motion';
 import { useShop } from '../contexts/ShopContext';
 
@@ -10,9 +11,10 @@ const mockReviews = [
     productName: 'Premium Wireless Headphones',
     productImage: 'https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg?auto=compress&cs=tinysrgb&w=300',
     customerName: 'John Doe',
+    email: 'john@example.com',
     rating: 5,
     comment: 'Excellent sound quality and very comfortable to wear for long periods. Battery life is impressive!',
-    date: '2024-03-10T14:23:54Z',
+    created_at: '2024-03-10T14:23:54Z',
     source: 'aliexpress',
     helpful: 12,
     verified: true
@@ -22,9 +24,10 @@ const mockReviews = [
     productName: 'Smart Watch Series 5',
     productImage: 'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=300',
     customerName: 'Sarah Williams',
+    email: 'sarah@example.com',
     rating: 4,
     comment: 'Great features and good battery life. The only downside is that the screen could be a bit brighter outdoors.',
-    date: '2024-03-09T09:12:11Z',
+    created_at: '2024-03-09T09:12:11Z',
     source: 'amazon',
     helpful: 8,
     verified: true
@@ -34,9 +37,10 @@ const mockReviews = [
     productName: 'Ergonomic Office Chair',
     productImage: 'https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=300',
     customerName: 'Michael Brown',
+    email: 'michael@example.com',
     rating: 5,
     comment: 'Best office chair I\'ve ever owned. The lumbar support is perfect and assembly was easy.',
-    date: '2024-03-08T18:45:30Z',
+    created_at: '2024-03-08T18:45:30Z',
     source: 'google',
     helpful: 15,
     verified: true
@@ -47,8 +51,18 @@ const Reviews: React.FC = () => {
   const { isConnected } = useShop();
   const [searchQuery, setSearchQuery] = React.useState('');
 
+  // Sort reviews by newest first
+  const sortedReviews = [...mockReviews].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  const averageRating =
+    sortedReviews.length > 0
+      ? sortedReviews.reduce((sum, r) => sum + r.rating, 0) / sortedReviews.length
+      : 0;
+
   // Filter reviews based on search query
-  const filteredReviews = mockReviews.filter(review =>
+  const filteredReviews = sortedReviews.filter(review =>
     review.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     review.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     review.comment.toLowerCase().includes(searchQuery.toLowerCase())
@@ -111,6 +125,18 @@ const Reviews: React.FC = () => {
           </div>
         </div>
 
+        {/* Average rating */}
+        <div className="flex items-center gap-2 mb-4">
+          {[...Array(5)].map((_, index) => (
+            <Star
+              key={index}
+              size={16}
+              className={index < Math.round(averageRating) ? 'text-warning-400 fill-warning-400' : 'text-neutral-300'}
+            />
+          ))}
+          <span className="text-sm text-neutral-700">{averageRating.toFixed(1)} / 5</span>
+        </div>
+
         <div className="space-y-4">
           {filteredReviews.map((review) => (
             <motion.div
@@ -149,7 +175,7 @@ const Reviews: React.FC = () => {
                       />
                     ))}
                     <span className="ml-2 text-sm text-neutral-500">
-                      {formatDate(review.date)}
+                      {formatDate(review.created_at)}
                     </span>
                   </div>
                   <div className="mt-2">
@@ -165,8 +191,9 @@ const Reviews: React.FC = () => {
                         <span className="text-sm text-success-400">Verified Purchase</span>
                       )}
                     </div>
-                    <div className="text-sm font-medium text-neutral-900">
-                      {review.customerName}
+                    <div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
+                      <Avatar email={review.email} size={32} />
+                      <span>{review.customerName}</span>
                     </div>
                   </div>
                 </div>
@@ -174,14 +201,21 @@ const Reviews: React.FC = () => {
             </motion.div>
           ))}
 
-          {filteredReviews.length === 0 && (
-            <div className="py-12 text-center">
-              <div className="flex flex-col items-center">
-                <Search className="h-8 w-8 text-neutral-300" />
-                <h3 className="mt-2 text-sm font-medium text-neutral-900">No reviews found</h3>
-                <p className="mt-1 text-sm text-neutral-500">Try adjusting your search or filters.</p>
-              </div>
+          {sortedReviews.length === 0 ? (
+            <div className="py-12 text-center space-y-4">
+              <p className="text-sm text-neutral-500">No reviews yet.</p>
+              <button className="btn btn-primary">Write a review</button>
             </div>
+          ) : (
+            filteredReviews.length === 0 && (
+              <div className="py-12 text-center">
+                <div className="flex flex-col items-center">
+                  <Search className="h-8 w-8 text-neutral-300" />
+                  <h3 className="mt-2 text-sm font-medium text-neutral-900">No reviews found</h3>
+                  <p className="mt-1 text-sm text-neutral-500">Try adjusting your search or filters.</p>
+                </div>
+              </div>
+            )
           )}
         </div>
       </div>
