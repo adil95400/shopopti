@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Zap, ArrowRight, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ export default function AutomationsPage() {
       setSuccess(true);
     } catch (error) {
       console.error('Erreur lors de l\'envoi du webhook:', error);
+      toast.error("Erreur d'envoi du webhook");
       setResult('Erreur: Impossible d\'envoyer le webhook. Veuillez vérifier votre connexion et réessayer.');
     } finally {
       setLoading(false);

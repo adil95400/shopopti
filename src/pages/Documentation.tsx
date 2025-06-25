@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Search, Book, Code, ExternalLink, ArrowLeft, ChevronRight, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 
@@ -142,7 +143,8 @@ async function importProduct(url) {
     console.log('Produit importé avec succès:', product.id);
     return product;
   } catch (error) {
-    console.error('Erreur lors de l\'importation:', error);
+    console.error("Erreur lors de l'importation:", error);
+    toast.error('Failed to import product');
   }
 }`
       }

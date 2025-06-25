@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users as UsersIcon, Search, Filter, Edit, Trash, UserPlus, CheckCircle, XCircle } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { supabase } from '../../lib/supabase';
 import { useRole } from '../../context/RoleContext';
@@ -57,6 +58,7 @@ const UsersAdmin: React.FC = () => {
       setUsers(mockUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }
@@ -82,6 +84,7 @@ const UsersAdmin: React.FC = () => {
       setUsers(users.filter(user => user.id !== userId));
     } catch (error) {
       console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
     }
   };
 
@@ -93,6 +96,7 @@ const UsersAdmin: React.FC = () => {
       ));
     } catch (error) {
       console.error('Error updating user status:', error);
+      toast.error('Failed to update user');
     }
   };
 

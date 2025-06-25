@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
 
@@ -81,6 +82,7 @@ const WinningProducts: React.FC = () => {
       setProducts(mockProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
