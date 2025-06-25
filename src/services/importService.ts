@@ -533,6 +533,13 @@ export const importService = {
         
         const optimizedBatch = await Promise.all(
           batch.map(async (product) => {
+            let variants = product.variants;
+            if (!variants || variants.length === 0) {
+              variants = await aiService.generateVariants({
+                title: product.title
+              });
+            }
+
             const seoData = await aiService.optimizeForSEO({
               title: product.title,
               description: product.description,
@@ -541,6 +548,7 @@ export const importService = {
 
             return {
               ...product,
+              variants,
               seo: seoData
             };
           })
