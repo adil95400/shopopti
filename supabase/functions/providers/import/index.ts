@@ -21,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { supplierId, apiKey, apiSecret, baseUrl, productIds } = await req.json();
+    const { supplierId, apiKey, apiSecret, baseUrl, productIds, withReviews } = await req.json();
     
     if (!apiKey) {
       throw new Error("API key is required");
@@ -81,6 +81,32 @@ serve(async (req) => {
         }
         
         importedProducts.push(data);
+
+        if (withReviews) {
+          // Simulate fetching reviews for the product
+          const reviews = Array(Math.floor(Math.random() * 3) + 1)
+            .fill(0)
+            .map((_, i) => ({
+              id: crypto.randomUUID(),
+              product_id: data.id,
+              supplier_product_id: productId,
+              rating: Math.floor(Math.random() * 5) + 1,
+              comment: `Review ${i + 1} for product ${productId}`,
+              author: `User ${i + 1}`,
+              created_at: new Date().toISOString(),
+            }));
+
+          const { error: reviewError } = await supabase
+            .from("reviews")
+            .insert(reviews);
+
+          if (reviewError) {
+            console.error(
+              `Failed to insert reviews for product ${productId}:`,
+              reviewError
+            );
+          }
+        }
       } catch (error) {
         console.error(`Failed to import product ${productId}:`, error);
         failedProducts.push({ id: productId, error: error.message });
