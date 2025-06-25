@@ -1,6 +1,5 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
 
 // Providers
 import { ShopProvider } from './contexts/ShopContext';
@@ -182,7 +181,6 @@ const AppRoutes = () => {
                 <Route path="*" element={<Navigate to="/\" replace />} />
               </Routes>
               
-              <Toaster position="top-right" expand={true} richColors />
               <ChatbotWidget />
             </ShopProvider>
           </RoleProvider>

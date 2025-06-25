@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  /* Primary colors - Orange */
-  --primary: #f97316;
+  /* Primary colors - Purple */
+  --primary: #6366f1;
   --primary-50: #fff7ed;
   --primary-100: #ffedd5;
   --primary-200: #fed7aa;
@@ -16,17 +16,17 @@
   --primary-800: #9a3412;
   --primary-900: #7c2d12;
 
-  /* Secondary colors - Deep Purple */
-  --secondary-50: #f5f3ff;
-  --secondary-100: #ede9fe;
-  --secondary-200: #ddd6fe;
-  --secondary-300: #c4b5fd;
-  --secondary-400: #1E1B26;
-  --secondary-500: #1a1724;
-  --secondary-600: #16141f;
-  --secondary-700: #13111a;
-  --secondary-800: #0f0d15;
-  --secondary-900: #0c0a10;
+  /* Secondary colors - Blue */
+  --secondary-50: #eff6ff;
+  --secondary-100: #dbeafe;
+  --secondary-200: #bfdbfe;
+  --secondary-300: #93c5fd;
+  --secondary-400: #60a5fa;
+  --secondary-500: #3b82f6;
+  --secondary-600: #2563eb;
+  --secondary-700: #1d4ed8;
+  --secondary-800: #1e40af;
+  --secondary-900: #1e3a8a;
 
   /* Accent colors - Light Gray */
   --accent-50: #fafafa;
@@ -57,6 +57,14 @@
   --neutral-700: #404040;
   --neutral-800: #262626;
   --neutral-900: #171717;
+
+  /* Global colors */
+  --background: #f9fafb;
+  --text: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 }
 
 @layer base {
@@ -66,7 +74,7 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-background text-foreground;
   }
 
   h1, h2, h3, h4, h5, h6 {

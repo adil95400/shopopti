@@ -32,7 +32,8 @@ import {
   SplitSquareVertical,
   Mail,
   HelpCircle,
-  Star
+  Star,
+  ChevronDown
 } from 'lucide-react';
 
 import Logo from './Logo';
@@ -124,6 +125,11 @@ const sections = [
 ];
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<number, boolean>>({});
+
+  const toggleSection = (index: number) => {
+    setOpenSections(prev => ({ ...prev, [index]: !prev[index] }));
+  };
 
   return (
     <>
@@ -144,8 +150,17 @@ export default function Sidebar() {
             <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-80px)]">
               {sections.map((section, i) => (
                 <div key={i} className="mb-4">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
-                  <div className="flex flex-col gap-1">
+                  <button
+                    className="flex w-full items-center justify-between text-sm font-semibold text-muted-foreground mb-2"
+                    onClick={() => toggleSection(i)}
+                  >
+                    {section.title}
+                    <ChevronDown
+                      size={16}
+                      className={`transition-transform ${openSections[i] === false ? '' : 'rotate-180'}`}
+                    />
+                  </button>
+                  <div className={`flex flex-col gap-1 ${openSections[i] === false ? 'hidden' : ''}`}>
                     {section.links.map(link => (
                       <NavLink
                         key={link.path}
@@ -174,8 +189,17 @@ export default function Sidebar() {
         <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-100px)]">
           {sections.map((section, i) => (
             <div key={i} className="mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
-              <div className="flex flex-col gap-1">
+              <button
+                className="flex w-full items-center justify-between text-sm font-semibold text-muted-foreground mb-2"
+                onClick={() => toggleSection(i)}
+              >
+                {section.title}
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${openSections[i] === false ? '' : 'rotate-180'}`}
+                />
+              </button>
+              <div className={`flex flex-col gap-1 ${openSections[i] === false ? 'hidden' : ''}`}>
                 {section.links.map(link => (
                   <NavLink
                     key={link.path}
