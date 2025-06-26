@@ -42,12 +42,12 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
         price: optimizationOptions.pricing 
           ? Math.round(product.price * 1.15 * 100) / 100 
           : product.price,
-        seo: optimizationOptions.seo 
+        seo: optimizationOptions.seo
           ? {
-              title: `Buy ${product.title} | Best Quality | Fast Shipping`,
-              description: `Shop for the best ${product.title} with premium features. Free shipping, 30-day returns, and exceptional customer service.`,
+              metaTitle: `Buy ${product.title} | Best Quality | Fast Shipping`,
+              metaDescription: `Shop for the best ${product.title} with premium features. Free shipping, 30-day returns, and exceptional customer service.`,
               keywords: ['premium', 'high-quality', product.category || '', 'best seller']
-            } 
+            }
           : null,
         tags: optimizationOptions.tags 
           ? [...(product.tags || []), 'trending', 'best-seller', 'premium'] 

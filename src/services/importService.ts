@@ -26,8 +26,8 @@ export interface ProductData {
   };
   metadata?: Record<string, any>;
   seo?: {
-    title: string;
-    description: string;
+    metaTitle: string;
+    metaDescription: string;
     keywords: string[];
   };
   reviews?: ProductReview[];
@@ -416,6 +416,12 @@ export const importService = {
         features: []
       });
 
+      const seoData = await aiService.optimizeForSEO({
+        title: optimizedTitle,
+        description: optimizedDescription,
+        category: 'Amazon'
+      });
+
       const reviews = $('.review')
         .map((_, review) => {
           try {
@@ -448,7 +454,12 @@ export const importService = {
           sourceUrl: url,
           importDate: new Date().toISOString()
         },
-        reviews: reviews.length > 0 ? reviews : undefined
+        reviews: reviews.length > 0 ? reviews : undefined,
+        seo: {
+          metaTitle: seoData.metaTitle,
+          metaDescription: seoData.metaDescription,
+          keywords: seoData.keywords
+        }
       };
 
     } catch (error: any) {
@@ -533,15 +544,25 @@ export const importService = {
         
         const optimizedBatch = await Promise.all(
           batch.map(async (product) => {
-            const seoData = await aiService.optimizeForSEO({
-              title: product.title,
-              description: product.description,
-              category: product.category || ''
-            });
+            let seo = product.seo;
+
+            if (!seo) {
+              const seoData = await aiService.optimizeForSEO({
+                title: product.title,
+                description: product.description,
+                category: product.category || ''
+              });
+
+              seo = {
+                metaTitle: seoData.metaTitle,
+                metaDescription: seoData.metaDescription,
+                keywords: seoData.keywords
+              };
+            }
 
             return {
               ...product,
-              seo: seoData
+              seo
             };
           })
         );
@@ -591,12 +612,23 @@ export const importService = {
             description: product.description,
             category: product.category || ''
           });
-          
+
+          const seoData = await aiService.optimizeForSEO({
+            title: optimized.title,
+            description: optimized.description_html,
+            category: product.category || ''
+          });
+
           return {
             ...product,
             title: optimized.title,
             description: optimized.description_html,
-            tags: optimized.tags
+            tags: optimized.tags,
+            seo: {
+              metaTitle: seoData.metaTitle,
+              metaDescription: seoData.metaDescription,
+              keywords: seoData.keywords
+            }
           };
         })
       );
