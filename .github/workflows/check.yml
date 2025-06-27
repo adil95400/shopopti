@@ -27,3 +27,12 @@ jobs:
 
       - name: 🏗️ Build app
         run: npm run build
+
+      - name: 📖 Generate OpenAPI spec
+        run: npm run docs:api
+
+      - name: 📤 Upload OpenAPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: docs/openapi.json

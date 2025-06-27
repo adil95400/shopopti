@@ -40,3 +40,6 @@ shopify.app.toml
 *.orig
 *.rej
 
+
+# Python
+__pycache__/
