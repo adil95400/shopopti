@@ -264,6 +264,41 @@ export const aiService = {
     }
   },
 
+  async generateVariants({
+    title,
+    description,
+    category,
+    attributes
+  }: {
+    title: string;
+    description?: string;
+    category?: string;
+    attributes?: Record<string, string[]>;
+  }): Promise<Array<{ title: string; options: Record<string, string> }>> {
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a merchandising expert generating realistic variant combinations for a product. Return a JSON array of variants with a title and an options object."
+          },
+          {
+            role: "user",
+            content: `Product: ${title}\nCategory: ${category || ''}\nDescription: ${description || ''}\nAttributes: ${attributes ? JSON.stringify(attributes) : 'N/A'}\nReturn JSON array.`
+          }
+        ]
+      });
+
+      const content = completion.choices[0].message.content || '[]';
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('Error generating variants:', error);
+      return [];
+    }
+  },
+
   async analyzeSentiment(text: string): Promise<'positive' | 'negative' | 'neutral'> {
     try {
       const completion = await openai.chat.completions.create({
