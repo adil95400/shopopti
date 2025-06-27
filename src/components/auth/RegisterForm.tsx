@@ -15,6 +15,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 
 import SocialLoginButtons from './SocialLoginButtons';
+import MfaEnroll from './MfaEnroll';
 
 interface RegisterFormProps {
   onClose?: () => void;
@@ -30,6 +31,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, isModal = false })
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [enrollMfa, setEnrollMfa] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -65,12 +67,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, isModal = false })
       
       if (error) throw error;
       
-      toast.success('Account created successfully! Please check your email to verify your account.');
-      
+      toast.success('Account created successfully!');
+      setEnrollMfa(true);
       if (isModal && onClose) {
         onClose();
-      } else {
-        navigate('/login');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -122,6 +122,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, isModal = false })
         <div className="flex-grow h-px bg-gray-300"></div>
       </div>
       
+      {enrollMfa ? (
+        <div className="mt-6">
+          <h3 className="text-lg font-medium mb-4">Set up Two-Factor Authentication</h3>
+          <MfaEnroll onComplete={() => navigate('/login')} />
+        </div>
+      ) : (
       <form onSubmit={handleRegister} className="space-y-4">
         <div>
           <div className="relative">
@@ -232,10 +238,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, isModal = false })
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin mx-auto" />
           ) : (
-            "Create Account"
+            'Create Account'
           )}
         </Button>
       </form>
+      )}
     </div>
   );
 };
