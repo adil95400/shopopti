@@ -24,6 +24,16 @@
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
+<<<<<<< HEAD
+
+### 📄 Variables d'environnement pour les intégrations
+
+Ajoutez les variables suivantes à votre fichier `.env` selon les services que vous utilisez :
+
+- `AIRTABLE_API_KEY` – Clé API Airtable utilisée pour créer des enregistrements.
+- `NOTION_API_KEY` – Jeton d'intégration Notion pour ajouter des pages.
+- `ZAPIER_WEBHOOK_URL` *(optionnel)* – URL de base pour vos hooks Zapier si vous n'utilisez pas un URL fourni par l'utilisateur.
+=======
 ```
 
 2. 🚀 Déployer sur Vercel :
@@ -34,3 +44,4 @@ vercel --prod
 ```bash
 git checkout -b v6.9
 ```
+>>>>>>> origin/main

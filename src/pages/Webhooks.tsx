@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Copy, Check, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
+import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/button';
 
 interface Webhook {
@@ -36,6 +37,62 @@ const Webhooks: React.FC = () => {
     url: '',
     events: [] as string[]
   });
+
+  const [zapierUrl, setZapierUrl] = useState('');
+  const [airtableBase, setAirtableBase] = useState('');
+  const [airtableTable, setAirtableTable] = useState('');
+  const [notionDb, setNotionDb] = useState('');
+
+  useEffect(() => {
+    loadIntegrationSettings();
+  }, []);
+
+  const loadIntegrationSettings = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const { data } = await supabase
+      .from('webhook_integrations')
+      .select('service, url, settings')
+      .eq('user_id', session.user.id);
+    data?.forEach((row: any) => {
+      if (row.service === 'zapier') setZapierUrl(row.url || '');
+      if (row.service === 'airtable') {
+        setAirtableBase(row.settings?.base_id || '');
+        setAirtableTable(row.settings?.table || '');
+      }
+      if (row.service === 'notion') setNotionDb(row.settings?.database_id || '');
+    });
+  };
+
+  const saveZapier = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    await fetch('/api/zapier/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: session.user.id, url: zapierUrl })
+    });
+  };
+
+  const saveAirtable = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    await fetch('/api/airtable/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: session.user.id, base_id: airtableBase, table: airtableTable })
+    });
+  };
+
+  const saveNotion = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    await fetch('/api/notion/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: session.user.id, database_id: notionDb })
+    });
+  };
   
   const [isAddingWebhook, setIsAddingWebhook] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -384,7 +441,53 @@ const Webhooks: React.FC = () => {
           </div>
         </div>
       )}
-      
+
+      <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+        <h3 className="text-lg font-medium">Integrations</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <h4 className="font-medium mb-2">Zapier</h4>
+            <input
+              type="url"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Webhook URL"
+              value={zapierUrl}
+              onChange={(e) => setZapierUrl(e.target.value)}
+            />
+            <Button className="mt-2" onClick={saveZapier}>Save</Button>
+          </div>
+          <div>
+            <h4 className="font-medium mb-2">Airtable</h4>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Base ID"
+              value={airtableBase}
+              onChange={(e) => setAirtableBase(e.target.value)}
+            />
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+              placeholder="Table Name"
+              value={airtableTable}
+              onChange={(e) => setAirtableTable(e.target.value)}
+            />
+            <Button className="mt-2" onClick={saveAirtable}>Save</Button>
+          </div>
+          <div>
+            <h4 className="font-medium mb-2">Notion</h4>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Database ID"
+              value={notionDb}
+              onChange={(e) => setNotionDb(e.target.value)}
+            />
+            <Button className="mt-2" onClick={saveNotion}>Save</Button>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-blue-50 p-4 rounded-md">
         <div className="flex items-start">
           <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
