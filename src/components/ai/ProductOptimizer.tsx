@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Check, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
 
+import { aiService } from '../../services/aiService';
 import { Button } from '../ui/button';
 
 interface ProductOptimizerProps {
@@ -24,39 +25,47 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
     pricing: false
   });
   const [optimizedProduct, setOptimizedProduct] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOptimize = async () => {
     try {
       setLoading(true);
-      
-      // Simulate API call to AI service
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const optimized = {
-        title: optimizationOptions.title 
-          ? `Premium ${product.title} - Professional Grade` 
-          : product.title,
-        description: optimizationOptions.description 
-          ? `${product.description}\n\nThis high-quality product offers exceptional performance and durability. Perfect for both professional and personal use, it features premium materials and expert craftsmanship.` 
+      setError(null);
+
+      const result = await aiService.optimizeProduct({
+        name: product.title,
+        description: product.description,
+        category: product.category || ''
+      });
+
+      const optimized: any = {
+        title: optimizationOptions.title ? result.title : product.title,
+        description: optimizationOptions.description
+          ? result.description_html
           : product.description,
-        price: optimizationOptions.pricing 
-          ? Math.round(product.price * 1.15 * 100) / 100 
+        price: optimizationOptions.pricing
+          ? Math.round(product.price * 1.15 * 100) / 100
           : product.price,
-        seo: optimizationOptions.seo 
-          ? {
-              title: `Buy ${product.title} | Best Quality | Fast Shipping`,
-              description: `Shop for the best ${product.title} with premium features. Free shipping, 30-day returns, and exceptional customer service.`,
-              keywords: ['premium', 'high-quality', product.category || '', 'best seller']
-            } 
-          : null,
-        tags: optimizationOptions.tags 
-          ? [...(product.tags || []), 'trending', 'best-seller', 'premium'] 
-          : product.tags
+        tags: optimizationOptions.tags ? result.tags : product.tags
       };
-      
+
+      if (optimizationOptions.seo) {
+        const seoData = await aiService.optimizeForSEO({
+          title: optimized.title,
+          description: optimized.description,
+          category: product.category || ''
+        });
+        optimized.seo = {
+          metaTitle: seoData.metaTitle,
+          metaDescription: seoData.metaDescription,
+          keywords: seoData.keywords
+        };
+      }
+
       setOptimizedProduct(optimized);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error optimizing product:', error);
+      setError(error.message || 'Failed to optimize product');
     } finally {
       setLoading(false);
     }
@@ -241,8 +250,8 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
       </div>
       
       {!optimizedProduct ? (
-        <Button 
-          onClick={handleOptimize} 
+        <Button
+          onClick={handleOptimize}
           disabled={loading || (!optimizationOptions.title && !optimizationOptions.description && !optimizationOptions.seo && !optimizationOptions.tags && !optimizationOptions.pricing)}
           className="w-full"
         >
@@ -269,7 +278,40 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
               Your product has been optimized for better performance.
             </p>
           </div>
-          
+
+          <div className="space-y-2 text-sm">
+            {optimizationOptions.title && (
+              <div>
+                <span className="font-medium">Title:</span> {optimizedProduct.title}
+              </div>
+            )}
+            {optimizationOptions.description && (
+              <div>
+                <span className="font-medium">Description:</span>
+                <div className="prose" dangerouslySetInnerHTML={{ __html: optimizedProduct.description }} />
+              </div>
+            )}
+            {optimizationOptions.tags && optimizedProduct.tags && (
+              <div>
+                <span className="font-medium">Tags:</span> {optimizedProduct.tags.join(', ')}
+              </div>
+            )}
+            {optimizationOptions.seo && optimizedProduct.seo && (
+              <div>
+                <span className="font-medium">Meta Title:</span> {optimizedProduct.seo.metaTitle}
+                <br />
+                <span className="font-medium">Meta Description:</span> {optimizedProduct.seo.metaDescription}
+                <br />
+                <span className="font-medium">Keywords:</span> {optimizedProduct.seo.keywords.join(', ')}
+              </div>
+            )}
+            {optimizationOptions.pricing && (
+              <div>
+                <span className="font-medium">Price:</span> {optimizedProduct.price}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button onClick={handleApply} className="w-full">
               <Check className="h-4 w-4 mr-2" />
@@ -280,6 +322,12 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
               Start Over
             </Button>
           </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+          {error}
         </div>
       )}
     </div>
