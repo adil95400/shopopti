@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Request, Header
 import stripe
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -20,29 +23,47 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         stripe_customer = session.get("customer")
         stripe_subscription = session.get("subscription")
         user_id = session.get("metadata", {}).get("user_id")
-        plan = session.get("display_items", [{}])[0].get("plan", {}).get("nickname", "unknown")
+        plan = (
+            session.get("display_items", [{}])[0]
+            .get("plan", {})
+            .get("nickname", "unknown")
+        )
 
         from supabase import create_client
+
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         supabase = create_client(supabase_url, supabase_key)
 
-        supabase.table("subscriptions").insert({
-            "user_id": user_id,
-            "stripe_customer_id": stripe_customer,
-            "stripe_subscription_id": stripe_subscription,
-            "plan": plan,
-            "status": "active"
-        }).execute()
+        supabase.table("subscriptions").insert(
+            {
+                "user_id": user_id,
+                "stripe_customer_id": stripe_customer,
+                "stripe_subscription_id": stripe_subscription,
+                "plan": plan,
+                "status": "active",
+            }
+        ).execute()
 
-    return {"received": True}
+        logger.info("Subscription created for user %s", user_id)
 
-
-    if event["type"] in ["customer.subscription.deleted", "invoice.payment_failed"]:
+    elif event["type"] in [
+        "customer.subscription.deleted",
+        "invoice.payment_failed",
+    ]:
         subscription = event["data"]["object"]
         stripe_subscription_id = subscription.get("id")
+
         from supabase import create_client
+
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         supabase = create_client(supabase_url, supabase_key)
-        supabase.table("subscriptions").update({"status": "canceled"}).eq("stripe_subscription_id", stripe_subscription_id).execute()
+
+        supabase.table("subscriptions").update({"status": "canceled"}).eq(
+            "stripe_subscription_id", stripe_subscription_id
+        ).execute()
+
+        logger.info("Subscription %s canceled", stripe_subscription_id)
+
+    return {"received": True}
