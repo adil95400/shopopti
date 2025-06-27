@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import ApiIntegration from '../components/integrations/ApiIntegration';
+import MailchimpConfig from '../components/integrations/MailchimpConfig';
 import { Button } from '../components/ui/button';
 
 
@@ -359,6 +360,7 @@ const Integrations: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ApiIntegration />
+        <MailchimpConfig />
         
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center mb-4">
