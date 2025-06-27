@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
+from gotrue import User
+from backend.auth import get_current_user
 from supabase import create_client
 import httpx
 import os
@@ -45,13 +47,13 @@ validators = {
 }
 
 @router.post("/api/connect/{platform}")
-async def connect_platform(platform: str, request: Request):
+async def connect_platform(
+    platform: str,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
     body = await request.json()
-    user_id = body.get("user_id")
     credentials = body.get("credentials", {})
-
-    if not user_id:
-        return {"error": "user_id required"}
 
     validator = validators.get(platform)
     if not validator:
@@ -62,7 +64,7 @@ async def connect_platform(platform: str, request: Request):
         return {"error": error or "invalid credentials"}
 
     supabase.table("connected_integrations").insert({
-        "user_id": user_id,
+        "user_id": current_user.id,
         "platform": platform,
         "credentials": credentials,
     }).execute()
