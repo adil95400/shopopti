@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # === CONFIGURATION ===
-REPO_DIR="/Users/admin/shopopti"
+# Use provided REPO_DIR or default to the directory of this script
+REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")" && pwd)}"
 LOG_FILE="$REPO_DIR/codex_sync.log"
 BRANCH=$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD)
 DATE=$(date '+%Y-%m-%d %H:%M:%S')
