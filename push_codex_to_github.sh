@@ -10,10 +10,16 @@ echo "📦 Ajout des fichiers modifiés..."
 git add .
 
 echo "📝 Création du commit : $MESSAGE_COMMIT"
-git commit -m "$MESSAGE_COMMIT"
+if ! git commit -m "$MESSAGE_COMMIT"; then
+  echo "❌ Échec du commit"
+  exit 1
+fi
 
 echo "📤 Push vers GitHub..."
-git push $REMOTE $BRANCHE
+if ! git push $REMOTE $BRANCHE; then
+  echo "❌ Échec du push vers GitHub"
+  exit 1
+fi
 
 echo "✅ Codex → GitHub synchronisé avec succès !"
 

@@ -28,8 +28,12 @@ if git diff --cached --quiet; then
   log "✅ Aucun changement détecté — rien à commit."
 else
   COMMIT_MSG="🔄 Sync automatique Codex → GitHub [$DATE]"
-  git commit -m "$COMMIT_MSG"
-  log "✅ Commit effectué : $COMMIT_MSG"
+  if git commit -m "$COMMIT_MSG"; then
+    log "✅ Commit effectué : $COMMIT_MSG"
+  else
+    log "❌ Commit échoué"
+    exit 1
+  fi
 fi
 
 # === PULL avec gestion de rebase ===
