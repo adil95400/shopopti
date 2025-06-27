@@ -16,11 +16,17 @@ if git diff-index --quiet HEAD --; then
   echo "✅ Aucun changement à committer."
 else
   TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-  git commit -m "🚀 Sync Codex update - $TIMESTAMP"
+  if ! git commit -m "🚀 Sync Codex update - $TIMESTAMP"; then
+    echo "❌ Échec du commit"
+    exit 1
+  fi
   echo "✅ Modifications commit."
 
   git branch -M main
-  git push -u origin main
+  if ! git push -u origin main; then
+    echo "❌ Échec du push vers GitHub"
+    exit 1
+  fi
   echo "📦 Pushed to GitHub ✅"
 fi
 

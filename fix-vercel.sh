@@ -17,8 +17,14 @@ fi
 
 # 3. Ajouter au git et pousser
 git add .
-git commit -m "fix: repositionner les fichiers à la racine pour Vercel"
-git push origin v6.8
+if ! git commit -m "fix: repositionner les fichiers à la racine pour Vercel"; then
+  echo "❌ Échec du commit"
+  exit 1
+fi
+if ! git push origin v6.8; then
+  echo "❌ Échec du push vers GitHub"
+  exit 1
+fi
 
 echo "✅ Push effectué. Tu peux maintenant redeployer sur Vercel."
 
