@@ -3,43 +3,52 @@
 # === CONFIGURATION ===
 REPO_DIR="/Users/admin/shopopti"
 LOG_FILE="$REPO_DIR/codex_sync.log"
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
-COMMIT_MSG="🚀 Sync Codex → GitHub - $TIMESTAMP"
+BRANCH=$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD)
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-cd "$REPO_DIR" || exit
+# === FONCTION DE LOG ===
+log() {
+  echo "[$DATE] $1" >> "$LOG_FILE"
+}
 
-# Détection de la branche active
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
+log "🔄 Début de la synchronisation Codex → Local → GitHub sur la 
+branche $BRANCH"
 
-echo "[$TIMESTAMP] 🔄 Démarrage sync Codex → GitHub (branche : $BRANCH)" 
->> "$LOG_FILE"
+# === SÉCURITÉ : se placer dans le dossier du projet ===
+cd "$REPO_DIR" || {
+  log "❌ Échec : impossible d’accéder au dossier $REPO_DIR"
+  exit 1
+}
 
-# Étape 1 - Ajout des fichiers
-git add . >> "$LOG_FILE" 2>&1
+# === STAGE DES FICHIERS MODIFIÉS ===
+git add .
 
-# Étape 2 - Commit intelligent
+# === SI RIEN À VALIDER ===
 if git diff --cached --quiet; then
-  echo "[$TIMESTAMP] 🟡 Rien à commit." >> "$LOG_FILE"
+  log "✅ Aucun changement détecté — rien à commit."
 else
-  git commit -m "$COMMIT_MSG" >> "$LOG_FILE" 2>&1
-  echo "[$TIMESTAMP] ✅ Commit effectué : $COMMIT_MSG" >> "$LOG_FILE"
+  COMMIT_MSG="🔄 Sync automatique Codex → GitHub [$DATE]"
+  git commit -m "$COMMIT_MSG"
+  log "✅ Commit effectué : $COMMIT_MSG"
 fi
 
-# Étape 3 - Pull rebase
-if git pull origin main --rebase >> "$LOG_FILE" 2>&1; then
-  echo "[$TIMESTAMP] 🔃 Pull avec rebase réussi." >> "$LOG_FILE"
+# === PULL avec gestion de rebase ===
+if git pull origin "$BRANCH" --rebase >> "$LOG_FILE" 2>&1; then
+  log "✅ Pull avec rebase réussi sur $BRANCH"
 else
-  echo "[$TIMESTAMP] ❌ Erreur durant git pull --rebase." >> "$LOG_FILE"
+  log "⚠️ Pull échoué : conflit probable, à résoudre manuellement"
+  exit 1
 fi
 
-# Étape 4 - Push sécurisé
+# === PUSH sécurisé ===
 if git push origin "$BRANCH" >> "$LOG_FILE" 2>&1; then
-  echo "[$TIMESTAMP] ✅ Push réussi vers GitHub (branche $BRANCH)" >> 
-"$LOG_FILE"
+  log "🚀 Push réussi sur GitHub"
 else
-  echo "[$TIMESTAMP] ❌ Push échoué. Branche distante en avance ?" >> 
-"$LOG_FILE"
+  log "❌ Push échoué — vérifier les droits ou les conflits"
+  exit 1
 fi
 
-echo "[$TIMESTAMP] 🎯 Fin de la synchronisation Codex." >> "$LOG_FILE"
+log "✅ Synchronisation terminée avec succès"
+
+exit 0
 
