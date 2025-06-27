@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/button';
@@ -57,6 +58,7 @@ const AuthCallback: React.FC = () => {
         }, 2000);
       } catch (error: any) {
         console.error('Auth callback error:', error);
+        toast.error('Authentication failed');
         setStatus('error');
         setErrorMessage(error.message || 'Authentication failed');
       }

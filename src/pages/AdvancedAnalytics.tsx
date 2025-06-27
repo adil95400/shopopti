@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronDown, Download, BarChart3, Globe, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import PerformanceMetrics from '../components/analytics/PerformanceMetrics';
@@ -29,6 +30,7 @@ const AdvancedAnalytics: React.FC = () => {
       setData(mockData);
     } catch (error) {
       console.error('Error fetching analytics data:', error);
+      toast.error('Failed to load analytics data');
     } finally {
       setLoading(false);
     }

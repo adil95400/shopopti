@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Copy, Check, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
 
@@ -78,6 +79,7 @@ const Webhooks: React.FC = () => {
       setIsAddingWebhook(false);
     } catch (error) {
       console.error('Error adding webhook:', error);
+      toast.error('Failed to add webhook');
     } finally {
       setLoading(false);
     }
@@ -93,6 +95,7 @@ const Webhooks: React.FC = () => {
       setWebhooks(webhooks.filter(webhook => webhook.id !== id));
     } catch (error) {
       console.error('Error deleting webhook:', error);
+      toast.error('Failed to delete webhook');
     } finally {
       setLoading(false);
     }
@@ -110,6 +113,7 @@ const Webhooks: React.FC = () => {
       ));
     } catch (error) {
       console.error('Error toggling webhook:', error);
+      toast.error('Failed to update webhook');
     } finally {
       setLoading(false);
     }
@@ -125,6 +129,7 @@ const Webhooks: React.FC = () => {
       alert('Webhook test successful!');
     } catch (error) {
       console.error('Error testing webhook:', error);
+      toast.error('Webhook test failed');
       alert('Webhook test failed. Please check your URL and try again.');
     } finally {
       setLoading(false);

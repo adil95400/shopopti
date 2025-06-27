@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ Retourne un JSON avec :
     } catch (error) {
       alert("Erreur lors de l'analyse SEO.");
       console.error(error);
+      toast.error("Erreur lors de l'analyse SEO");
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Filter, Calendar, RefreshCw, Plus, Trash2, Settings, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
 
@@ -53,6 +54,7 @@ const CustomReports: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1500));
     } catch (error) {
       console.error('Error refreshing report:', error);
+      toast.error('Failed to refresh report');
     } finally {
       setLoading(false);
     }
