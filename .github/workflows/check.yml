@@ -27,3 +27,9 @@ jobs:
 
       - name: 🏗️ Build app
         run: npm run build
+
+      - name: 🐍 Install Python dependencies
+        run: pip install fastapi supabase httpx stripe
+
+      - name: 📄 Generate OpenAPI schema
+        run: python backend/generate_openapi.py
