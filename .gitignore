@@ -40,3 +40,4 @@ shopify.app.toml
 *.orig
 *.rej
 
+docs/openapi.json
