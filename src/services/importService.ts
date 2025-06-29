@@ -7,50 +7,7 @@ import { supabase } from '../lib/supabase';
 
 import { aiService } from './aiService';
 import { supplierService } from './supplierService';
-
-export interface ProductData {
-  id?: string;
-  title: string;
-  description: string;
-  price: number;
-  images: string[];
-  variants?: ProductVariant[];
-  sku?: string;
-  stock?: number;
-  category?: string;
-  weight?: number;
-  dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-  };
-  metadata?: Record<string, any>;
-  seo?: {
-    title: string;
-    description: string;
-    keywords: string[];
-  };
-  reviews?: ProductReview[];
-}
-
-interface ProductVariant {
-  id?: string;
-  title: string;
-  price: number;
-  sku?: string;
-  stock?: number;
-  options: Record<string, string>;
-}
-
-interface ProductReview {
-  id?: string;
-  rating: number;
-  comment: string;
-  author: string;
-  date: string;
-  verified: boolean;
-  helpful?: number;
-}
+import { ProductData, ProductVariant, ProductReview } from '../types/product';
 
 // Updated list of reliable CORS proxies
 const CORS_PROXIES = [
@@ -132,7 +89,7 @@ export const importService = {
       const config = {
         header: true,
         skipEmptyLines: true,
-        transform: (value) => value.trim(),
+        transform: (value: string) => value.trim(),
         chunk: async (results: any, parser: any) => {
           try {
             const products = await Promise.all(
@@ -421,17 +378,19 @@ export const importService = {
 
       const optimizedDescription = await aiService.generateProductDescription({
         title: optimizedTitle,
-        description,
+        category: 'Amazon',
         features: []
       });
 
-      let finalVariants = variants.length > 0 ? variants : undefined;
+      let finalVariants: ProductVariant[] | undefined =
+        variants.length > 0 ? variants : undefined;
       if (!finalVariants) {
-        finalVariants = await aiService.generateVariants({
+        const generated = await aiService.generateVariants({
           title: optimizedTitle,
           description: optimizedDescription,
           category: 'Amazon'
         });
+        finalVariants = generated.map(v => ({ ...v, price }));
       }
 
       const reviews = $('.review')
@@ -587,13 +546,14 @@ export const importService = {
       // Transformer les produits au format Shopopti+
       const transformedProducts = await Promise.all(
         products.map(async product => {
-          let variants = product.variants;
+          let variants: ProductVariant[] | undefined = product.variants;
           if (!variants || variants.length === 0) {
-            variants = await aiService.generateVariants({
+            const generated = await aiService.generateVariants({
               title: product.name,
               description: product.description,
               category: product.category
             });
+            variants = generated.map(v => ({ ...v, price: product.price }));
           }
           return {
             title: product.name,

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import type { ProductVariant } from '../types/product';
 
 interface ScrapingOptions {
   proxy?: boolean;
@@ -7,12 +8,6 @@ interface ScrapingOptions {
   retries?: number;
 }
 
-interface ProductVariant {
-  title: string;
-  price: string;
-  sku: string;
-  stock: number;
-}
 
 interface ScrapedProduct {
   title: string;
@@ -46,13 +41,18 @@ export const scrapingService = {
       return {
         title: data.product.title,
         description: data.product.body_html,
-        price: data.product.variants[0].price,
+        price: parseFloat(data.product.variants[0].price),
         images: data.product.images.map((img: { src: string }) => img.src),
         variants: data.product.variants.map((variant: any) => ({
           title: variant.title,
-          price: variant.price,
+          price: parseFloat(variant.price),
           sku: variant.sku,
-          stock: variant.inventory_quantity
+          stock: variant.inventory_quantity,
+          options: {
+            ...(variant.option1 ? { option1: variant.option1 } : {}),
+            ...(variant.option2 ? { option2: variant.option2 } : {}),
+            ...(variant.option3 ? { option3: variant.option3 } : {})
+          }
         })),
         metadata: {
           source: 'shopify',
