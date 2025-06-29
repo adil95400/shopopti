@@ -1,24 +1,33 @@
 #!/bin/bash
 
+set -e  # Arrête le script en cas d'erreur
+
 # === CONFIGURATION ===
 REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")" && pwd)}"
 LOG_FILE="$REPO_DIR/codex_sync.log"
 BRANCH=$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD)
 DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-# === LOGGING ===
+# === FONCTION LOG ===
 log() {
   echo "[$DATE] $1" | tee -a "$LOG_FILE"
 }
 
 log "🔄 Début synchronisation Codex → GitHub (branche : $BRANCH)"
 
+# === ACCÈS AU DOSSIER ===
 cd "$REPO_DIR" || {
-  log "❌ Erreur : impossible d'accéder au répertoire $REPO_DIR"
+  log "❌ Erreur : impossible d'accéder à $REPO_DIR"
   exit 1
 }
 
-# === AJOUT & COMMIT AUTOMATIQUE ===
+# === RÉINITIALISATION SI REBASE BLOQUÉ ===
+if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+  log "⚠️ Rebase interrompu détecté — tentative d'abandon..."
+  git rebase --abort || rm -rf .git/rebase-* || true
+fi
+
+# === AJOUT DES FICHIERS ===
 git add .
 
 if git diff --cached --quiet; then
@@ -31,47 +40,48 @@ else
   }
 fi
 
-# === MISE À JOUR AVEC REBASE ===
-if git pull origin "$BRANCH" --rebase; then
-  log "✅ Pull avec rebase réussi"
-else
-  log "⚠️ Conflits détectés, tentative de résolution automatique..."
+# === PULL + REBASE ===
+log "📥 Tentative de pull avec rebase..."
+if ! git pull origin "$BRANCH" --rebase; then
+  log "⚠️ Conflit détecté. Tentative de résolution automatique..."
 
-  # === GESTION AUTOMATIQUE DES CONFLITS FRÉQUENTS ===
-  for FILE in README.md .env.example package.json package-lock.json; do
-    if grep -q "<<<<<<<" "$FILE" 2>/dev/null; then
-      log "⚠️ Conflit détecté dans $FILE — fusion automatique..."
-      
-      # Conserver les deux blocs sans les lignes de conflit
-      awk '
-        BEGIN { conflict = 0 }
-        /^<<<<<<< / { conflict = 1; next }
-        /^=======/ { next }
-        /^>>>>>>> / { conflict = 0; next }
-        conflict == 0 { print }
-      ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
-      
-      git add "$FILE"
-      log "✅ Résolu automatiquement : $FILE"
-    fi
-  done
+  auto_resolve_conflicts() {
+    CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
 
-  # Finaliser le rebase
+    for FILE in $CONFLICT_FILES; do
+      if grep -q "<<<<<<<" "$FILE"; then
+        log "🔧 Résolution automatique : $FILE"
+        awk '
+          BEGIN { conflict = 0 }
+          /^<<<<<<< / { conflict = 1; next }
+          /^=======/ { next }
+          /^>>>>>>> / { conflict = 0; next }
+          conflict == 0 { print }
+        ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+        git add "$FILE"
+      fi
+    done
+  }
+
+  auto_resolve_conflicts
+
   if git rebase --continue; then
     log "✅ Rebase terminé après résolution automatique"
   else
-    log "❌ Rebase bloqué — intervention manuelle requise"
+    log "❌ Rebase bloqué — veuillez résoudre manuellement puis relancer ce script"
     exit 1
   fi
+else
+  log "✅ Pull avec rebase réussi"
 fi
 
 # === PUSH FINAL ===
 if git push origin "$BRANCH"; then
   log "🚀 Push réussi vers GitHub"
 else
-  log "❌ Push échoué — vérifier les droits ou les conflits"
+  log "❌ Push échoué — vérifier les conflits ou les droits d'accès"
   exit 1
 fi
 
-log "✅ Synchronisation complète terminée"
+log "✅ Synchronisation complète terminée avec succès"
 exit 0
