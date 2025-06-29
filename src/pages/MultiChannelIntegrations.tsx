@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingBag } from 'lucide-react';
+import logger from '../lib/logger';
 
 import IntegrationCard from '../components/integrations/IntegrationCard';
 import { Badge } from '../components/ui/badge';
@@ -77,7 +78,7 @@ const MultiChannelIntegrations: React.FC = () => {
   };
 
   const handleConfigure = (id: string) => {
-    console.log(`Configure ${id}`);
+    logger.info(`Configure ${id}`);
   };
 
   return (

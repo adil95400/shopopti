@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Bot, Search, TrendingUp, FileText } from 'lucide-react';
+import logger from '../lib/logger';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
@@ -20,7 +21,7 @@ const AiHub: React.FC = () => {
   };
 
   const handleProductOptimize = (optimizedProduct: any) => {
-    console.log('Optimized product:', optimizedProduct);
+    logger.info('Optimized product:', optimizedProduct);
     // In a real app, you would save the optimized product to your database
     alert('Product optimized successfully!');
   };

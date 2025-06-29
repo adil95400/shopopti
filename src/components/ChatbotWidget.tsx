@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, X, User, Bot, Loader2 } from 'lucide-react';
+import logger from '../lib/logger';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { useChatbot } from "../hooks/useChatbot";
@@ -20,7 +21,7 @@ export default function ChatbotWidget() {
           const audio = new Audio('/sounds/notify.mp3');
           audio.play().catch(() => {});
         } catch (error) {
-          console.log('Audio notification not supported');
+          logger.info('Audio notification not supported');
         }
       }
       prevMessageCount.current = messages.length;

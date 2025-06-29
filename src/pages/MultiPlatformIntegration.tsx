@@ -19,6 +19,7 @@ import CategoryMapping, { CategoryMapping as CategoryMappingType } from '../comp
 import SyncHistory from '../components/integrations/SyncHistory';
 import NotificationSettings, { NotificationSettings as NotificationSettingsType } from '../components/integrations/NotificationSettings';
 import { Button } from '../components/ui/button';
+import logger from '../lib/logger';
 
 
 const MultiPlatformIntegration: React.FC = () => {
@@ -85,7 +86,7 @@ const MultiPlatformIntegration: React.FC = () => {
     setLoading(true);
     try {
       // In a real implementation, you would make an API call to connect the platform
-      console.log(`Connecting to ${platformId} with credentials:`, credentials);
+      logger.info(`Connecting to ${platformId} with credentials:`, credentials);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -108,7 +109,7 @@ const MultiPlatformIntegration: React.FC = () => {
     setLoading(true);
     try {
       // In a real implementation, you would make an API call to disconnect the platform
-      console.log(`Disconnecting from ${platformId}`);
+      logger.info(`Disconnecting from ${platformId}`);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -130,7 +131,7 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleSyncNow = async () => {
     try {
       // In a real implementation, you would make an API call to trigger synchronization
-      console.log('Triggering synchronization');
+      logger.info('Triggering synchronization');
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -145,7 +146,7 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleUpdateSyncSettings = async (settings: SyncSettingsType) => {
     try {
       // In a real implementation, you would make an API call to update sync settings
-      console.log('Updating sync settings:', settings);
+      logger.info('Updating sync settings:', settings);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -160,7 +161,7 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleSaveCategoryMapping = async (mappings: CategoryMappingType[]) => {
     try {
       // In a real implementation, you would make an API call to save category mappings
-      console.log('Saving category mappings:', mappings);
+      logger.info('Saving category mappings:', mappings);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -175,7 +176,7 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleRefreshCategories = async () => {
     try {
       // In a real implementation, you would make an API call to refresh categories
-      console.log('Refreshing categories');
+      logger.info('Refreshing categories');
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -190,7 +191,7 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleRefreshSyncHistory = async () => {
     try {
       // In a real implementation, you would make an API call to refresh sync history
-      console.log('Refreshing sync history');
+      logger.info('Refreshing sync history');
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -205,7 +206,7 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleSaveNotificationSettings = async (settings: NotificationSettingsType) => {
     try {
       // In a real implementation, you would make an API call to save notification settings
-      console.log('Saving notification settings:', settings);
+      logger.info('Saving notification settings:', settings);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));

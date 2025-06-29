@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logger from '../lib/logger';
 import { 
   Globe, 
   ShoppingBag, 
@@ -328,7 +329,7 @@ const GlobalMarketplaces: React.FC = () => {
 
   const handleViewDetails = (marketplaceId: string) => {
     // In a real app, you would navigate to the marketplace details page
-    console.log(`Viewing details for ${marketplaceId}`);
+    logger.info(`Viewing details for ${marketplaceId}`);
   };
 
   return (

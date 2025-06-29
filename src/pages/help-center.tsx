@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, Mail, BookOpen, MessageSquare, FileText, Phone, Video, Search } from 'lucide-react';
+import logger from '../lib/logger';
 
 import { Button } from '@/components/ui/button';
 
@@ -36,7 +37,7 @@ const HelpCenterPage = () => {
       description: "Discutez avec notre équipe support",
       link: "#",
       linkText: "Démarrer une conversation",
-      onClick: () => console.log("Open chat")
+      onClick: () => logger.info("Open chat")
     },
     {
       title: "Email",

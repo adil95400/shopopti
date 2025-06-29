@@ -34,6 +34,7 @@ import XMLImporter from '../components/import/XMLImporter';
 import ImageImporter from '../components/import/ImageImporter';
 import URLImporter from '../components/import/URLImporter';
 import FTPImporter from '../components/import/FTPImporter';
+import logger from '../lib/logger';
 import MarketplaceImporter from '../components/import/MarketplaceImporter';
 import SupplierCatalogImporter from '../components/import/SupplierCatalogImporter';
 import MainNavbar from '../components/layout/MainNavbar';
@@ -173,7 +174,7 @@ const ImportProducts: React.FC = () => {
                       className="border rounded-lg p-4 flex flex-col items-center justify-center hover:border-primary hover:shadow-md cursor-pointer transition-all"
                       onClick={() => {
                         // In a real app, this would open a connection flow
-                        console.log(`Connecting to ${marketplace.name}...`);
+                        logger.info(`Connecting to ${marketplace.name}...`);
                         
                         // For now, we'll simulate connecting to Shopify
                         if (marketplace.id === 'shopify') {
@@ -776,7 +777,7 @@ const ImportProducts: React.FC = () => {
                         className="border rounded-lg p-4 flex flex-col items-center justify-center hover:border-primary hover:shadow-md cursor-pointer transition-all"
                         onClick={() => {
                           // In a real app, this would open a connection flow
-                          console.log(`Connecting to ${marketplace.name}...`);
+                          logger.info(`Connecting to ${marketplace.name}...`);
                           
                           // For now, we'll simulate connecting to Shopify
                           if (marketplace.id === 'shopify') {

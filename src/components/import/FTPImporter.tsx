@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Server } from 'lucide-react';
+import logger from '../../lib/logger';
 
 interface FTPImporterProps {
   marketplace?: string;
@@ -63,7 +64,7 @@ const FTPImporter: React.FC<FTPImporterProps> = () => {
         className="px-4 py-2 bg-primary-400 text-white rounded-lg hover:bg-primary-500 transition-colors"
         onClick={() => {
           // Handle FTP connection
-          console.log(ftpDetails);
+          logger.info(ftpDetails);
         }}
       >
         Connecter

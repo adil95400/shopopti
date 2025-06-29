@@ -3,6 +3,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { FileText, Download, Filter, Calendar, RefreshCw, Plus, Trash2, Settings, Loader2 } from 'lucide-react';
 
 import { Button } from '../components/ui/button';
+import logger from '../lib/logger';
 
 const CustomReports: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@ const CustomReports: React.FC = () => {
   
   const handleExport = (format: 'pdf' | 'csv' | 'excel') => {
     // In a real app, you would generate and download the report
-    console.log(`Exporting ${activeReport} report as ${format}`);
+    logger.info(`Exporting ${activeReport} report as ${format}`);
     
     // Simulate download
     setTimeout(() => {

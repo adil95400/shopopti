@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import logger from '../../lib/logger';
 
 export interface StockAlert {
   id?: string;
@@ -215,7 +216,7 @@ export const inventoryService = {
   async createReorder(productId: string, quantity: number): Promise<void> {
     try {
       // In a real app, this would create a reorder in your system
-      console.log(`Auto-reordering ${quantity} units of product ${productId}`);
+      logger.info(`Auto-reordering ${quantity} units of product ${productId}`);
       
       // For now, we'll just log it
       const { error } = await supabase
