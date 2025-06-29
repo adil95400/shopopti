@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   BarChart3,
   Share2,
+  Layers,
   Settings,
   Code,
   Webhook,
@@ -72,6 +73,7 @@ const sections = [
       { path: '/app/advanced-suppliers', label: 'Fournisseurs avanc\u00e9s', icon: <Building size={18} /> },
       { path: '/app/winning-products', label: 'Winning Products', icon: <Zap size={18} /> },
       { path: '/app/multi-channel', label: 'Multi-Channel', icon: <Share2 size={18} /> },
+      { path: '/app/multi-channel-integrations', label: 'Int\u00e9grations Multi-Channel', icon: <Share2 size={18} /> },
       { path: '/app/global-marketplaces', label: 'Global Marketplaces', icon: <Globe size={18} /> },
       { path: '/app/international-selling', label: 'International Selling', icon: <Languages size={18} /> },
       { path: '/marketplace-b2b', label: 'Marketplace B2B', icon: <Globe size={18} /> }
@@ -91,6 +93,7 @@ const sections = [
     title: 'Int\u00e9grations',
     links: [
       { path: '/app/integrations', label: 'Int\u00e9grations', icon: <Code size={18} /> },
+      { path: '/app/multi-platform-integration', label: 'Int\u00e9gration Multi-Plateforme', icon: <Layers size={18} /> },
       { path: '/app/webhooks', label: 'Webhooks', icon: <Webhook size={18} /> }
     ]
   },
