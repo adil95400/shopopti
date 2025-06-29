@@ -7,6 +7,9 @@ import importPlugin from 'eslint-plugin-import';
 import prettier from 'eslint-config-prettier';
 
 export default [
+  {
+    ignores: ['.eslintrc.js', 'src/services/__tests__/**'],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -17,7 +20,6 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-        project: './tsconfig.json',
       },
       globals: {
         window: 'readonly',
