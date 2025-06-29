@@ -3,7 +3,7 @@ import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight
 import { Navigate } from 'react-router-dom';
 
 import { supabase } from '../../lib/supabase';
-import { useRole } from '../../context/RoleContext';
+import { useRole } from '../../contexts/RoleContext';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 

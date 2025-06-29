@@ -3,7 +3,7 @@ import { BarChart3, TrendingUp, DollarSign, Users, Calendar, Download, ArrowUpRi
 import { Navigate } from 'react-router-dom';
 
 import { supabase } from '../../lib/supabase';
-import { useRole } from '../../context/RoleContext';
+import { useRole } from '../../contexts/RoleContext';
 import { Button } from '../../components/ui/button';
 
 
