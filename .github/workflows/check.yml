@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: 📦 Install dependencies
+      - name: 📦 Install Node.js dependencies
         run: npm ci
 
       - name: 🔍 Lint code
@@ -28,7 +28,6 @@ jobs:
       - name: 🏗️ Build app
         run: npm run build
 
-<<<<<<< HEAD
       - name: 🐍 Install Python dependencies
         run: |
           pip install -r requirements.txt
@@ -36,16 +35,6 @@ jobs:
 
       - name: 📄 Generate OpenAPI schema
         run: python backend/generate_openapi.py
-<<<<<<< HEAD
-=======
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
-
-      - name: Generate API docs
-        run: npm run docs:api
->>>>>>> codex/créer-requirements.txt-et-ajouter-étape-d-installation
-=======
 
       - name: 📘 Generate API docs
         run: npm run docs:api
->>>>>>> c8e81eb3 (✅ Fusion manuelle résolue dans check.yml (Codex + main))
