@@ -30,10 +30,13 @@ jobs:
 
 <<<<<<< HEAD
       - name: 🐍 Install Python dependencies
-        run: pip install fastapi supabase httpx stripe
+        run: |
+          pip install -r requirements.txt
+          pip install fastapi supabase httpx stripe
 
       - name: 📄 Generate OpenAPI schema
         run: python backend/generate_openapi.py
+<<<<<<< HEAD
 =======
       - name: Install Python dependencies
         run: pip install -r requirements.txt
@@ -41,3 +44,8 @@ jobs:
       - name: Generate API docs
         run: npm run docs:api
 >>>>>>> codex/créer-requirements.txt-et-ajouter-étape-d-installation
+=======
+
+      - name: 📘 Generate API docs
+        run: npm run docs:api
+>>>>>>> c8e81eb3 (✅ Fusion manuelle résolue dans check.yml (Codex + main))
