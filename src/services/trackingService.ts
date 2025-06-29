@@ -112,17 +112,17 @@ export const trackingService = {
       }
       
       // Process and transform the 17track response to our format
-      return this.process17TrackResponse(response.data, trackingNumber);
+      return await this.process17TrackResponse(response.data, trackingNumber);
     } catch (error: any) {
       console.error('Error calling 17Track API:', error);
       throw new Error(error.message || 'Error tracking package');
     }
   },
   
-  process17TrackResponse(data: any, trackingNumber: string): TrackingResult {
+  async process17TrackResponse(data: any, trackingNumber: string): Promise<TrackingResult> {
     // This would need to be implemented based on the actual API response structure
     // For now, we'll just return a mock response
-    return this.simulateApiCall(trackingNumber);
+    return await this.simulateApiCall(trackingNumber);
   },
 
   detectCarrier(trackingNumber: string): string {
