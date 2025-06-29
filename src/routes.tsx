@@ -7,6 +7,7 @@ import { UserProvider } from './contexts/UserContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { RoleProvider } from './context/RoleContext';
+import { WorkspaceProvider } from './contexts/WorkspaceContext';
 
 // Layouts
 import Layout from './components/layout/Layout';
@@ -62,6 +63,7 @@ import Analytics from './pages/Analytics';
 import Reviews from './pages/Reviews';
 import Suppliers from './pages/Suppliers';
 import Settings from './pages/Settings';
+import WorkspaceSettings from './pages/WorkspaceSettings';
 import Support from './pages/Support';
 import Contact from './pages/Contact';
 import Subscription from './pages/Account/Subscription';
@@ -89,8 +91,9 @@ const AppRoutes = () => {
         <CurrencyProvider>
           <UserProvider>
             <RoleProvider>
-              <ShopProvider>
-              <SubscriptionBanner />
+              <WorkspaceProvider>
+                <ShopProvider>
+                  <SubscriptionBanner />
               <Routes>
                 {/* Public pages */}
                 <Route path="/" element={<Home />} />
@@ -132,6 +135,7 @@ const AppRoutes = () => {
                   <Route path="reviews" element={<Reviews />} />
                   <Route path="suppliers" element={<Suppliers />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="workspace-settings" element={<WorkspaceSettings />} />
                   <Route path="support" element={<Support />} />
                   <Route path="contact" element={<Contact />} />
                   <Route path="subscription" element={<Subscription />} />
@@ -183,6 +187,7 @@ const AppRoutes = () => {
               
               <ChatbotWidget />
             </ShopProvider>
+          </WorkspaceProvider>
           </RoleProvider>
         </UserProvider>
         </CurrencyProvider>
