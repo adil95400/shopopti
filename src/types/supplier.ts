@@ -11,6 +11,8 @@ export interface ExternalSupplier {
   user_id: string;
 }
 
+import type { ProductVariant } from './product';
+
 export interface SupplierProduct {
   id: string;
   externalId: string;
@@ -37,18 +39,6 @@ export interface SupplierProduct {
   metadata?: Record<string, any>;
 }
 
-export interface ProductVariant {
-  id: string;
-  name: string;
-  sku?: string;
-  price: number;
-  stock: number;
-  attributes: {
-    name: string;
-    value: string;
-  }[];
-  image?: string;
-}
 
 export interface SupplierCategory {
   id: string;
