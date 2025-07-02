@@ -4,6 +4,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 import { supabase } from '@/lib/supabase';
+import { computeMargin } from '@/lib/margin';
 
 import { aiService } from './aiService';
 import { supplierService } from './supplierService';
@@ -117,10 +118,13 @@ export const importService = {
                   });
                 }
 
+                const price = parseFloat(row.price);
+                const msrp = row.msrp ? parseFloat(row.msrp) : undefined;
+                const margin = computeMargin(msrp, price);
                 return {
                   title: optimizedTitle,
                   description: optimizedDescription,
-                  price: parseFloat(row.price),
+                  price,
                   images: (row.images || '').split(',').filter(Boolean),
                   sku: row.sku,
                   stock: parseInt(row.stock, 10) || 0,
@@ -128,7 +132,9 @@ export const importService = {
                   variants,
                   metadata: {
                     source: 'csv',
-                    importDate: new Date().toISOString()
+                    importDate: new Date().toISOString(),
+                    msrp,
+                    margin
                   }
                 };
               })
@@ -427,7 +433,8 @@ export const importService = {
         metadata: {
           source: 'amazon',
           sourceUrl: url,
-          importDate: new Date().toISOString()
+          importDate: new Date().toISOString(),
+          margin: computeMargin(undefined, price)
         },
         reviews: reviews.length > 0 ? reviews : undefined
       };
@@ -520,8 +527,10 @@ export const importService = {
               category: product.category || ''
             });
 
+            const margin = computeMargin(product.metadata?.msrp, product.price);
             return {
               ...product,
+              metadata: { ...product.metadata, margin },
               seo: seoData
             };
           })
@@ -559,6 +568,7 @@ export const importService = {
               });
               variants = generated.map(v => ({ ...v, price: product.price }));
             }
+          const margin = computeMargin(product.msrp, product.price);
           return {
             title: product.name,
             description: product.description,
@@ -571,7 +581,9 @@ export const importService = {
             metadata: {
               source: supplier.type,
               sourceId: product.id,
-              importDate: new Date().toISOString()
+              importDate: new Date().toISOString(),
+              msrp: product.msrp,
+              margin
             }
           };
         })

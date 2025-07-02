@@ -74,6 +74,11 @@ const Products = () => {
             <h3 className="text-lg font-bold">{p.title}</h3>
             <p className="text-sm text-gray-600 mb-2">{p.description}</p>
             <p className="font-semibold text-blue-700 mb-1">{p.price} €</p>
+            {p.metadata?.margin !== undefined && (
+              <p className="text-sm text-green-600 mb-1">
+                Margin: {(p.metadata.margin * 100).toFixed(0)}%
+              </p>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => navigate(`/product/${p.id}`)}
