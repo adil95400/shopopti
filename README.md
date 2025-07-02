@@ -39,6 +39,15 @@ Ajoutez les variables suivantes à votre fichier `.env` selon les services utili
 
 * `ZAPIER_WEBHOOK_URL` *(optionnel)* – URL de base pour les hooks Zapier.
 
+### 📡 Routes API AutoDS
+
+Ces routes simulées permettent d'interagir avec le fournisseur AutoDS via les fonctions Supabase :
+
+* `POST /functions/v1/providers/autods` – récupérer des produits
+* `POST /functions/v1/providers/autods/categories` – lister les catégories
+* `POST /functions/v1/providers/autods/orders` – créer une commande
+* `GET  /functions/v1/providers/autods/orders/{id}` – vérifier le statut d'une commande
+
 2. 🚀 Déployer sur Vercel :
 
 ```bash

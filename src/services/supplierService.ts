@@ -207,7 +207,11 @@ export const supplierService = {
       const supplier = await this.getSupplierById(supplierId);
       
       // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/${supplier.type}/categories`;
+      if (supplier.type !== 'autods') {
+        throw new Error('Categories not supported for this supplier');
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/categories`;
       
       const response = await axios.post(apiUrl, {
         supplierId,
@@ -283,7 +287,11 @@ export const supplierService = {
       const supplier = await this.getSupplierById(supplierId);
       
       // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/${supplier.type}/orders`;
+      if (supplier.type !== 'autods') {
+        throw new Error('Order creation not supported for this supplier');
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/orders`;
       
       const response = await axios.post(apiUrl, {
         supplierId,
@@ -315,7 +323,11 @@ export const supplierService = {
       const supplier = await this.getSupplierById(supplierId);
       
       // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/${supplier.type}/orders/${externalOrderId}`;
+      if (supplier.type !== 'autods') {
+        throw new Error('Order status not supported for this supplier');
+      }
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/orders/${externalOrderId}`;
       
       const response = await axios.get(apiUrl, {
         headers: {
