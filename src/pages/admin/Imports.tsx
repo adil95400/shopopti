@@ -48,6 +48,9 @@ const Imports: React.FC = () => {
     maxPrice: undefined,
     minStock: undefined,
     category: undefined,
+    shippingLocation: '',
+    priceMarkupType: 'percentage',
+    priceMarkupValue: undefined,
     page: 1,
     limit: 20
   });
@@ -243,7 +246,7 @@ const Imports: React.FC = () => {
         .map(p => p.externalId);
       
       // Import from supplier
-      const result = await supplierService.importProducts(selectedSupplier.id, productIds);
+      const result = await supplierService.importProducts(selectedSupplier.id, productIds, filters);
       
       if (result.success) {
         toast.success(`Successfully imported ${result.importedCount} products from ${selectedSupplier.name}`);
@@ -394,23 +397,45 @@ const Imports: React.FC = () => {
                         onChange={(e) => handleFilterChange('search', e.target.value)}
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <select
-                        className="px-3 py-2 border border-gray-300 rounded-md"
-                        value={filters.category || ''}
-                        onChange={(e) => handleFilterChange('category', e.target.value)}
-                      >
-                        <option value="">All Categories</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="fashion">Fashion</option>
-                        <option value="home">Home & Garden</option>
-                        <option value="beauty">Beauty & Health</option>
-                      </select>
-                      <Button type="submit">
-                        <Search className="h-4 w-4 mr-2" />
-                        Search
-                      </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <select
+                      className="px-3 py-2 border border-gray-300 rounded-md"
+                      value={filters.category || ''}
+                      onChange={(e) => handleFilterChange('category', e.target.value)}
+                    >
+                      <option value="">All Categories</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="fashion">Fashion</option>
+                      <option value="home">Home & Garden</option>
+                      <option value="beauty">Beauty & Health</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Ship to..."
+                      className="px-3 py-2 border border-gray-300 rounded-md"
+                      value={filters.shippingLocation || ''}
+                      onChange={(e) => handleFilterChange('shippingLocation', e.target.value)}
+                    />
+                    <select
+                      className="px-3 py-2 border border-gray-300 rounded-md"
+                      value={filters.priceMarkupType || 'percentage'}
+                      onChange={(e) => handleFilterChange('priceMarkupType', e.target.value)}
+                    >
+                      <option value="percentage">% Markup</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="Markup"
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md"
+                      value={filters.priceMarkupValue ?? ''}
+                      onChange={(e) => handleFilterChange('priceMarkupValue', Number(e.target.value))}
+                    />
+                    <Button type="submit">
+                      <Search className="h-4 w-4 mr-2" />
+                      Search
+                    </Button>
+                  </div>
                   </form>
                   
                   <div className="flex justify-between items-center mb-4">

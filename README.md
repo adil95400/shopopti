@@ -32,6 +32,17 @@ Dans les environnements CI, utilisez `vitest --run` pour éviter le mode watch 
 npm run test -- --run
 ```
 
+### Supplier Imports
+
+The import screen now supports advanced filters inspired by Spocket and AutoDS.
+When fetching or importing products you can specify:
+
+- **shippingLocation** – preferred destination used to filter suppliers.
+- **priceMarkupType** and **priceMarkupValue** – automatically adjust product prices during import.
+
+Imported items keep price and stock in sync with their supplier, so any change
+is propagated automatically after import.
+
 ---
 
 ### 🚀 Étapes suivantes

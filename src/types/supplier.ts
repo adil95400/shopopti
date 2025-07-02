@@ -54,6 +54,9 @@ export interface ImportFilter {
   maxPrice?: number;
   minStock?: number;
   search?: string;
+  shippingLocation?: string;
+  priceMarkupType?: 'percentage' | 'fixed';
+  priceMarkupValue?: number;
   page?: number;
   limit?: number;
 }
