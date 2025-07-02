@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, DollarSign, Users, Calendar, Download, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-import { supabase } from '../../lib/supabase';
 import { useRole } from '../../context/RoleContext';
+import { useAnalytics } from '../../hooks/useAnalytics';
 import { Button } from '../../components/ui/button';
 
 
 const AdminAnalytics: React.FC = () => {
   const { isAdmin, loading: roleLoading } = useRole();
-  const [loading, setLoading] = useState(true);
+  const { sales, loading: analyticsLoading, refresh } = useAnalytics();
   const [period, setPeriod] = useState('30days');
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -25,37 +25,20 @@ const AdminAnalytics: React.FC = () => {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchAnalyticsData();
+      refresh();
     }
   }, [isAdmin, period]);
 
-  const fetchAnalyticsData = async () => {
-    try {
-      setLoading(true);
-      
-      // In a real app, you would fetch this data from your database
-      // For now, we'll use mock data
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStats({
-        totalUsers: 1234,
-        activeUsers: 789,
-        newUsers: 123,
-        revenue: 45678,
-        revenueGrowth: 8.3,
-        orders: 789,
-        ordersGrowth: 5.7,
-        averageOrderValue: 57.89,
-        conversionRate: 3.2
-      });
-    } catch (error) {
-      console.error('Error fetching analytics data:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (sales.length) {
+      const revenue = sales.reduce((acc, s) => acc + s.revenue, 0);
+      const orders = sales.reduce((acc, s) => acc + s.orders, 0);
+      setStats(prev => ({ ...prev, revenue, orders }));
     }
-  };
+  }, [sales]);
+
+  const loading = analyticsLoading || roleLoading;
+
 
   if (roleLoading) {
     return <div className="flex justify-center p-8">Chargement...</div>;
