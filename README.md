@@ -24,19 +24,6 @@ Avant d'exécuter les commandes de build ou de lint, installez d'abord les dépe
 npm ci  # ou npm install
 ```
 
-### 🧪 Tests
-
-Dans les environnements CI, utilisez `vitest --run` pour éviter le mode watch :
-
-```bash
-npm run test -- --run
-```
-
----
-
-### 🚀 Étapes suivantes
-
-1. 🏷️ Créer un tag Git :
 ```bash
 git tag v6.8-final
 git push origin v6.8-final
