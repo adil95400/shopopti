@@ -3,7 +3,7 @@ import { ProductVariant } from './product';
 export interface ExternalSupplier {
   id: string;
   name: string;
-  type: 'bigbuy' | 'eprolo' | 'cdiscount' | 'autods';
+  type: 'bigbuy' | 'eprolo' | 'cdiscount' | 'autods' | 'spocket';
   apiKey: string;
   apiSecret?: string;
   baseUrl: string;

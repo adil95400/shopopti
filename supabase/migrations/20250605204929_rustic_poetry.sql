@@ -26,7 +26,7 @@
 CREATE TABLE IF NOT EXISTS external_suppliers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
-  type text NOT NULL CHECK (type IN ('bigbuy', 'eprolo', 'cdiscount', 'autods')),
+  type text NOT NULL CHECK (type IN ('bigbuy', 'eprolo', 'cdiscount', 'autods', 'spocket')),
   api_key text NOT NULL,
   api_secret text,
   base_url text NOT NULL,

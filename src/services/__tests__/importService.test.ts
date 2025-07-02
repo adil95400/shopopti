@@ -55,6 +55,6 @@ it('calls generateVariants when supplier products lack variants', async () => {
   const result = await importService.importFromSupplier('sup', ['1'])
 
   expect(generateVariantsMock).toHaveBeenCalled()
-  expect(result[0].variants).toEqual([{ title: 'v1', options: { color: 'red' } }])
+  expect(result[0].variants).toEqual([{ title: 'v1', options: { color: 'red' }, price: 5 }])
   expect(insertMock).toHaveBeenCalled()
 })
