@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  RefreshCw, 
-  Loader2, 
-  CheckCircle, 
-  AlertTriangle, 
-  Download, 
-  Upload, 
-  Settings, 
-  Trash2, 
-  Edit, 
-  ShoppingBag, 
-  ArrowRight, 
-  X 
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  Download,
+  Upload,
+  Settings,
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  X,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/lib/supabase';
 import { supplierService } from '@/services/supplierService';
-import { ExternalSupplier, SupplierProduct, ImportFilter } from '@/types/supplier';
+import {
+  ExternalSupplier,
+  SupplierProduct,
+  ImportFilter,
+  SupplierCategory
+} from '@/types/supplier';
 import { Button } from '@/components/ui/button';
 
 
@@ -29,6 +33,7 @@ const Imports: React.FC = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<ExternalSupplier | null>(null);
   const [products, setProducts] = useState<SupplierProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [categories, setCategories] = useState<SupplierCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -99,11 +104,28 @@ const Imports: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    if (!selectedSupplier) return;
+    try {
+      const fetchedCategories = await supplierService.getCategories(selectedSupplier.id);
+      setCategories(fetchedCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedSupplier) {
+      fetchCategories();
+      fetchProducts();
+    }
+  }, [selectedSupplier]);
+
   useEffect(() => {
     if (selectedSupplier) {
       fetchProducts();
     }
-  }, [selectedSupplier, filters]);
+  }, [filters]);
 
   const handleAddSupplier = async () => {
     try {
@@ -298,62 +320,91 @@ const Imports: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Supplier sidebar */}
           <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h2 className="text-lg font-medium mb-4">Suppliers</h2>
-              
-              {suppliers.length === 0 ? (
-                <div className="text-center py-8">
-                  <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">No suppliers yet</h3>
-                  <p className="text-gray-500 mb-4">
-                    Add your first supplier to start importing products
-                  </p>
-                  <Button onClick={() => setShowAddSupplier(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Supplier
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {suppliers.map((supplier) => (
-                    <div
-                      key={supplier.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedSupplier?.id === supplier.id
-                          ? 'border-primary bg-primary-50'
-                          : 'border-gray-200 hover:border-primary-200'
-                      }`}
-                      onClick={() => setSelectedSupplier(supplier)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">{supplier.name}</h3>
-                          <div className="flex items-center mt-1">
-                            <span className="text-xs text-gray-500 capitalize">{supplier.type}</span>
-                            <span className="mx-2 text-gray-300">•</span>
-                            <span className={`text-xs ${
-                              supplier.status === 'active' ? 'text-green-600' :
-                              supplier.status === 'error' ? 'text-red-600' :
-                              'text-gray-500'
-                            }`}>
-                              {supplier.status}
-                            </span>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
+              <div>
+                <h2 className="text-lg font-medium mb-4">Suppliers</h2>
+
+                {suppliers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">No suppliers yet</h3>
+                    <p className="text-gray-500 mb-4">
+                      Add your first supplier to start importing products
+                    </p>
+                    <Button onClick={() => setShowAddSupplier(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Supplier
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {suppliers.map((supplier) => (
+                      <div
+                        key={supplier.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedSupplier?.id === supplier.id
+                            ? 'border-primary bg-primary-50'
+                            : 'border-gray-200 hover:border-primary-200'
+                        }`}
+                        onClick={() => setSelectedSupplier(supplier)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-medium">{supplier.name}</h3>
+                            <div className="flex items-center mt-1">
+                              <span className="text-xs text-gray-500 capitalize">{supplier.type}</span>
+                              <span className="mx-2 text-gray-300">•</span>
+                              <span className={`text-xs ${
+                                supplier.status === 'active' ? 'text-green-600' :
+                                supplier.status === 'error' ? 'text-red-600' :
+                                'text-gray-500'
+                              }`}>
+                                {supplier.status}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSupplier(supplier.id);
+                              }}
+                              className="text-gray-400 hover:text-red-600 p-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteSupplier(supplier.id);
-                            }}
-                            className="text-gray-400 hover:text-red-600 p-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {selectedSupplier && (
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Categories</h3>
+                  {categories.length === 0 ? (
+                    <p className="text-sm text-gray-500">No categories available</p>
+                  ) : (
+                    <ul className="space-y-2 max-h-72 overflow-y-auto">
+                      <li
+                        className={`cursor-pointer text-sm ${!filters.category ? 'text-primary font-medium' : 'text-gray-700'}`}
+                        onClick={() => handleFilterChange('category', undefined)}
+                      >
+                        All Products
+                      </li>
+                      {categories.map((cat) => (
+                        <li
+                          key={cat.id}
+                          className={`cursor-pointer text-sm ${filters.category === cat.externalId ? 'text-primary font-medium' : 'text-gray-700'}`}
+                          onClick={() => handleFilterChange('category', cat.externalId)}
+                        >
+                          {cat.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </div>
@@ -386,35 +437,41 @@ const Imports: React.FC = () => {
                     </div>
                   </div>
                   
-                  <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
-                        value={filters.search || ''}
-                        onChange={(e) => handleFilterChange('search', e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <select
-                        className="px-3 py-2 border border-gray-300 rounded-md"
-                        value={filters.category || ''}
-                        onChange={(e) => handleFilterChange('category', e.target.value)}
-                      >
-                        <option value="">All Categories</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="fashion">Fashion</option>
-                        <option value="home">Home & Garden</option>
-                        <option value="beauty">Beauty & Health</option>
-                      </select>
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+                    <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search products..."
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
+                          value={filters.search || ''}
+                          onChange={(e) => handleFilterChange('search', e.target.value)}
+                        />
+                      </div>
                       <Button type="submit">
                         <Search className="h-4 w-4 mr-2" />
                         Search
                       </Button>
+                    </form>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleFilterChange('page', Math.max(1, (filters.page || 1) - 1))}
+                        disabled={(filters.page || 1) <= 1}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleFilterChange('page', (filters.page || 1) + 1)}
+                      >
+                        Next
+                      </Button>
                     </div>
-                  </form>
+                  </div>
                   
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
@@ -499,12 +556,17 @@ const Imports: React.FC = () => {
                               </div>
                             )}
                             <div className="absolute top-2 right-2">
-                              <input
-                                type="checkbox"
-                                checked={selectedProducts.includes(product.id)}
-                                onChange={() => handleProductSelect(product.id)}
-                                className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
-                              />
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                onClick={() => handleProductSelect(product.id)}
+                              >
+                                {selectedProducts.includes(product.id) ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <Plus className="h-4 w-4" />
+                                )}
+                              </Button>
                             </div>
                           </div>
                           
