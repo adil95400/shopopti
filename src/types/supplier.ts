@@ -1,3 +1,5 @@
+import { ProductVariant } from './product';
+
 export interface ExternalSupplier {
   id: string;
   name: string;
@@ -35,19 +37,6 @@ export interface SupplierProduct {
   shipping_time?: string;
   processing_time?: string;
   metadata?: Record<string, any>;
-}
-
-export interface ProductVariant {
-  id: string;
-  name: string;
-  sku?: string;
-  price: number;
-  stock: number;
-  attributes: {
-    name: string;
-    value: string;
-  }[];
-  image?: string;
 }
 
 export interface SupplierCategory {
