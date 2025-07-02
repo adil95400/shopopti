@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, TrendingUp, DollarSign, Star, ShoppingBag, Truck, Tag, ArrowUpRight } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface Product {
   id: string;

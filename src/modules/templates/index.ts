@@ -1,5 +1,5 @@
-import { supabase } from '../../lib/supabase';
-import { aiService } from '../ai';
+import { supabase } from '@/lib/supabase';
+import { aiService } from '@/modules/ai';
 
 export interface Template {
   id?: string;

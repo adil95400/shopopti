@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Code, Key, Lock, Save, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface ApiIntegrationProps {
   onSave?: (credentials: ApiCredentials) => Promise<void>;

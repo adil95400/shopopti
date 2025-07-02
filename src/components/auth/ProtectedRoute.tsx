@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface ProtectedRouteProps {
   children: ReactNode;

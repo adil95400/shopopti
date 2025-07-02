@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import MfaSettings from '../components/auth/MfaSettings';
-import { availableLanguages, useLanguage } from '../contexts/LanguageContext';
-import { availableCurrencies, useCurrency } from '../contexts/CurrencyContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import MfaSettings from '@/components/auth/MfaSettings';
+import { availableLanguages, useLanguage } from '@/contexts/LanguageContext';
+import { availableCurrencies, useCurrency } from '@/contexts/CurrencyContext';
 
 const Settings = () => {
   const { currentLanguage, setLanguage } = useLanguage();

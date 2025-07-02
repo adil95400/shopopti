@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import { useShop } from '../contexts/ShopContext';
+import { useShop } from '@/contexts/ShopContext';
 
 // Mock order data
 const mockOrders = [

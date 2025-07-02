@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
-import { supabase } from '../../lib/supabase';
-import { Button } from '../../components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
 
 const AuthCallback: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');

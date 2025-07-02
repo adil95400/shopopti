@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, DollarSign, Users, Calendar, Download, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-import { supabase } from '../../lib/supabase';
-import { useRole } from '../../context/RoleContext';
-import { Button } from '../../components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { useRole } from '@/context/RoleContext';
+import { Button } from '@/components/ui/button';
 
 
 const AdminAnalytics: React.FC = () => {

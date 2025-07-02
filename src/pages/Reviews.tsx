@@ -2,7 +2,7 @@ import React from 'react';
 import { MessageSquare, Search, Filter, SlidersHorizontal, Star, ThumbsUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import { useShop } from '../contexts/ShopContext';
+import { useShop } from '@/contexts/ShopContext';
 
 // Mock reviews data
 const mockReviews = [

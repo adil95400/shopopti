@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { supabase } from '../lib/supabase';
-import { aiService } from '../services/aiService';
+import { supabase } from '@/lib/supabase';
+import { aiService } from '@/services/aiService';
 
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);

@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-import { supabase } from '../../lib/supabase';
-import { useRole } from '../../context/RoleContext';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useRole } from '@/context/RoleContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 const AdminDashboard: React.FC = () => {

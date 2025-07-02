@@ -2,9 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
 
-import LoginForm from '../components/auth/LoginForm';
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
+import LoginForm from '@/components/auth/LoginForm';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
 
 const LoginPage: React.FC = () => {
   return (

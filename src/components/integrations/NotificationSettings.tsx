@@ -10,7 +10,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface NotificationSettingsProps {
   onSaveSettings: (settings: NotificationSettings) => Promise<void>;

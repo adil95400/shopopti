@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 
-import Logo from '../components/layout/Logo';
-import { supabase } from '../lib/supabase';
-import { Input } from '../components/ui/input';
-import { Button } from '../components/ui/button';
-import MainNavbar from '../components/layout/MainNavbar';
-import RegisterForm from '../components/auth/RegisterForm';
-import Footer from '../components/layout/Footer';
+import Logo from '@/components/layout/Logo';
+import { supabase } from '@/lib/supabase';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import MainNavbar from '@/components/layout/MainNavbar';
+import RegisterForm from '@/components/auth/RegisterForm';
+import Footer from '@/components/layout/Footer';
 
 const Register: React.FC = () => {
   return (

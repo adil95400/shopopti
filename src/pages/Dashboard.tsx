@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, ShoppingBag, TrendingUp, Users, ArrowUpRight, ArrowDownRight, Package, Calendar, Bell, Settings, FileText, Bot, Database, Code, Layers, Webhook } from 'lucide-react';
 
-import { supabase } from '../lib/supabase';
-import SubscriptionOverview from '../components/dashboard/SubscriptionOverview';
-import TrackingWidget from '../components/tracking/TrackingWidget';
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
-import { Button } from '../components/ui/button';
+import { supabase } from '@/lib/supabase';
+import SubscriptionOverview from '@/components/dashboard/SubscriptionOverview';
+import TrackingWidget from '@/components/tracking/TrackingWidget';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
+import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({

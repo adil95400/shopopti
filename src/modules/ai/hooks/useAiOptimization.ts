@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { aiService } from '../../../services/aiService';
+import { aiService } from '@/services/aiService';
 
 export interface OptimizationOptions {
   title?: boolean;

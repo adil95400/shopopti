@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { askChatGPT } from "../lib/openai";
+import { askChatGPT } from "@/lib/openai";
 
 export function useChatbot() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);

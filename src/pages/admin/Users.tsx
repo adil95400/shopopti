@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Users as UsersIcon, Search, Filter, Edit, Trash, UserPlus, CheckCircle, XCircle } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-import { supabase } from '../../lib/supabase';
-import { useRole } from '../../context/RoleContext';
-import { Button } from '../../components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { useRole } from '@/context/RoleContext';
+import { Button } from '@/components/ui/button';
 
 
 interface User {

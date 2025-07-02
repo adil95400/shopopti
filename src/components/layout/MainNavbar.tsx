@@ -24,9 +24,9 @@ import {
   X
 } from 'lucide-react';
 
-import { Button } from '../ui/button';
-import LoginModal from '../auth/LoginModal';
-import { supabase } from '../../lib/supabase';
+import { Button } from '@/components/ui/button';
+import LoginModal from '@/components/auth/LoginModal';
+import { supabase } from '@/lib/supabase';
 
 import Logo from './Logo';
 

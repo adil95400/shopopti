@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { trackingService } from '../../services/trackingService';
+import { trackingService } from '@/services/trackingService';
 
 import PackageStatusBadge from './PackageStatusBadge';
 

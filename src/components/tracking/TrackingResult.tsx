@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Printer, Phone } from 'lucide-react';
 
-import { TrackingResult as TrackingResultType } from '../../services/trackingService';
+import { TrackingResult as TrackingResultType } from '@/services/trackingService';
 
 import TrackingHistory from './TrackingHistory';
 import PackageStatusBadge from './PackageStatusBadge';

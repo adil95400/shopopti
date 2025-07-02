@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Filter, Calendar, RefreshCw, Plus, Trash2, Settings, Loader2 } from 'lucide-react';
 
-import { Button } from '../components/ui/button';
+import { Button } from '@/components/ui/button';
 
 const CustomReports: React.FC = () => {
   const [loading, setLoading] = useState(false);

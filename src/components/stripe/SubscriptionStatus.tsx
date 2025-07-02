@@ -3,9 +3,9 @@ import { Loader2, CreditCard, Calendar, AlertTriangle, CheckCircle } from 'lucid
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
-import { supabase } from '../../lib/supabase';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const SubscriptionStatus: React.FC = () => {
   const [subscription, setSubscription] = useState<any>(null);

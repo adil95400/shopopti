@@ -12,9 +12,9 @@ import {
   Loader2
 } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Button } from '../components/ui/button';
-import MarketplaceCard from '../components/marketplace/MarketplaceCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import MarketplaceCard from '@/components/marketplace/MarketplaceCard';
 
 interface Marketplace {
   id: string;
