@@ -129,6 +129,9 @@ const Imports: React.FC = () => {
           case 'autods':
             newSupplier.baseUrl = 'https://api.autods.com';
             break;
+          case 'spocket':
+            newSupplier.baseUrl = 'https://api.spocket.co';
+            break;
         }
       }
       
@@ -635,6 +638,7 @@ const Imports: React.FC = () => {
                     <option value="eprolo">EPROLO</option>
                     <option value="cdiscount">Cdiscount</option>
                     <option value="autods">AutoDS</option>
+                    <option value="spocket">Spocket</option>
                   </select>
                 </div>
                 
