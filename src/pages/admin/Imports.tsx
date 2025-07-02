@@ -18,10 +18,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { supabase } from '../../lib/supabase';
-import { supplierService } from '../../services/supplierService';
-import { ExternalSupplier, SupplierProduct, ImportFilter } from '../../types/supplier';
-import { Button } from '../../components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { supplierService } from '@/services/supplierService';
+import { ExternalSupplier, SupplierProduct, ImportFilter } from '@/types/supplier';
+import { Button } from '@/components/ui/button';
 
 
 const Imports: React.FC = () => {

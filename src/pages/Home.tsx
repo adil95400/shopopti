@@ -26,9 +26,9 @@ import {
   DollarSign
 } from 'lucide-react';
 
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
-import { Button } from '../components/ui/button';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
+import { Button } from '@/components/ui/button';
 
 const Home: React.FC = () => {
   return (

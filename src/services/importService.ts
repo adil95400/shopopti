@@ -3,7 +3,7 @@ import { parseString } from 'xml2js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 import { aiService } from './aiService';
 import { supplierService } from './supplierService';

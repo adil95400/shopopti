@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Check, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface ProductOptimizerProps {
   product: {

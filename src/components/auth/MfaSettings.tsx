@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-import { supabase } from '../../lib/supabase';
-import { Button } from '../ui/button';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
 
 import MfaEnroll from './MfaEnroll';
 

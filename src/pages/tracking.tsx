@@ -4,13 +4,13 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Package, AlertTriangle } from 'lucide-react';
 
-import { trackingService, TrackingResult } from '../services/trackingService';
-import TrackingForm from '../components/tracking/TrackingForm';
-import TrackingResultComponent from '../components/tracking/TrackingResult';
-import RecentTrackings from '../components/tracking/RecentTrackings';
-import BulkTrackingForm from '../components/tracking/BulkTrackingForm';
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
+import { trackingService, TrackingResult } from '@/services/trackingService';
+import TrackingForm from '@/components/tracking/TrackingForm';
+import TrackingResultComponent from '@/components/tracking/TrackingResult';
+import RecentTrackings from '@/components/tracking/RecentTrackings';
+import BulkTrackingForm from '@/components/tracking/BulkTrackingForm';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
 
 export default function TrackingPage() {
   const { t } = useTranslation('tracking');

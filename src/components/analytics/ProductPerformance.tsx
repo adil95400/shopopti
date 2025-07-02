@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Search, Filter } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface Product {
   id: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Package, Truck, CheckCircle, AlertCircle } from 'lucide-react';
 
-import { TrackingEvent, TrackingResult } from '../../services/trackingService';
+import { TrackingEvent, TrackingResult } from '@/services/trackingService';
 
 interface TrackingHistoryProps {
   result: TrackingResult;

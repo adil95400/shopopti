@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
-import { createCheckoutSession } from '../../lib/stripe';
-import { supabase } from '../../lib/supabase';
+import { createCheckoutSession } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
 
 interface CheckoutButtonProps {
   priceId: string;

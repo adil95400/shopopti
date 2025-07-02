@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { ShoppingBag, Users, Package, TrendingUp } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import ProductFinder from '../components/dropshipping/ProductFinder';
-import SupplierDirectory from '../components/dropshipping/SupplierDirectory';
-import OrderFulfillment from '../components/dropshipping/OrderFulfillment';
-import SupplierCatalogImporter from '../components/import/SupplierCatalogImporter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ProductFinder from '@/components/dropshipping/ProductFinder';
+import SupplierDirectory from '@/components/dropshipping/SupplierDirectory';
+import OrderFulfillment from '@/components/dropshipping/OrderFulfillment';
+import SupplierCatalogImporter from '@/components/import/SupplierCatalogImporter';
 
 const Dropshipping: React.FC = () => {
   const [activeTab, setActiveTab] = useState('products');

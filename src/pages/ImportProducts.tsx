@@ -26,18 +26,18 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useShop } from '../contexts/ShopContext';
-import { Button } from '../components/ui/button';
-import CSVImporter from '../components/import/CSVImporter';
-import JSONImporter from '../components/import/JSONImporter';
-import XMLImporter from '../components/import/XMLImporter';
-import ImageImporter from '../components/import/ImageImporter';
-import URLImporter from '../components/import/URLImporter';
-import FTPImporter from '../components/import/FTPImporter';
-import MarketplaceImporter from '../components/import/MarketplaceImporter';
-import SupplierCatalogImporter from '../components/import/SupplierCatalogImporter';
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
+import { useShop } from '@/contexts/ShopContext';
+import { Button } from '@/components/ui/button';
+import CSVImporter from '@/components/import/CSVImporter';
+import JSONImporter from '@/components/import/JSONImporter';
+import XMLImporter from '@/components/import/XMLImporter';
+import ImageImporter from '@/components/import/ImageImporter';
+import URLImporter from '@/components/import/URLImporter';
+import FTPImporter from '@/components/import/FTPImporter';
+import MarketplaceImporter from '@/components/import/MarketplaceImporter';
+import SupplierCatalogImporter from '@/components/import/SupplierCatalogImporter';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
 
 
 const importMethods = [

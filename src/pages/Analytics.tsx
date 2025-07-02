@@ -26,7 +26,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-import { useShop } from '../contexts/ShopContext';
+import { useShop } from '@/contexts/ShopContext';
 
 // Mock analytics data
 const salesData = [

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export const availableLanguages = [
   { code: 'fr', name: 'Français', flag: '🇫🇷' },

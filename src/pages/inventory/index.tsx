@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Package, AlertTriangle, Settings, RefreshCw, Search, Filter, CheckCircle, XCircle, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { inventoryService, StockAlert, InventorySettings } from '../../modules/inventory';
-import { Button } from '../../components/ui/button';
+import { inventoryService, StockAlert, InventorySettings } from '@/modules/inventory';
+import { Button } from '@/components/ui/button';
 
 
 const InventoryPage: React.FC = () => {

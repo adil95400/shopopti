@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface Platform {
   id: string;

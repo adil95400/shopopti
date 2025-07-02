@@ -12,7 +12,7 @@ import {
   X
 } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface Channel {
   id: string;

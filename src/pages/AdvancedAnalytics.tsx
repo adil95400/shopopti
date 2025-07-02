@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronDown, Download, BarChart3, Globe, ShoppingBag } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import PerformanceMetrics from '../components/analytics/PerformanceMetrics';
-import TrafficSources from '../components/analytics/TrafficSources';
-import ProductPerformance from '../components/analytics/ProductPerformance';
-import { Button } from '../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PerformanceMetrics from '@/components/analytics/PerformanceMetrics';
+import TrafficSources from '@/components/analytics/TrafficSources';
+import ProductPerformance from '@/components/analytics/ProductPerformance';
+import { Button } from '@/components/ui/button';
 
 const AdvancedAnalytics: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');

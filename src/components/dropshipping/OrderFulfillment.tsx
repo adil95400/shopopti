@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Package, Truck, CheckCircle, AlertTriangle, Search, Filter, ArrowRight, Printer, Download } from 'lucide-react';
 
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface Order {
   id: string;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Copy, Check, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
-import { supabase } from '../lib/supabase';
-import { Button } from '../components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
 
 interface Webhook {
   id: string;

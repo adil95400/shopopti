@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Zap, Calendar, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { supabase } from '../../lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const SubscriptionOverview: React.FC = () => {
   const [subscription, setSubscription] = useState<any>(null);

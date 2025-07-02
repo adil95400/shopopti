@@ -4,8 +4,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Loader2, Download, Plus, Trash2, FileText, Calendar, DollarSign, User, Building } from 'lucide-react';
 
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

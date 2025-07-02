@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-import { supabase } from '../lib/supabase';
-import PricingCard from '../components/stripe/PricingCard';
-import { stripeProducts } from '../stripe-config';
+import { supabase } from '@/lib/supabase';
+import PricingCard from '@/components/stripe/PricingCard';
+import { stripeProducts } from '@/stripe-config';
 
 const Pricing: React.FC = () => {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);

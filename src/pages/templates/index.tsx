@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Search, Filter, Edit, Trash2, Copy, Eye, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { templateService, Template } from '../../modules/templates';
-import { Button } from '../../components/ui/button';
+import { templateService, Template } from '@/modules/templates';
+import { Button } from '@/components/ui/button';
 
 
 const TemplatesPage: React.FC = () => {

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Link as LinkIcon, AlertCircle, ArrowRight, Loader2, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { importService } from '../../services/importService';
-import { scrapingService } from '../../services/scrapingService';
+import { importService } from '@/services/importService';
+import { scrapingService } from '@/services/scrapingService';
 
 interface URLImporterProps {
   marketplace?: string;

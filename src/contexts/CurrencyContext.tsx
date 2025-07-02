@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export const availableCurrencies = [
   'USD',

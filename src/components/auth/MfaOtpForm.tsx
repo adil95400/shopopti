@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
-import { supabase } from '../../lib/supabase';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface MfaOtpFormProps {
   factorId: string;

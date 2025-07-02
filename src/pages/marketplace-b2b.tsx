@@ -15,8 +15,8 @@ import {
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
-import MainNavbar from '../components/layout/MainNavbar';
-import Footer from '../components/layout/Footer';
+import MainNavbar from '@/components/layout/MainNavbar';
+import Footer from '@/components/layout/Footer';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { b2bService, B2BSupplier } from '@/services/b2bService';

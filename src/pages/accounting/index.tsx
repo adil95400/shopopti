@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Download, Printer, Search, Filter, DollarSign, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { accountingService, Invoice } from '../../modules/accounting';
-import { Button } from '../../components/ui/button';
+import { accountingService, Invoice } from '@/modules/accounting';
+import { Button } from '@/components/ui/button';
 
 
 const AccountingPage: React.FC = () => {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Globe, DollarSign, Languages, Truck, Settings, Check, AlertTriangle } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Button } from '../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 const InternationalSelling: React.FC = () => {
   const [activeTab, setActiveTab] = useState('markets');

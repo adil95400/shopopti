@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, X, User, Bot, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { useChatbot } from "../hooks/useChatbot";
+import { useChatbot } from "@/hooks/useChatbot";
 
 export default function ChatbotWidget() {
   const [open, setOpen] = useState(false);

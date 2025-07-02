@@ -6,10 +6,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import IntegrationCard from '../components/integrations/IntegrationCard';
-import ApiIntegration from '../components/integrations/ApiIntegration';
-import { Button } from '../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import IntegrationCard from '@/components/integrations/IntegrationCard';
+import ApiIntegration from '@/components/integrations/ApiIntegration';
+import { Button } from '@/components/ui/button';
 
 
 const Integrations: React.FC = () => {

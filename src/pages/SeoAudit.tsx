@@ -1,4 +1,4 @@
-import SeoAuditForm from "../components/SeoAuditForm";
+import SeoAuditForm from "@/components/SeoAuditForm";
 
 export default function SeoAuditPage() {
   return (

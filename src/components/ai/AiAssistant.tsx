@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Copy, Check, Loader2 } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface Message {
   role: 'user' | 'assistant';

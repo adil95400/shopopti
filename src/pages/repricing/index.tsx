@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Plus, Trash2, Save, Percent, Settings, RefreshCw, TrendingUp, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { repricingService, PricingRule } from '../../modules/repricing';
-import { Button } from '../../components/ui/button';
+import { repricingService, PricingRule } from '@/modules/repricing';
+import { Button } from '@/components/ui/button';
 
 
 const RepricingPage: React.FC = () => {

@@ -9,7 +9,7 @@ import {
   ArrowDown
 } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface DataMappingConfigProps {
   onSaveMapping: (mapping: DataMapping[]) => Promise<void>;

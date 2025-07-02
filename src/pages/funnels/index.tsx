@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GitBranch, Plus, BarChart3, Edit, Trash2, Play, Pause, Copy, Search, Filter, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { funnelService, Funnel } from '../../modules/funnels';
-import { Button } from '../../components/ui/button';
+import { funnelService, Funnel } from '@/modules/funnels';
+import { Button } from '@/components/ui/button';
 
 
 const FunnelsPage: React.FC = () => {

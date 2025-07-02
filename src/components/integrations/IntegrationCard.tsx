@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ExternalLink, Check, X, Settings, Loader2 } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 interface IntegrationCardProps {
   integration: {
