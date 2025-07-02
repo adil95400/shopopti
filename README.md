@@ -16,6 +16,22 @@
 - Normalisation des scripts shell (ex: `fix-vercel.sh`)
 - Préparation pour la branche `v6.9` (Analytics, Stripe Billing, Assistant AI...)
 
+### 🛠 Installation
+
+Avant d'exécuter les commandes de build ou de lint, installez d'abord les dépendances :
+
+```bash
+npm ci  # ou npm install
+```
+
+### 🧪 Tests
+
+Dans les environnements CI, utilisez `vitest --run` pour éviter le mode watch :
+
+```bash
+npm run test -- --run
+```
+
 ---
 
 ### 🚀 Étapes suivantes
