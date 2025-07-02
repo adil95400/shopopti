@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 import { supplierService } from './supplierService';
+import { OrderResult } from '../types/supplier';
 
 export const orderService = {
   async forwardOrderToSupplier(orderId: string): Promise<{
@@ -19,7 +20,10 @@ export const orderService = {
       if (error) throw error;
       
       // Regrouper les articles par fournisseur
-      const itemsBySupplier = {};
+      const itemsBySupplier: Record<
+        string,
+        { product_id: string; quantity: number; price: number }[]
+      > = {};
       for (const item of order.order_items) {
         const { data: product, error: productError } = await supabase
           .from('products')
@@ -44,18 +48,23 @@ export const orderService = {
       }
       
       // Transmettre la commande à chaque fournisseur
-      const results = [];
+      const results: OrderResult[] = [];
       for (const [supplierId, items] of Object.entries(itemsBySupplier)) {
+        const orderItems = items as {
+          product_id: string;
+          quantity: number;
+          price: number;
+        }[];
         const result = await supplierService.createOrder(supplierId, {
           external_order_id: order.id,
           shipping_address: order.shipping_address,
-          items
+          items: orderItems
         });
         
         results.push(result);
-        
+
         // Mettre à jour les articles de la commande avec les informations du fournisseur
-        for (const item of items) {
+        for (const item of orderItems) {
           await supabase
             .from('order_items')
             .update({
