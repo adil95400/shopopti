@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 import { supplierService } from './supplierService';
+import { computeMargin } from '@/lib/margin';
 
 export const syncService = {
   async syncProductsWithSupplier(supplierId: string): Promise<{
@@ -24,14 +25,17 @@ export const syncService = {
         try {
           const externalId = product.metadata.source_id;
           const updatedData = await supplierService.getProductById(supplierId, externalId);
-          
+          const margin = computeMargin(updatedData.msrp, updatedData.price);
+          const newMetadata = { ...product.metadata, msrp: updatedData.msrp, margin };
+
           // Mettre à jour le produit
           await supabase
             .from('products')
             .update({
               price: updatedData.price,
               stock: updatedData.stock,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
+              metadata: newMetadata
             })
             .eq('id', product.id);
           
