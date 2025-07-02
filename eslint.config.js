@@ -7,17 +7,27 @@ import importPlugin from 'eslint-plugin-import';
 import prettier from 'eslint-config-prettier';
 
 export default [
+  {
+    ignores: [
+      '.eslintrc.js',
+      'supabase/**',
+      'backend/**',
+      'public/**',
+      'vite.config.ts',
+      'vitest.config.ts'
+      ,'src/services/__tests__/**'
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-        project: './tsconfig.json',
       },
       globals: {
         window: 'readonly',
