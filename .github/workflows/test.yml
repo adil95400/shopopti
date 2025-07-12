@@ -1,0 +1,49 @@
+name: ✅ Test & Build CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 📦 Install JS dependencies
+        run: npm ci
+
+      - name: 🔍 Lint code
+        run: npm run lint
+
+      - name: 🏗️ Build app
+        run: npm run build
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install Python requirements
+        run: |
+          pip install -r requirements.txt
+          pip install fastapi supabase httpx stripe
+
+      - name: 📄 Generate OpenAPI schema
+        run: python backend/generate_openapi.py
+
+      - name: 📘 Générer docs API
+        run: npm run docs:api
+
+      - name: ✅ Placeholder tests (à compléter)
+        run: echo "✔️ Tests ici (unitaires, e2e, etc.)"
+
