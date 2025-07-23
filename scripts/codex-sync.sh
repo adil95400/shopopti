@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # === CONFIGURATION ===
-REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")" && pwd)}"
+REPO_DIR=$(git rev-parse --show-toplevel)
 LOG_FILE="$REPO_DIR/codex_sync.log"
 BRANCH=$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD)
 DATE=$(date '+%Y-%m-%d %H:%M:%S')
@@ -17,7 +17,7 @@ cd "$REPO_DIR" || {
   exit 1
 }
 
-if [ ! -d ".git" ]; then
+if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
   log "❌ Ce dossier n'est pas un dépôt Git"
   exit 1
 fi
