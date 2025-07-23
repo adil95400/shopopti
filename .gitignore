@@ -1,0 +1,43 @@
+# === ENVIRONNEMENT ===
+.env
+.env.*
+!.env.example
+
+# === NODE ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === BUILD ===
+dist/
+build/
+*.log
+
+# === OS et IDE ===
+.DS_Store
+*.swp
+*.swo
+*.swn
+*.tmp
+.vscode/
+.idea/
+
+# === TEST ===
+coverage/
+*.lcov
+
+# === VERCEL ===
+.vercel/
+output.log
+
+# === SHOPIFY ===
+shopify.app.toml
+.shopify/
+
+# === GIT ===
+*.patch
+*.orig
+*.rej
+
+docs/openapi.json

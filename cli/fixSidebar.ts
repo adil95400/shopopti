@@ -1,0 +1,1 @@
+// Refactorise la sidebar automatiquement

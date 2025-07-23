@@ -1,0 +1,1 @@
+export const SEOPage = () => <div>SEO IA</div>;

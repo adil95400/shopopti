@@ -1,0 +1,1 @@
+// Injecte React.lazy dans les pages

@@ -1,0 +1,1 @@
+// Script de monitoring Vercel/Sentry
