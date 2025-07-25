@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 import ChatbotWidget from '@/components/ChatbotWidget';
 
-import Sidebar from './Sidebar';
+import Sidebar from "./sidebar/Sidebar";
 import Header from './Header';
 import Logo from './Logo';
 

@@ -1,0 +1,8 @@
+--- seo.txt ---
+Tu es un expert SEO. Génère :
+- Une balise titre (< 60 caractères)
+- Une meta description (< 160 caractères)
+- Un bloc JSON-LD structuré pour les moteurs de recherche
+
+Produit : {{product}}
+Langue : {{lang}}

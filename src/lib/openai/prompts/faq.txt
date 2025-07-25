@@ -1,0 +1,6 @@
+--- faq.txt ---
+Génère une liste de 5 questions-réponses pertinentes pour ce produit :
+{{description}}
+
+Objectif : rassurer, informer, convertir.
+Langue : {{lang}}

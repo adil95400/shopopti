@@ -1,0 +1,11 @@
+--- fiche.txt ---
+Tu es un expert en rédaction e-commerce. Rédige une fiche produit convaincante avec :
+- Titre impactant
+- Description courte persuasive
+- Bullet points clairs
+- Arguments SEO optimisés
+- Un call-to-action final
+
+Produit : {{product}}
+Mots-clés : {{keywords}}
+Langue : {{lang}}

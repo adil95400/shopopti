@@ -10,6 +10,7 @@ export async function generateProductDescription(prompt: string): Promise<string
     model: "gpt-4",
     messages: [{ role: "user", content: prompt }],
   });
+
   return res.choices[0]?.message.content ?? "";
 }
 
@@ -18,6 +19,7 @@ export async function generateSEO(prompt: string): Promise<string> {
     model: "gpt-4",
     messages: [{ role: "user", content: prompt }],
   });
+
   return res.choices[0]?.message.content ?? "";
 }
 
@@ -26,6 +28,7 @@ export async function generateTranslation(prompt: string): Promise<string> {
     model: "gpt-4",
     messages: [{ role: "user", content: prompt }],
   });
+
   return res.choices[0]?.message.content ?? "";
 }
 
@@ -34,6 +37,7 @@ export async function generateFAQ(prompt: string): Promise<string> {
     model: "gpt-4",
     messages: [{ role: "user", content: prompt }],
   });
+
   return res.choices[0]?.message.content ?? "";
 }
 
@@ -42,6 +46,7 @@ export async function generateReviewPrompt(prompt: string): Promise<string> {
     model: "gpt-4",
     messages: [{ role: "user", content: prompt }],
   });
+
   return res.choices[0]?.message.content ?? "";
 }
 
@@ -50,14 +55,7 @@ export async function generateNewsletter(prompt: string): Promise<string> {
     model: "gpt-4",
     messages: [{ role: "user", content: prompt }],
   });
-  return res.choices[0]?.message.content ?? "";
-}
 
-export async function askChatGPT(prompt: string): Promise<string> {
-  const res = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [{ role: "user", content: prompt }],
-  });
   return res.choices[0]?.message.content ?? "";
 }
 
