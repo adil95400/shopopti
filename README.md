@@ -102,6 +102,8 @@ ZAPIER_WEBHOOK_URL=...
 VITE_CANVA_APP_ID=...
 ```
 
+Le champ `VITE_OPENAI_API_KEY` est obligatoire pour toutes les fonctionnalités IA.
+
 ---
 
 ## 📘 Documentation IA
