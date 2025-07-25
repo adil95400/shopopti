@@ -1,7 +1,17 @@
 import OpenAI from 'openai';
 
+const apiKey =
+  import.meta.env.VITE_OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+
+if (!apiKey) {
+  console.error(
+    'VITE_OPENAI_API_KEY is not defined. Set this value in your .env file.'
+  );
+  throw new Error('VITE_OPENAI_API_KEY is not defined');
+}
+
 const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  apiKey,
   dangerouslyAllowBrowser: true
 });
 

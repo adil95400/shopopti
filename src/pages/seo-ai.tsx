@@ -63,7 +63,9 @@ Génère un JSON SEO complet avec :
       } catch (parseError) {
         console.error("Erreur de parsing JSON:", parseError);
         // Tentative de récupération du JSON dans la réponse
-        const jsonMatch = raw.match(/```json\n([\s\S]*?)\n```/) || raw.match(/\{[\s\S]*\}/);
+        const jsonMatch =
+          typeof raw === 'string' &&
+          (raw.match(/```json\n([\s\S]*?)\n```/) || raw.match(/\{[\s\S]*\}/));
         if (jsonMatch) {
           try {
             const jsonContent = jsonMatch[1] || jsonMatch[0];
