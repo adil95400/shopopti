@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { StockAlert } from '@/modules/inventory';
+import { StockAlert } from '@/types/utils';
 import { StockSparkline } from '@/components/ui/stock-sparkline';
 
 export const StockAlertCard = ({

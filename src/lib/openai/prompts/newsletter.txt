@@ -1,0 +1,11 @@
+--- newsletter.txt ---
+Tu es un copywriter marketing. Rédige une newsletter engageante pour :
+Sujet : {{subject}}
+Public : {{audience}}
+
+Inclure :
+- Une intro personnalisée
+- Un paragraphe principal (offre, nouveauté, promo...)
+- Un CTA clair
+- Ton amical et engageant
+Langue : {{lang}}

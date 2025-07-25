@@ -1,24 +1,31 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",                      // 🔄 Plus moderne
     "module": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
+
+    "moduleResolution": "Bundler",           // ✅ recommandé avec Vite
     "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "checkJs": false,
     "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "Node",
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
     "jsx": "react-jsx",
+
+    // ✅ Alias `@` vers /src
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+
+    // ✅ Types Vite + environnement
+    "types": ["vite/client", "vite-plugin-pwa/client"]
   },
-  "include": ["src"],
+  "include": ["src", "env.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
