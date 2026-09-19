@@ -70,7 +70,7 @@ const ReturnsPage: React.FC = () => {
       // Update the return request
       const updatedReturn = { 
         ...selectedReturn, 
-        status: 'completed', 
+        status: 'completed' as const, 
         refundAmount: parseFloat(refundAmount) 
       };
       
@@ -237,7 +237,7 @@ const ReturnsPage: React.FC = () => {
             <>
               <div className="p-4 border-b border-gray-200 flex justify-between items-center">
                 <div className="flex items-center">
-                  <Button variant="ghost\" size="sm\" className="mr-2 md:hidden\" onClick={() => setSelectedReturn(null)}>
+                  <Button variant="ghost" size="sm" className="mr-2 md:hidden" onClick={() => setSelectedReturn(null)}>
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <div>
