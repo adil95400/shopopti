@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "vercel": "vercel",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "docs:api": "node scripts/generate-api-docs.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
