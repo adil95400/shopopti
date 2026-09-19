@@ -71,7 +71,8 @@ export function useAiOptimization() {
 
       return optimized;
     } catch (error) {
-      setError(error.message || 'Failed to optimize product');
+      const message = error instanceof Error ? error.message : 'Failed to optimize product';
+      setError(message);
       throw error;
     } finally {
       setLoading(false);
