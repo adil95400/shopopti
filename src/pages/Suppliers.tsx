@@ -21,12 +21,12 @@ const Suppliers = () => {
 
   const fetchSuppliers = async () => {
     const { data, error } = await supabase.from('suppliers').select('*');
-    if (!error) setSuppliers(data);
+    if (!error) setSuppliers((data || []) as SupplierListItem[]);
   };
 
   const filtered = suppliers.filter(s =>
-    (!country || s.country.toLowerCase().includes(country.toLowerCase())) &&
-    (!category || s.category.toLowerCase().includes(category.toLowerCase())) &&
+    (!country || (s.country ?? '').toLowerCase().includes(country.toLowerCase())) &&
+    (!category || (s.category ?? '').toLowerCase().includes(category.toLowerCase())) &&
     (!verified || (verified === 'yes' ? s.is_verified : !s.is_verified))
   );
 
