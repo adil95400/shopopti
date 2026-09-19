@@ -9,6 +9,13 @@ export interface StockAlert {
   status: 'active' | 'resolved' | 'ignored';
   createdAt?: string;
   updatedAt?: string;
+  productImage?: string;
+  level?: 'critique' | 'moyenne' | 'basse';
+  lastRestock?: string;
+  supplier?: string;
+  sku?: string;
+  history?: number[];
+  orderLink?: string;
 }
 
 export interface InventorySettings {
