@@ -127,8 +127,8 @@ const CategoryMapping: React.FC<CategoryMappingProps> = ({
   const handleCategoryMappingChange = (mappingId: string, platformId: string, categoryId: string) => {
     setMappings(mappings.map(mapping => {
       if (mapping.id === mappingId) {
-        const platformCategories = platformCategories[platformId] || [];
-        const category = platformCategories.find(c => c.id === categoryId);
+        const categoriesForPlatform = platformCategories[platformId] || [];
+        const category = categoriesForPlatform.find(c => c.id === categoryId);
         
         return {
           ...mapping,
