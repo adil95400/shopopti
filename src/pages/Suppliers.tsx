@@ -2,8 +2,15 @@ import React, { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
+interface SupplierListItem {
+  country?: string;
+  category?: string;
+  is_verified?: boolean;
+  [key: string]: unknown;
+}
+
 const Suppliers = () => {
-  const [suppliers, setSuppliers] = useState([]);
+  const [suppliers, setSuppliers] = useState<SupplierListItem[]>([]);
   const [country, setCountry] = useState('');
   const [category, setCategory] = useState('');
   const [verified, setVerified] = useState('');
