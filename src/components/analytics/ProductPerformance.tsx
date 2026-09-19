@@ -93,7 +93,8 @@ const ProductPerformance: React.FC<ProductPerformanceProps> = ({ products }) => 
               <Tooltip
                 formatter={(value, name) => {
                   if (name === 'revenue') return [`$${value}`, 'Revenue'];
-                  const label = String(name);\n                  return [value, label.charAt(0).toUpperCase() + label.slice(1)];
+                  const label = String(name);
+                  return [value, label.charAt(0).toUpperCase() + label.slice(1)];
                 }}
                 contentStyle={{
                   backgroundColor: 'white',
