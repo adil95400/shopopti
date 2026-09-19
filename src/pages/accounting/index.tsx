@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, Download, Printer, Search, Filter, DollarSign, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { FileText, Plus, Download, Printer, Search, Filter, DollarSign, Calendar, CheckCircle, Clock, AlertCircle, Loader2, ArrowLeft, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { accountingService, Invoice } from '@/modules/accounting';
@@ -312,7 +312,7 @@ const AccountingPage: React.FC = () => {
             <>
               <div className="p-4 border-b border-gray-200 flex justify-between items-center">
                 <div className="flex items-center">
-                  <Button variant="ghost\" size="sm\" className="mr-2 md:hidden\" onClick={() => setSelectedInvoice(null)}>
+                  <Button variant="ghost" size="sm" className="mr-2 md:hidden" onClick={() => setSelectedInvoice(null)}>
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <div>
