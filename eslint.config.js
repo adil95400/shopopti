@@ -7,6 +7,9 @@ import importPlugin from 'eslint-plugin-import';
 import prettier from 'eslint-config-prettier';
 
 export default [
+  {
+    ignores: ['node_modules/**', 'dist/**', '.eslintrc.js'],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -17,7 +20,6 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-        project: './tsconfig.json',
       },
       globals: {
         window: 'readonly',
@@ -56,6 +58,12 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       'import/order': ['warn', { 'newlines-between': 'always' }],
+    },
+  },
+  {
+    files: ['src/services/__tests__/**/*.ts'],
+    rules: {
+      'no-var': 'off',
     },
   },
   {
