@@ -2,8 +2,15 @@ import React, { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
+interface SupplierListItem {
+  country?: string;
+  category?: string;
+  is_verified?: boolean;
+  [key: string]: unknown;
+}
+
 const Suppliers = () => {
-  const [suppliers, setSuppliers] = useState([]);
+  const [suppliers, setSuppliers] = useState<SupplierListItem[]>([]);
   const [country, setCountry] = useState('');
   const [category, setCategory] = useState('');
   const [verified, setVerified] = useState('');
@@ -14,12 +21,12 @@ const Suppliers = () => {
 
   const fetchSuppliers = async () => {
     const { data, error } = await supabase.from('suppliers').select('*');
-    if (!error) setSuppliers(data);
+    if (!error) setSuppliers((data || []) as SupplierListItem[]);
   };
 
   const filtered = suppliers.filter(s =>
-    (!country || s.country.toLowerCase().includes(country.toLowerCase())) &&
-    (!category || s.category.toLowerCase().includes(category.toLowerCase())) &&
+    (!country || (s.country ?? '').toLowerCase().includes(country.toLowerCase())) &&
+    (!category || (s.category ?? '').toLowerCase().includes(category.toLowerCase())) &&
     (!verified || (verified === 'yes' ? s.is_verified : !s.is_verified))
   );
 
