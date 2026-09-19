@@ -27,7 +27,18 @@ it('calls AutoDS categories endpoint', async () => {
 
 it('creates order via AutoDS endpoint', async () => {
   ;(axios.post as any).mockResolvedValueOnce({ data: { success: true } })
-  await supplierService.createOrder('1', { external_order_id: '1', shipping_address: {}, items: [] })
+  await supplierService.createOrder('1', {
+    external_order_id: '1',
+    shipping_address: {
+      name: 'Test User',
+      address1: '1 Test Street',
+      city: 'Paris',
+      state: 'Île-de-France',
+      zip: '75001',
+      country: 'FR',
+    },
+    items: [],
+  })
   expect((axios.post as any).mock.calls[0][0]).toContain('/providers/autods/orders')
 })
 
@@ -35,4 +46,22 @@ it('checks order status via AutoDS endpoint', async () => {
   ;(axios.get as any).mockResolvedValueOnce({ data: { status: 'processing' } })
   await supplierService.getOrderStatus('1', '100')
   expect((axios.get as any).mock.calls[0][0]).toContain('/providers/autods/orders/100')
+})
+
+it('fails closed instead of calling the removed direct Shopify import endpoint', async () => {
+  await expect(supplierService.importToShopify([{
+    id: 'product-1',
+    externalId: 'external-1',
+    name: 'Product',
+    description: 'Description',
+    price: 10,
+    stock: 1,
+    images: [],
+    category: 'General',
+    supplier_id: 'supplier-1',
+    supplier_type: 'autods',
+    shipping_time: '3 days',
+    processing_time: '1 day',
+  }])).rejects.toThrow('ShopOpti catalog')
+  expect(axios.post).not.toHaveBeenCalledWith(expect.stringContaining('/shopify/import'), expect.anything(), expect.anything())
 })
