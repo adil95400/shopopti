@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { utils, writeFile } from 'xlsx';
+import { utils, write } from 'xlsx';
 
 import { supabase } from '@/lib/supabase';
 
@@ -481,7 +481,7 @@ export const accountingService = {
       utils.book_append_sheet(wb, summaryWs, 'Rapport TVA');
       
       // Generate Excel file
-      const excelBuffer = writeFile(wb, { bookType: 'xlsx', type: 'array' });
+      const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
       return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     } catch (error) {
       console.error('Error exporting tax report to Excel:', error);
