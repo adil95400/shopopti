@@ -18,7 +18,9 @@ interface MarketplaceCardProps {
     cons: string[];
     connected?: boolean;
     products?: number;
-    status?: 'active' | 'pending' | 'error';\n    currency?: string;\n    language?: string;
+    status?: 'active' | 'pending' | 'error';
+    currency?: string;
+    language?: string;
   };
   onConnect?: (id: string) => Promise<void>;
   onViewDetails?: (id: string) => void;
