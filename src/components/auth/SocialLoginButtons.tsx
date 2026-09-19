@@ -17,7 +17,7 @@ const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
 }) => {
   const [loading, setLoading] = React.useState<string | null>(null);
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple' | 'whatsapp') => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
     try {
       if (onLoginStart) onLoginStart();
       setLoading(provider);
@@ -43,23 +43,6 @@ const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
 
   return (
     <div className="grid grid-cols-4 gap-3 mb-6">
-      {/* WhatsApp */}
-      <button
-        onClick={() => handleSocialLogin('whatsapp')}
-        disabled={loading !== null}
-        className="flex justify-center items-center py-2 px-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors relative"
-      >
-        {loading === 'whatsapp' ? (
-          <Loader2 className="h-6 w-6 animate-spin text-green-500" />
-        ) : (
-          <div className="bg-green-500 rounded-full p-1">
-            <svg xmlns="http://www.w3.org/2000/svg\" width="24\" height="24\" viewBox="0 0 24 24\" fill="white">
-              <path d="M17.6 6.2c-1.5-1.5-3.4-2.3-5.5-2.3-4.3 0-7.8 3.5-7.8 7.8 0 1.4 0.4 2.7 1 3.9l-1.1 4 4.1-1.1c1.1 0.6 2.4 0.9 3.7 0.9 4.3 0 7.8-3.5 7.8-7.8 0-2.1-0.8-4-2.3-5.5zm-5.5 11.9c-1.2 0-2.3-0.3-3.3-0.9l-0.2-0.1-2.4 0.6 0.6-2.3-0.1-0.2c-0.6-1-1-2.2-1-3.4 0-3.6 2.9-6.5 6.5-6.5 1.7 0 3.3 0.7 4.6 1.9 1.2 1.2 1.9 2.8 1.9 4.6 0 3.6-2.9 6.5-6.5 6.5zm3.5-4.8c-0.2-0.1-1.2-0.6-1.4-0.7-0.2-0.1-0.3-0.1-0.4 0.1-0.1 0.2-0.5 0.7-0.6 0.8-0.1 0.1-0.2 0.1-0.4 0-0.2-0.1-0.8-0.3-1.6-0.9-0.6-0.5-1-1.1-1.1-1.3-0.1-0.2 0-0.3 0.1-0.4 0.1-0.1 0.2-0.2 0.3-0.3 0.1-0.1 0.1-0.2 0.2-0.3 0.1-0.1 0-0.2 0-0.3-0.1-0.1-0.4-1-0.6-1.4-0.2-0.4-0.3-0.3-0.4-0.3h-0.3c-0.1 0-0.3 0-0.5 0.2-0.2 0.2-0.7 0.7-0.7 1.6s0.7 1.9 0.8 2c0.1 0.1 1.4 2.1 3.3 2.9 0.5 0.2 0.8 0.3 1.1 0.4 0.5 0.1 0.9 0.1 1.2 0.1 0.4-0.1 1.2-0.5 1.3-0.9 0.2-0.5 0.2-0.9 0.1-1-0.1-0.1-0.2-0.1-0.4-0.2z"/>
-            </svg>
-          </div>
-        )}
-      </button>
-      
       {/* Facebook */}
       <button
         onClick={() => handleSocialLogin('facebook')}
