@@ -34,10 +34,10 @@ const getRange = (timeRange: TimeRange) => {
   return { from: asDate(from), to: asDate(to) };
 };
 
-const formatMoney = (value: number) =>
+const formatAmount = (value: number) =>
   new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
 
 const Analytics: React.FC = () => {
@@ -123,7 +123,7 @@ const Analytics: React.FC = () => {
         Source: <strong>marketplace_analytics</strong>
         {snapshot ? (
           <>
-            {' '}· vérifié le {new Date(snapshot.verifiedAt).toLocaleString('fr-FR')}
+            {' '}· consulté le {new Date(snapshot.verifiedAt).toLocaleString('fr-FR')}
           </>
         ) : null}
       </div>
@@ -141,7 +141,7 @@ const Analytics: React.FC = () => {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
             <MetricCard
               title="Revenu"
-              value={formatMoney(snapshot.revenue)}
+              value={`${formatAmount(snapshot.revenue)} · devise non vérifiée`}
               icon={<DollarSign size={16} />}
             />
             <MetricCard
@@ -180,7 +180,7 @@ const Analytics: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip formatter={(value) => [formatMoney(Number(value)), 'Revenu']} />
+                      <Tooltip formatter={(value) => [`${formatAmount(Number(value))} · devise non vérifiée`, 'Revenu']} />
                       <Legend />
                       <Line
                         type="monotone"
@@ -210,7 +210,7 @@ const Analytics: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis type="category" dataKey="name" width={110} />
-                      <Tooltip formatter={(value) => [formatMoney(Number(value)), 'Revenu']} />
+                      <Tooltip formatter={(value) => [`${formatAmount(Number(value))} · devise non vérifiée`, 'Revenu']} />
                       <Legend />
                       <Bar dataKey="revenue" name="Revenu" fill="currentColor" />
                     </BarChart>
@@ -249,7 +249,7 @@ const Analytics: React.FC = () => {
                           ? 'Non vérifié'
                           : `${product.conversionRate.toFixed(2)}%`}
                       </td>
-                      <td className="px-3 py-3">{formatMoney(product.revenue)}</td>
+                      <td className="px-3 py-3">{`${formatAmount(product.revenue)} · devise non vérifiée`}</td>
                       <td className="px-3 py-3 text-neutral-500">Non vérifié</td>
                     </tr>
                   ))}
