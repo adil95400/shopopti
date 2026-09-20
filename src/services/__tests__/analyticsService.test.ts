@@ -94,6 +94,8 @@ describe('aggregateProductAnalytics', () => {
     );
 
     expect(snapshot.products).toEqual([]);
-    expect(snapshot.revenue).toBe(99);
+    expect(snapshot.revenue).toBe(0);
+    expect(snapshot.views).toBe(0);
+    expect(snapshot.dailyRevenue).toEqual([]);
   });
 });
