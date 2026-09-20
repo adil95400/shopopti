@@ -16,9 +16,7 @@ beforeEach(() => {
 
 it('routes variant generation through the authenticated ai-hub function', async () => {
   invokeMock.mockResolvedValue({
-    data: {
-      data: [{ title: 'Variant A', options: { size: 'S' } }],
-    },
+    data: { data: [{ title: 'Variant A', options: { size: 'S' } }] },
     error: null,
   })
 
@@ -34,9 +32,38 @@ it('routes variant generation through the authenticated ai-hub function', async 
         category: undefined,
         attributes: undefined,
       },
+      bypassCache: false,
     },
   })
   expect(result).toEqual([{ title: 'Variant A', options: { size: 'S' } }])
+})
+
+it('passes explicit cache bypass for user-requested regeneration', async () => {
+  invokeMock.mockResolvedValue({
+    data: {
+      data: {
+        title: 'Fresh title',
+        description_html: 'Fresh description',
+        tags: [],
+        seo: { metaTitle: 'Fresh title', metaDescription: '', keywords: [] },
+      },
+    },
+    error: null,
+  })
+
+  const { aiService } = await import('../aiService')
+  await aiService.optimizeProduct(
+    { name: 'Product', description: 'Description', category: 'Category' },
+    { bypassCache: true }
+  )
+
+  expect(invokeMock).toHaveBeenLastCalledWith('ai-hub', {
+    body: {
+      action: 'optimizeProduct',
+      payload: { name: 'Product', description: 'Description', category: 'Category' },
+      bypassCache: true,
+    },
+  })
 })
 
 it('fails closed when the ai-hub response is invalid', async () => {
