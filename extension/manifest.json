@@ -1,35 +1,26 @@
 {
   "manifest_version": 3,
-  "name": "Shopopti+ Product Importer",
-  "version": "1.0.0",
-  "description": "Import products to your Shopify store with one click",
+  "name": "ShopOpti Product Importer",
+  "version": "1.1.0",
+  "description": "Prepare AliExpress product data for import into ShopOpti.",
   "permissions": [
     "activeTab",
     "storage"
   ],
   "host_permissions": [
     "https://*.aliexpress.com/*",
-    "https://*.amazon.com/*",
-    "https://*.myshopify.com/*"
+    "https://shopopti.io/*"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://*.aliexpress.com/item/*",
-        "https://*.amazon.com/*/dp/*"
+        "https://*.aliexpress.com/item/*"
       ],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
-  ],
-  "background": {
-    "service_worker": "background.js"
-  }
+  ]
 }
