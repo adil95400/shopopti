@@ -38,7 +38,7 @@ export const platformService = {
       if (error) throw error;
       
       return (data || []).map(platform => ({
-        id: platform.id,
+        id: platform.platform_id,
         name: platform.name,
         type: platform.type,
         connected: platform.status === 'active',
@@ -53,27 +53,42 @@ export const platformService = {
 
   async connectPlatform(platformId: string, credentials: Record<string, string>): Promise<boolean> {
     try {
-      // Validate credentials with the platform's API
+      if (platformId === 'ebay') {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+
+        if (!token) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch('/api/connect/ebay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ credentials })
+        });
+
+        if (!response.ok) {
+          throw new Error(`eBay connection request failed with HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        if (!payload.success) {
+          throw new Error(payload.error || 'eBay connection validation failed');
+        }
+
+        return true;
+      }
+
       const validationResult = await this.validatePlatformCredentials(platformId, credentials);
-      
+
       if (!validationResult.success) {
         throw new Error(validationResult.message);
       }
-      
-      // Save platform connection to database
-      const { error } = await supabase
-        .from('platform_connections')
-        .upsert({
-          platform_id: platformId,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          credentials: credentials,
-          status: 'active',
-          connected_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
-      
-      return true;
+
+      throw new Error(`${platformId} connection persistence is not enabled in the production-safe path`);
     } catch (error) {
       console.error(`Error connecting to ${platformId}:`, error);
       throw error;
@@ -82,19 +97,34 @@ export const platformService = {
 
   async disconnectPlatform(platformId: string): Promise<boolean> {
     try {
-      // Update platform connection status in database
-      const { error } = await supabase
-        .from('platform_connections')
-        .update({
-          status: 'inactive',
-          disconnected_at: new Date().toISOString()
-        })
-        .eq('platform_id', platformId)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-      
-      if (error) throw error;
-      
-      return true;
+      if (platformId === 'ebay') {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+
+        if (!token) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch('/api/connect/ebay', {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`eBay disconnect request failed with HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        if (!payload.success) {
+          throw new Error(payload.error || 'eBay disconnect failed');
+        }
+
+        return true;
+      }
+
+      throw new Error(`${platformId} disconnect is not enabled in the production-safe path`);
     } catch (error) {
       console.error(`Error disconnecting from ${platformId}:`, error);
       throw error;
@@ -137,6 +167,13 @@ export const platformService = {
           
           return { success: true, message: 'Amazon credentials validated successfully' };
         
+        case 'ebay':
+          if (!credentials.accessToken) {
+            return { success: false, message: 'eBay user access token is required' };
+          }
+
+          return { success: true, message: 'eBay credentials ready for server validation' };
+
         case 'etsy':
           if (!credentials.apiKey || !credentials.storeUrl) {
             return { success: false, message: 'API Key and Shop ID are required' };
