@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 210" role="img" aria-labelledby="title desc">
+<title id="title">ShopOpti</title><desc id="desc">ShopOpti smart ecommerce logo</desc>
+<defs>
+  <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0ea5ff"/><stop offset=".55" stop-color="#066eff"/><stop offset="1" stop-color="#1736bf"/></linearGradient>
+  <linearGradient id="gWarm" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb000"/><stop offset=".42" stop-color="#ff6a00"/><stop offset=".72" stop-color="#ff2d6f"/><stop offset="1" stop-color="#7b3cff"/></linearGradient>
+  <linearGradient id="gWord" x1="0" y1="0" x2="1" y2="0"><stop offset=".56" stop-color="#075fcb"/><stop offset=".72" stop-color="#ff9a00"/><stop offset=".86" stop-color="#ff2d6f"/><stop offset="1" stop-color="#ff5b2b"/></linearGradient>
+</defs>
+<rect width="720" height="210" rx="28" fill="#071f36"/>
+<g transform="translate(28 18)">
+  <path d="M8 126C32 74 82 44 132 44c29 0 56 10 77 29-24-11-48-13-70-7-35 9-62 31-78 61 22 22 50 34 82 34 30 0 58-10 83-30-20 36-58 58-100 58-49 0-92-24-118-63z" fill="url(#gBlue)"/>
+  <path d="M31 132c47 17 93 13 136-12 29-17 55-43 76-78l9 19c-20 36-48 65-82 85-48 28-99 33-151 14z" fill="url(#gWarm)"/>
+  <path d="M118 28l39-20-6 42 42 2-52 51 8-37-31-38z" fill="#ffae00"/>
+  <rect x="68" y="93" width="24" height="38" rx="2" fill="#ff8a00"/><rect x="102" y="76" width="24" height="55" rx="2" fill="#ff2d6f"/><rect x="136" y="55" width="24" height="76" rx="2" fill="url(#gBlue)"/>
+  <g fill="#078cff"><path d="M70 27l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/><path d="M92 12l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/><path d="M112 28l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/></g>
+</g>
+<text x="245" y="112" font-family="Inter,Arial,sans-serif" font-size="73" font-weight="800" letter-spacing="-4"><tspan fill="#ffffff">Shop</tspan><tspan fill="url(#gWarm)">Opti</tspan></text>
+<text x="247" y="152" font-family="Inter,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="5" fill="#ffffff">SMART ECOMMERCE. BIGGER RESULTS.</text>
+</svg>
