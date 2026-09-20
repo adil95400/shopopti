@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, CreditCard, Truck, BarChart, Mail, 
   Globe, Code, Zap, Search, MessageSquare, Database,
@@ -10,22 +11,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import IntegrationCard from '@/components/integrations/IntegrationCard';
 import ApiIntegration from '@/components/integrations/ApiIntegration';
 import { Button } from '@/components/ui/button';
+import { shopifyService } from '@/services/shopifyService';
 
 
 const Integrations: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [shopifyConnected, setShopifyConnected] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let active = true;
+    shopifyService.getStatus()
+      .then(status => {
+        if (active) setShopifyConnected(status.connected);
+      })
+      .catch(() => {
+        if (active) setShopifyConnected(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   
   const integrations = [
     // Marketplaces
     {
       id: 'shopify',
       name: 'Shopify',
-      description: 'Connect your Shopify store to import products and sync orders automatically.',
+      description: 'Validate a Shopify store server-side and publish catalog products with confirmed remote IDs.',
       icon: <ShoppingBag className="h-5 w-5 text-green-600" />,
-      connected: true,
-      category: 'marketplace' as const,
+      connected: shopifyConnected,
+      category: 'webstore' as const,
       url: 'https://shopify.com',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png'
     },
@@ -86,7 +103,7 @@ const Integrations: React.FC = () => {
       name: 'Stripe',
       description: 'Process payments securely with Stripe and manage subscriptions.',
       icon: <CreditCard className="h-5 w-5 text-blue-600" />,
-      connected: true,
+      connected: false,
       category: 'payment' as const,
       url: 'https://stripe.com',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png'
@@ -128,7 +145,7 @@ const Integrations: React.FC = () => {
       name: 'Easyship',
       description: 'Get the best shipping rates and automate fulfillment with Easyship.',
       icon: <Truck className="h-5 w-5 text-blue-600" />,
-      connected: true,
+      connected: false,
       category: 'shipping' as const,
       url: 'https://easyship.com',
       logo: 'https://cdn.easyship.com/courier-logos/easyship-logo.png'
@@ -170,7 +187,7 @@ const Integrations: React.FC = () => {
       name: 'Facebook & Instagram',
       description: 'Connect your Facebook and Instagram shops for social selling.',
       icon: <Globe className="h-5 w-5 text-blue-600" />,
-      connected: true,
+      connected: false,
       category: 'marketing' as const,
       url: 'https://facebook.com/business',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1024px-Facebook_Logo_%282019%29.png'
@@ -192,7 +209,7 @@ const Integrations: React.FC = () => {
       name: 'Google Analytics',
       description: 'Track website traffic and user behavior with Google Analytics.',
       icon: <BarChart className="h-5 w-5 text-blue-600" />,
-      connected: true,
+      connected: false,
       category: 'analytics' as const,
       url: 'https://analytics.google.com',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Google_Analytics_logo.svg/1200px-Google_Analytics_logo.svg.png'
@@ -220,45 +237,32 @@ const Integrations: React.FC = () => {
   ];
   
   const handleConnect = async (id: string) => {
-    try {
-      setLoading(true);
-      // In a real app, you would connect to the integration
-      console.log(`Connecting to ${id}...`);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success(`Successfully connected to ${id}`);
-    } catch (error) {
-      console.error(`Error connecting to ${id}:`, error);
-      toast.error(`Failed to connect to ${id}`);
-    } finally {
-      setLoading(false);
+    if (id === 'shopify') {
+      navigate('/app/multi-channel-integrations');
+      return;
     }
+    toast.error(`${id} is not available through a verified server integration yet.`);
+    throw new Error(`${id} integration is unavailable.`);
   };
   
   const handleDisconnect = async (id: string) => {
-    try {
-      setLoading(true);
-      // In a real app, you would disconnect from the integration
-      console.log(`Disconnecting from ${id}...`);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success(`Successfully disconnected from ${id}`);
-    } catch (error) {
-      console.error(`Error disconnecting from ${id}:`, error);
-      toast.error(`Failed to disconnect from ${id}`);
-    } finally {
-      setLoading(false);
+    if (id !== 'shopify') {
+      toast.error(`${id} is not available through a verified server integration yet.`);
+      throw new Error(`${id} integration is unavailable.`);
     }
+    await shopifyService.disconnect();
+    const status = await shopifyService.getStatus();
+    if (status.connected) throw new Error('Shopify did not confirm the disconnection.');
+    setShopifyConnected(false);
+    toast.success('Shopify disconnected.');
   };
   
   const handleConfigure = (id: string) => {
-    // In a real app, you would open configuration modal
-    console.log(`Configuring ${id}...`);
-    toast.info(`Opening configuration for ${id}`);
+    if (id === 'shopify') {
+      navigate('/app/multi-channel-integrations');
+      return;
+    }
+    toast.info(`${id} configuration is not available.`);
   };
   
   const filteredIntegrations = integrations.filter(integration => {
