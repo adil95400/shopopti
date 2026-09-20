@@ -1,24 +1,54 @@
-import { it, expect, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 
-var createMock: any
-vi.mock('openai', () => {
-  createMock = vi.fn()
-  return {
-    default: class {
-      chat = { completions: { create: createMock } }
-    }
-  }
+const invokeMock = vi.fn()
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    functions: {
+      invoke: invokeMock,
+    },
+  },
+}))
+
+beforeEach(() => {
+  invokeMock.mockReset()
 })
 
-it('parses variant suggestions from OpenAI', async () => {
-  process.env.VITE_OPENAI_API_KEY = 'test-key'
+it('routes variant generation through the authenticated ai-hub function', async () => {
+  invokeMock.mockResolvedValue({
+    data: {
+      data: [{ title: 'Variant A', options: { size: 'S' } }],
+    },
+    error: null,
+  })
 
   const { aiService } = await import('../aiService')
-
-  createMock.mockResolvedValue({
-    choices: [{ message: { content: '[{"title":"Variant A","options":{"size":"S"}}]' } }]
-  })
   const result = await aiService.generateVariants({ title: 'Test Product' })
+
+  expect(invokeMock).toHaveBeenCalledWith('ai-hub', {
+    body: {
+      action: 'generateVariants',
+      payload: {
+        title: 'Test Product',
+        description: undefined,
+        category: undefined,
+        attributes: undefined,
+      },
+    },
+  })
   expect(result).toEqual([{ title: 'Variant A', options: { size: 'S' } }])
 })
 
+it('fails closed when the ai-hub response is invalid', async () => {
+  invokeMock.mockResolvedValue({ data: null, error: null })
+
+  const { aiService } = await import('../aiService')
+
+  await expect(
+    aiService.optimizeProduct({
+      name: 'Product',
+      description: 'Description',
+      category: 'Category',
+    })
+  ).rejects.toThrow('Invalid AI response')
+})
