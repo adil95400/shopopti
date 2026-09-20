@@ -28,6 +28,30 @@ type ProductRow = {
   id: string;
   title: string;
   price: number | string;
+  cost_price: number | string | null;
+  currency: string | null;
+};
+
+type OrderItemRow = {
+  product_id: string | null;
+  qty: number;
+};
+
+type OrderRow = {
+  id: string;
+  shop_id: string | null;
+  total_amount: number | string;
+  currency: string | null;
+  financial_status: string | null;
+  created_at: string | null;
+  order_date: string | null;
+  order_items: OrderItemRow[] | null;
+};
+
+type ShopRow = {
+  id: string;
+  name: string;
+  platform: string;
 };
 
 type ProductPerformance = {
@@ -98,7 +122,10 @@ const AdminAnalytics: React.FC = () => {
   const [previousRows, setPreviousRows] = useState<AnalyticsRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [marketplaces, setMarketplaces] = useState<MarketplaceRow[]>([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [shops, setShops] = useState<ShopRow[]>([]);
   const [marketplaceId, setMarketplaceId] = useState('all');
+  const [shopId, setShopId] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,30 +157,52 @@ const AdminAnalytics: React.FC = () => {
         previousQuery = previousQuery.eq('marketplace_id', marketplaceId);
       }
 
-      const productsQuery = supabase.from('products').select('id,title,price');
+      const productsQuery = supabase.from('products').select('id,title,price,cost_price,currency');
       const marketplacesQuery = supabase
         .from('marketplaces')
         .select('id,name,country,status')
         .order('name', { ascending: true });
 
-      const [currentResult, previousResult, productsResult, marketplacesResult] = await Promise.all([
+      let ordersQuery = supabase
+        .from('orders')
+        .select('id,shop_id,total_amount,currency,financial_status,created_at,order_date,order_items(product_id,qty)')
+        .gte('created_at', range.start + 'T00:00:00')
+        .lte('created_at', range.end + 'T23:59:59.999')
+        .order('created_at', { ascending: true });
+
+      if (shopId !== 'all') {
+        ordersQuery = ordersQuery.eq('shop_id', shopId);
+      }
+
+      const shopsQuery = supabase
+        .from('shops')
+        .select('id,name,platform')
+        .order('name', { ascending: true });
+
+      const [currentResult, previousResult, productsResult, marketplacesResult, ordersResult, shopsResult] = await Promise.all([
         currentQuery,
         previousQuery,
         productsQuery,
         marketplacesQuery,
+        ordersQuery,
+        shopsQuery,
       ]);
 
       const firstError =
         currentResult.error ??
         previousResult.error ??
         productsResult.error ??
-        marketplacesResult.error;
+        marketplacesResult.error ??
+        ordersResult.error ??
+        shopsResult.error;
       if (firstError) {
         console.error('Unable to load verified analytics', firstError);
         setRows([]);
         setPreviousRows([]);
         setProducts([]);
         setMarketplaces([]);
+        setOrders([]);
+        setShops([]);
         setError('Les données Analytics ne peuvent pas être vérifiées pour le moment.');
         setLoading(false);
         return;
@@ -163,11 +212,13 @@ const AdminAnalytics: React.FC = () => {
       setPreviousRows((previousResult.data ?? []) as AnalyticsRow[]);
       setProducts((productsResult.data ?? []) as ProductRow[]);
       setMarketplaces((marketplacesResult.data ?? []) as MarketplaceRow[]);
+      setOrders((ordersResult.data ?? []) as OrderRow[]);
+      setShops((shopsResult.data ?? []) as ShopRow[]);
       setLoading(false);
     };
 
     void fetchAnalytics();
-  }, [isAdmin, range, marketplaceId]);
+  }, [isAdmin, range, marketplaceId, shopId]);
 
   const current = useMemo(() => aggregate(rows), [rows]);
   const previous = useMemo(() => aggregate(previousRows), [previousRows]);
@@ -184,6 +235,72 @@ const AdminAnalytics: React.FC = () => {
   }, [rows]);
 
   const maxDailyRevenue = Math.max(...dailyRevenue.map((item) => item.revenue), 0);
+
+  const orderEconomics = useMemo(() => {
+    const costByProduct = new Map(products.map((product) => [product.id, Number(product.cost_price ?? 0)]));
+    const currencies = new Set(orders.map((order) => order.currency).filter((currency): currency is string => Boolean(currency)));
+    const paidOrders = orders.filter((order) =>
+      ['paid', 'partially_refunded', 'refunded'].includes((order.financial_status ?? '').toLowerCase()),
+    );
+
+    let revenue = 0;
+    let cogs = 0;
+    let missingCostItems = 0;
+
+    paidOrders.forEach((order) => {
+      revenue += Number(order.total_amount ?? 0);
+      (order.order_items ?? []).forEach((item) => {
+        if (!item.product_id || !costByProduct.has(item.product_id)) {
+          missingCostItems += 1;
+          return;
+        }
+        cogs += (costByProduct.get(item.product_id) ?? 0) * Number(item.qty ?? 0);
+      });
+    });
+
+    const singleCurrency = currencies.size === 1 ? Array.from(currencies)[0] : null;
+    const cogsVerified = missingCostItems === 0;
+    const grossProfit = cogsVerified ? revenue - cogs : null;
+    const grossMargin = grossProfit !== null && revenue > 0 ? (grossProfit / revenue) * 100 : null;
+
+    return {
+      orders: paidOrders.length,
+      revenue,
+      cogs: cogsVerified ? cogs : null,
+      grossProfit,
+      grossMargin,
+      currency: singleCurrency,
+      mixedCurrencies: currencies.size > 1,
+      missingCostItems,
+    };
+  }, [orders, products]);
+
+  const shopBreakdown = useMemo(() => {
+    const shopNames = new Map(shops.map((shop) => [shop.id, shop.name + ' · ' + shop.platform]));
+    const grouped = new Map<string, { orders: number; revenue: number; currencies: Set<string> }>();
+    orders
+      .filter((order) => ['paid', 'partially_refunded', 'refunded'].includes((order.financial_status ?? '').toLowerCase()))
+      .forEach((order) => {
+        const key = order.shop_id ?? 'unattributed';
+        const existing = grouped.get(key) ?? { orders: 0, revenue: 0, currencies: new Set<string>() };
+        if (order.currency) existing.currencies.add(order.currency);
+        grouped.set(key, {
+          orders: existing.orders + 1,
+          revenue: existing.revenue + Number(order.total_amount ?? 0),
+          currencies: existing.currencies,
+        });
+      });
+
+    return Array.from(grouped.entries())
+      .map(([id, metrics]) => ({
+        id,
+        name: id === 'unattributed' ? 'Boutique non attribuée' : shopNames.get(id) ?? 'Boutique inconnue',
+        orders: metrics.orders,
+        revenue: metrics.revenue,
+        currency: metrics.currencies.size === 1 ? Array.from(metrics.currencies)[0] : null,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [orders, shops]);
 
   const marketplaceBreakdown = useMemo(() => {
     const byMarketplace = new Map<string, { revenue: number; conversions: number; clicks: number }>();
@@ -269,6 +386,18 @@ const AdminAnalytics: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <select
+            className="px-3 py-2 border border-gray-300 rounded-md"
+            value={shopId}
+            onChange={(event) => setShopId(event.target.value)}
+          >
+            <option value="all">Toutes les boutiques</option>
+            {shops.map((shop) => (
+              <option key={shop.id} value={shop.id}>
+                {shop.name} · {shop.platform}
+              </option>
+            ))}
+          </select>
           <select
             className="px-3 py-2 border border-gray-300 rounded-md"
             value={marketplaceId}
@@ -410,17 +539,55 @@ const AdminAnalytics: React.FC = () => {
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="font-medium mb-4">Métriques P1 encore non vérifiables</h3>
+          <h3 className="font-medium mb-4">Économie des commandes payées</h3>
           <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex justify-between"><span>Commandes réelles distinctes</span><strong>Non vérifié</strong></div>
-            <div className="flex justify-between"><span>COGS / coût fournisseur</span><strong>Non vérifié</strong></div>
-            <div className="flex justify-between"><span>Marge / profit net</span><strong>Non vérifié</strong></div>
-            <div className="flex justify-between"><span>Devise par canal</span><strong>Non vérifié</strong></div>
-            <p className="pt-2 text-xs text-gray-500">
-              Ces KPI ne sont pas dérivés artificiellement : le schéma actuel ne fournit pas encore une source canonique suffisante.
-            </p>
+            <div className="flex justify-between"><span>Commandes réelles</span><strong>{error ? 'Non vérifié' : orderEconomics.orders}</strong></div>
+            <div className="flex justify-between">
+              <span>CA commandes</span>
+              <strong>{error || orderEconomics.mixedCurrencies || !orderEconomics.currency ? 'Non vérifié' : orderEconomics.revenue.toLocaleString('fr-FR', { style: 'currency', currency: orderEconomics.currency })}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>COGS catalogue</span>
+              <strong>{error || orderEconomics.cogs === null || !orderEconomics.currency ? 'Non vérifié' : orderEconomics.cogs.toLocaleString('fr-FR', { style: 'currency', currency: orderEconomics.currency })}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Marge brute estimée</span>
+              <strong>{error || orderEconomics.grossProfit === null || !orderEconomics.currency ? 'Non vérifié' : orderEconomics.grossProfit.toLocaleString('fr-FR', { style: 'currency', currency: orderEconomics.currency })}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Taux de marge brute</span>
+              <strong>{error || orderEconomics.grossMargin === null ? 'Non vérifié' : orderEconomics.grossMargin.toFixed(2) + '%'}</strong>
+            </div>
+            {orderEconomics.missingCostItems > 0 && (
+              <p className="pt-2 text-xs text-amber-700">
+                {orderEconomics.missingCostItems} ligne(s) sans coût produit vérifiable : COGS et marge restent fail-closed.
+              </p>
+            )}
+            {orderEconomics.mixedCurrencies && (
+              <p className="pt-2 text-xs text-amber-700">Plusieurs devises sont présentes : aucun total monétaire multi-devise n'est additionné comme s'il était homogène.</p>
+            )}
+            <p className="pt-2 text-xs text-gray-500">La marge est brute et estimée depuis products.cost_price ; frais marketplace, publicité, taxes et transport ne sont pas encore déduits.</p>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h3 className="font-medium mb-4">Commandes par boutique</h3>
+        {loading ? (
+          <div className="text-sm text-gray-500">Chargement...</div>
+        ) : error || !shopBreakdown.length ? (
+          <div className="text-sm text-gray-500">Aucune commande payée vérifiée sur cette période.</div>
+        ) : (
+          <div className="space-y-3">
+            {shopBreakdown.map((shop) => (
+              <div key={shop.id} className="grid grid-cols-3 gap-3 border-b border-gray-100 pb-3 text-sm">
+                <div className="font-medium">{shop.name}</div>
+                <div className="text-right">{shop.orders} commandes</div>
+                <div className="text-right">{shop.currency ? shop.revenue.toLocaleString('fr-FR', { style: 'currency', currency: shop.currency }) : 'Devise mixte/non vérifiée'}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-sm">
