@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
-import { percentChange, sumAmount } from '@/utils/dashboardMetrics';
+import { percentChange } from '@/utils/dashboardMetrics';
 
 export type DashboardPeriod = 7 | 30 | 90;
 
@@ -102,8 +102,8 @@ export function useDashboardStats(period: DashboardPeriod) {
       const currentAnalytics = (currentAnalyticsResult.data || []) as AnalyticsRow[];
       const previousAnalytics = (previousAnalyticsResult.data || []) as AnalyticsRow[];
 
-      const currentRevenue = sumAmount(currentOrders);
-      const previousRevenue = sumAmount(previousOrders);
+      const currentRevenue = currentAnalytics.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+      const previousRevenue = previousAnalytics.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
 
       const currentViews = currentAnalytics.reduce((sum, row) => sum + Number(row.views || 0), 0);
       const previousViews = previousAnalytics.reduce((sum, row) => sum + Number(row.views || 0), 0);
