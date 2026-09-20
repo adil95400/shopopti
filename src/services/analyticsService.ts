@@ -64,6 +64,8 @@ export const aggregateProductAnalytics = (
   let conversions = 0;
 
   for (const row of rows) {
+    if (!row.product_id || !productNames.has(row.product_id)) continue;
+
     const rowViews = asFiniteNumber(row.views);
     const rowClicks = asFiniteNumber(row.clicks);
     const rowConversions = asFiniteNumber(row.conversions);
@@ -74,8 +76,6 @@ export const aggregateProductAnalytics = (
     clicks += rowClicks;
     conversions += rowConversions;
     byDate.set(row.date, (byDate.get(row.date) ?? 0) + rowRevenue);
-
-    if (!row.product_id || !productNames.has(row.product_id)) continue;
 
     const current = byProduct.get(row.product_id) ?? {
       productId: row.product_id,
