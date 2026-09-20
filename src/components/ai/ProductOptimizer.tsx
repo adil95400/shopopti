@@ -36,7 +36,7 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
     setOptimizationOptions(current => ({ ...current, [key]: !current[key] }));
   };
 
-  const handleOptimize = async (regenerate = false) => {
+  const handleOptimize = async () => {
     const optimized = await optimizeProduct(
       {
         name: product.title,
@@ -47,8 +47,7 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
       {
         ...optimizationOptions,
         pricing: false
-      },
-      { regenerate }
+      }
     );
 
     setOptimizedProduct({
@@ -105,7 +104,7 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
       </div>
 
       {!optimizedProduct ? (
-        <Button onClick={() => handleOptimize(false)} disabled={loading || !hasSelection} className="w-full">
+        <Button onClick={handleOptimize} disabled={loading || !hasSelection} className="w-full">
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -161,7 +160,7 @@ const ProductOptimizer: React.FC<ProductOptimizerProps> = ({ product, onOptimize
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <Button variant="outline" onClick={() => handleOptimize(true)} disabled={loading}>
+            <Button variant="outline" onClick={handleOptimize} disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
               Regenerate
             </Button>
