@@ -27,7 +27,19 @@ describe('Shopify production contract', () => {
     expect(migration).toContain('REVOKE ALL ON TABLE shopify_private.connection_secrets FROM PUBLIC, anon, authenticated')
     expect(migration).toContain('TO service_role')
     expect(migration).toContain('USING ((SELECT auth.uid()) = user_id)')
-    expect(migration).toContain("status = 'inactive'")
+    expect(migration).toContain('get_shopify_connection_status')
+  })
+
+  it('supports both historical and current staging platform connection schemas', () => {
+    const migration = read('supabase/migrations/20260919091526_shopify_secure_integration_p0.sql')
+    const shopifyFunction = read('supabase/functions/shopify/index.ts')
+
+    expect(migration).toContain("column_name = 'platform_id'")
+    expect(migration).toContain("lower(platform_name) = 'shopify'")
+    expect(migration).toContain("connection_status = ''connected''")
+    expect(migration).toContain("sync_settings")
+    expect(shopifyFunction).toContain("admin.rpc('get_shopify_connection_status'")
+    expect(shopifyFunction).not.toContain(".eq('platform_id', 'shopify')")
   })
 
   it('contains no malformed redirect escape', () => {
