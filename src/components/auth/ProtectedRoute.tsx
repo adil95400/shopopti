@@ -4,10 +4,10 @@ import { Loader2 } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
 import {
-  MfaFactorSummary,
   requiresMfaChallenge,
   toVerifiedFactorSummaries
 } from '@/lib/auth/mfaPolicy';
+import type { MfaFactorSummary } from '@/lib/auth/mfaPolicy';
 
 import MfaOtpForm from './MfaOtpForm';
 
@@ -87,7 +87,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(() => {
-      void checkAuth();
+      // Supabase recommends deferring additional auth calls made in this
+      // callback so they do not contend with the auth client's internal lock.
+      window.setTimeout(() => {
+        void checkAuth();
+      }, 0);
     });
 
     return () => subscription.unsubscribe();
