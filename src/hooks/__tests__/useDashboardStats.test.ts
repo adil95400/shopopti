@@ -16,9 +16,9 @@ describe('dashboard metric helpers', () => {
   it('sums supplier order amounts defensively', () => {
     expect(
       sumAmount([
-        { id: '1', status: 'pending', total_amount: '12.50', created_at: '2026-09-20T10:00:00Z' },
-        { id: '2', status: 'shipped', total_amount: 7.5, created_at: '2026-09-20T11:00:00Z' },
-        { id: '3', status: 'delivered', total_amount: null, created_at: '2026-09-20T12:00:00Z' },
+        { total_amount: '12.50' },
+        { total_amount: 7.5 },
+        { total_amount: null },
       ])
     ).toBe(20);
   });
