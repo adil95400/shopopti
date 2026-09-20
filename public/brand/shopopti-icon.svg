@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="ShopOpti">
+<defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#18a8ff"/><stop offset=".55" stop-color="#0674ff"/><stop offset="1" stop-color="#1934bd"/></linearGradient><linearGradient id="w" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb000"/><stop offset=".43" stop-color="#ff6a00"/><stop offset=".72" stop-color="#ff2d6f"/><stop offset="1" stop-color="#7b3cff"/></linearGradient></defs>
+<rect width="256" height="256" rx="54" fill="#071f36"/>
+<path d="M28 161c20-49 66-82 116-82 28 0 53 8 73 24-21-8-42-8-61-3-35 9-62 31-78 60 20 20 45 30 75 30 28 0 54-9 78-27-19 34-55 54-96 54-46 0-84-21-107-56z" fill="url(#b)"/>
+<path d="M47 164c43 16 84 11 122-12 27-17 50-41 69-73l8 17c-18 33-43 59-74 77-43 26-89 31-136 13z" fill="url(#w)"/>
+<path d="M128 57l36-18-6 36 38 2-47 47 8-34-29-33z" fill="#ffad00"/>
+<rect x="90" y="123" width="25" height="39" rx="2" fill="#ff8a00"/><rect x="124" y="106" width="25" height="56" rx="2" fill="#ff2d6f"/><rect x="158" y="86" width="25" height="76" rx="2" fill="url(#b)"/>
+<g fill="#0b8cff"><path d="M92 73l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/><path d="M115 58l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/><path d="M137 73l4 8 8 4-8 4-4 8-4-8-8-4 8-4z"/></g>
+</svg>
