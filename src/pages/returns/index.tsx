@@ -70,7 +70,7 @@ const ReturnsPage: React.FC = () => {
       // Update the return request
       const updatedReturn = { 
         ...selectedReturn, 
-        status: 'completed' as const, 
+        status: 'completed' as const,
         refundAmount: parseFloat(refundAmount) 
       };
       
