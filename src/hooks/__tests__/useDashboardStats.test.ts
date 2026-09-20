@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { percentChange, sumAmount } from '../useDashboardStats';
+import { percentChange, sumAmount } from '@/utils/dashboardMetrics';
 
 describe('dashboard metric helpers', () => {
   it('computes positive and negative previous-period changes', () => {
