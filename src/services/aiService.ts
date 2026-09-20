@@ -1,8 +1,12 @@
 import { supabase } from '@/lib/supabase';
 
-async function invokeAi<T>(action: string, payload: Record<string, unknown>): Promise<T> {
+async function invokeAi<T>(
+  action: string,
+  payload: Record<string, unknown>,
+  options: { bypassCache?: boolean } = {}
+): Promise<T> {
   const { data, error } = await supabase.functions.invoke('ai-hub', {
-    body: { action, payload },
+    body: { action, payload, bypassCache: options.bypassCache === true },
   });
 
   if (error) {
@@ -37,24 +41,24 @@ export const aiService = {
     keywords?: string[];
     maxLength?: number;
   }): Promise<string> {
-    return invokeAi<string>('optimizeProductTitle', {
-      title,
-      category,
-      keywords,
-      maxLength
-    });
+    return invokeAi<string>('optimizeProductTitle', { title, category, keywords, maxLength });
   },
 
   async optimizeProduct(product: {
     name: string;
     description: string;
     category: string;
-  }): Promise<{
+  }, options: { bypassCache?: boolean } = {}): Promise<{
     title: string;
     description_html: string;
     tags: string[];
+    seo?: {
+      metaTitle: string;
+      metaDescription: string;
+      keywords: string[];
+    };
   }> {
-    return invokeAi('optimizeProduct', product);
+    return invokeAi('optimizeProduct', product, options);
   },
 
   async optimizeForSEO({
@@ -75,15 +79,7 @@ export const aiService = {
     return invokeAi('optimizeForSEO', { title, description, category });
   },
 
-  async generateBlogContent({
-    title,
-    keywords,
-    type,
-    targetAudience,
-    tone,
-    wordCount,
-    structure
-  }: {
+  async generateBlogContent(input: {
     title: string;
     keywords: string[];
     type: string;
@@ -92,47 +88,30 @@ export const aiService = {
     wordCount: number;
     structure: string[];
   }): Promise<string> {
-    return invokeAi('generateBlogContent', {
-      title,
-      keywords,
-      type,
-      targetAudience,
-      tone,
-      wordCount,
-      structure
-    });
+    return invokeAi('generateBlogContent', input);
   },
 
-  async generateHashtags({
-    product,
-    platform,
-    count
-  }: {
+  async generateHashtags(input: {
     product: string;
     platform: string;
     count: number;
   }): Promise<string[]> {
     try {
-      return await invokeAi<string[]>('generateHashtags', { product, platform, count });
+      return await invokeAi<string[]>('generateHashtags', input);
     } catch (error) {
       console.error('Error generating hashtags:', error);
       return [];
     }
   },
 
-  async generateVariants({
-    title,
-    description,
-    category,
-    attributes
-  }: {
+  async generateVariants(input: {
     title: string;
     description?: string;
     category?: string;
     attributes?: Record<string, string[]>;
   }): Promise<Array<{ title: string; options: Record<string, string> }>> {
     try {
-      return await invokeAi('generateVariants', { title, description, category, attributes });
+      return await invokeAi('generateVariants', input);
     } catch (error) {
       console.error('Error generating variants:', error);
       return [];
@@ -148,19 +127,14 @@ export const aiService = {
     }
   },
 
-  async generateResponse({
-    review,
-    rating,
-    sentiment,
-    verified
-  }: {
+  async generateResponse(input: {
     review: string;
     rating: number;
     sentiment?: 'positive' | 'negative' | 'neutral';
     verified?: boolean;
   }): Promise<string> {
     try {
-      return await invokeAi('generateResponse', { review, rating, sentiment, verified });
+      return await invokeAi('generateResponse', input);
     } catch (error) {
       console.error('Error generating response:', error);
       return 'Merci pour votre avis. Nous apprécions vos commentaires.';
