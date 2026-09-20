@@ -27,7 +27,7 @@ it('calls AutoDS categories endpoint', async () => {
 
 it('creates order via AutoDS endpoint', async () => {
   ;(axios.post as any).mockResolvedValueOnce({ data: { success: true } })
-  await supplierService.createOrder('1', { external_order_id: '1', shipping_address: {}, items: [] })
+  await supplierService.createOrder('1', { external_order_id: '1', shipping_address: { name: 'Test', address1: '1 Test St', city: 'Paris', state: 'IDF', zip: '75001', country: 'FR' }, items: [] })
   expect((axios.post as any).mock.calls[0][0]).toContain('/providers/autods/orders')
 })
 

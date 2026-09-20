@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, Search, Filter, Edit, Trash2, Copy, Eye, Sparkles } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Edit, Trash2, Copy, Eye, Sparkles, ShoppingBag, Layout, Mail, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { templateService, Template } from '@/modules/templates';

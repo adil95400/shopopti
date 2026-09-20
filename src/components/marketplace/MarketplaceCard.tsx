@@ -19,6 +19,8 @@ interface MarketplaceCardProps {
     connected?: boolean;
     products?: number;
     status?: 'active' | 'pending' | 'error';
+    currency?: string;
+    language?: string;
   };
   onConnect?: (id: string) => Promise<void>;
   onViewDetails?: (id: string) => void;
@@ -151,11 +153,11 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = ({
               <div className="mt-2 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Devise:</span>
-                  <span>{marketplace.currency}</span>
+                  <span>{marketplace.currency || 'Non vérifié'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Langue:</span>
-                  <span>{marketplace.language}</span>
+                  <span>{marketplace.language || 'Non vérifié'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Commission:</span>

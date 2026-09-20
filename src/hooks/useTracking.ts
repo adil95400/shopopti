@@ -1,4 +1,4 @@
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { trackingService, TrackingResult } from '@/services/trackingService';
@@ -8,7 +8,7 @@ export function useTracking() {
   const [carrier, setCarrier] = useState('auto');
   const [result, setResult] = useState<TrackingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const trackPackage = async (number?: string, selectedCarrier?: string) => {
     const trackingToUse = number || trackingNumber;
@@ -19,24 +19,25 @@ export function useTracking() {
       return;
     }
 
-    startTransition(async () => {
-      setError(null);
-      
-      try {
-        const trackingResult = await trackingService.trackPackage(
-          trackingToUse, 
-          { carrier: carrierToUse !== 'auto' ? carrierToUse : undefined }
-        );
-        
-        setResult(trackingResult);
-        toast.success('Informations de suivi récupérées avec succès');
-      } catch (err: any) {
-        console.error('Erreur de suivi:', err);
-        setError(err.message || "Une erreur est survenue lors du suivi du colis");
-        setResult(null);
-        toast.error(err.message || "Une erreur est survenue lors du suivi du colis");
-      }
-    });
+    setIsPending(true);
+    setError(null);
+
+    try {
+      const trackingResult = await trackingService.trackPackage(
+        trackingToUse,
+        { carrier: carrierToUse !== 'auto' ? carrierToUse : undefined }
+      );
+
+      setResult(trackingResult);
+      toast.success('Informations de suivi récupérées avec succès');
+    } catch (err: any) {
+      console.error('Erreur de suivi:', err);
+      setError(err.message || "Une erreur est survenue lors du suivi du colis");
+      setResult(null);
+      toast.error(err.message || "Une erreur est survenue lors du suivi du colis");
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return {

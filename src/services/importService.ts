@@ -94,7 +94,7 @@ export const importService = {
       const config = {
         header: true,
         skipEmptyLines: true,
-        transform: (value) => value.trim(),
+        transform: (value: string) => value.trim(),
         chunk: async (results: any, parser: any) => {
           try {
             const products = await Promise.all(
@@ -388,8 +388,8 @@ export const importService = {
 
       const optimizedDescription = await aiService.generateProductDescription({
         title: optimizedTitle,
-        description,
-        features: []
+        category: 'Amazon',
+        features: description ? [description] : []
       });
 
       let finalVariants: ProductVariant[] | undefined =

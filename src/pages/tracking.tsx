@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +20,7 @@ export default function TrackingPage() {
   const [result, setResult] = useState<TrackingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bulkResults, setBulkResults] = useState<TrackingResult[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const performTracking = async (number: string, selectedCarrier: string = 'auto') => {
     if (!number.trim()) {
@@ -36,39 +36,39 @@ export default function TrackingPage() {
   useEffect(() => {
     const number = searchParams.get('number');
     if (number) {
-      startTransition(async () => {
-        try {
-          setTrackingNumber(number);
-          setError(null);
-          
-          const trackingResult = await performTracking(number, carrier);
+      setIsPending(true);
+      setTrackingNumber(number);
+      setError(null);
+      void performTracking(number, carrier)
+        .then((trackingResult) => {
           setResult(trackingResult);
           toast.success('Informations de suivi récupérées avec succès');
-        } catch (err: any) {
+        })
+        .catch((err: any) => {
           console.error('Erreur de suivi:', err);
           setError(err.message || t('error.generic'));
           setResult(null);
           toast.error(err.message || t('error.generic'));
-        }
-      });
+        })
+        .finally(() => setIsPending(false));
     }
   }, [searchParams, carrier, t]);
 
   const handleSearch = async (number: string, selectedCarrier: string) => {
-    startTransition(async () => {
-      try {
-        setError(null);
-        
-        const trackingResult = await performTracking(number, selectedCarrier);
-        setResult(trackingResult);
-        toast.success('Informations de suivi récupérées avec succès');
-      } catch (err: any) {
-        console.error('Erreur de suivi:', err);
-        setError(err.message || t('error.generic'));
-        setResult(null);
-        toast.error(err.message || t('error.generic'));
-      }
-    });
+    setIsPending(true);
+    try {
+      setError(null);
+      const trackingResult = await performTracking(number, selectedCarrier);
+      setResult(trackingResult);
+      toast.success('Informations de suivi récupérées avec succès');
+    } catch (err: any) {
+      console.error('Erreur de suivi:', err);
+      setError(err.message || t('error.generic'));
+      setResult(null);
+      toast.error(err.message || t('error.generic'));
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const handleBulkTracking = async (trackingNumbers: string[]) => {
@@ -76,32 +76,33 @@ export default function TrackingPage() {
 
     const limitedNumbers = trackingNumbers.slice(0, 10);
 
-    startTransition(async () => {
-      try {
-        setBulkResults([]);
+    setIsPending(true);
+    try {
+      setBulkResults([]);
 
-        const results = await Promise.all(
-          limitedNumbers.map(number =>
-            performTracking(number).catch(error => {
-              console.error(`Error tracking ${number}:`, error);
-              return null;
-            })
-          )
-        );
+      const results = await Promise.all(
+        limitedNumbers.map(number =>
+          performTracking(number).catch(error => {
+            console.error(`Error tracking ${number}:`, error);
+            return null;
+          })
+        )
+      );
 
-        const successfulResults = results.filter(Boolean) as TrackingResult[];
-        setBulkResults(successfulResults);
+      const successfulResults = results.filter(Boolean) as TrackingResult[];
+      setBulkResults(successfulResults);
 
-        if (successfulResults.length > 0) {
-          toast.success(`${successfulResults.length} colis suivis avec succès`);
-        } else {
-          toast.error("Aucun colis n'a pu être suivi");
-        }
-      } catch (error) {
-        console.error('Error in bulk tracking:', error);
-        toast.error('Une erreur est survenue lors du suivi en masse');
+      if (successfulResults.length > 0) {
+        toast.success(`${successfulResults.length} colis suivis avec succès`);
+      } else {
+        toast.error("Aucun colis n'a pu être suivi");
       }
-    });
+    } catch (error) {
+      console.error('Error in bulk tracking:', error);
+      toast.error('Une erreur est survenue lors du suivi en masse');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
