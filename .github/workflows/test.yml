@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, agent/shopify-production-p0]
 
 jobs:
   test:
@@ -21,6 +21,16 @@ jobs:
 
       - name: 📦 Install JS dependencies
         run: npm ci
+
+      - name: 🧪 Shopify production tests
+        run: >
+          npx vitest run
+          src/services/__tests__/shopifyProductionContract.test.ts
+          src/services/__tests__/shopifyService.test.ts
+          src/services/__tests__/supplierService.test.ts
+
+      - name: 🧪 Unit tests
+        run: npm run test -- --run
 
       - name: 🔍 Lint code
         run: npm run lint
@@ -43,7 +53,3 @@ jobs:
 
       - name: 📘 Générer docs API
         run: npm run docs:api
-
-      - name: ✅ Placeholder tests (à compléter)
-        run: echo "✔️ Tests ici (unitaires, e2e, etc.)"
-
