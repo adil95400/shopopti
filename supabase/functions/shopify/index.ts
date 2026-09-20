@@ -105,36 +105,33 @@ function adminClient() {
 }
 
 async function connectionStatus(admin: ReturnType<typeof adminClient>, userId: string) {
-  const { data, error } = await admin
-    .from('platform_connections')
-    .select('id, platform_id, name, type, status, settings, last_sync, connected_at, disconnected_at')
-    .eq('user_id', userId)
-    .eq('platform_id', 'shopify')
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-  if (error) throw new ShopifyIntegrationError('SHOPIFY_CONNECTION_READ_FAILED', 'Unable to read Shopify connection.', 502)
-  const settings = data?.settings && typeof data.settings === 'object'
-    ? data.settings as Record<string, unknown>
+  const { data, error } = await admin.rpc('get_shopify_connection_status', { p_user_id: userId })
+  const row = Array.isArray(data) ? data[0] : data
+  if (error) {
+    throw new ShopifyIntegrationError('SHOPIFY_CONNECTION_READ_FAILED', 'Unable to read Shopify connection.', 502)
+  }
+  const settings = row?.settings && typeof row.settings === 'object'
+    ? row.settings as Record<string, unknown>
     : {}
   if (
-    !data
-    || data.status !== 'active'
+    !row
+    || row.status !== 'active'
     || typeof settings.validated_at !== 'string'
     || typeof settings.shop_domain !== 'string'
     || typeof settings.location_id !== 'string'
   ) return { connected: false, connection: null }
+
   return {
     connected: true,
     connection: {
-      id: data.id,
-      platform_id: data.platform_id,
-      name: data.name,
+      id: row.id,
+      platform_id: 'shopify',
+      name: row.name,
       type: 'webstore',
-      status: data.status,
+      status: 'active',
       settings,
-      last_sync: data.last_sync,
-      connected_at: data.connected_at,
+      last_sync: row.last_sync,
+      connected_at: row.connected_at,
     },
   }
 }
