@@ -260,25 +260,10 @@ export const supplierService = {
     }
   },
 
-  async importToShopify(products: SupplierProduct[]): Promise<ImportResult> {
-    try {
-      // Call the Shopify import endpoint
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify/import`;
-      
-      const response = await axios.post(apiUrl, {
-        products
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error importing products to Shopify:', error);
-      throw error;
-    }
+  async importToShopify(_products: SupplierProduct[]): Promise<ImportResult> {
+    throw new Error(
+      'Direct supplier-to-Shopify import is disabled. Import products into the ShopOpti catalog first, then publish them through the verified Shopify server path.',
+    );
   },
 
   async createOrder(supplierId: string, orderData: OrderRequest): Promise<OrderResult> {
