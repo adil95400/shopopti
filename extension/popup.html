@@ -1,44 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopopti+ Product Importer</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
+  <title>ShopOpti Product Importer</title>
+  <style>
+    body { width: 340px; margin: 0; padding: 16px; font-family: Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+    h1 { margin: 0; font-size: 18px; }
+    .muted { color: #64748b; font-size: 12px; }
+    .card { margin-top: 14px; padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; }
+    .hidden { display: none; }
+    img { width: 100%; height: 170px; object-fit: contain; background: #f1f5f9; border-radius: 8px; }
+    button { width: 100%; margin-top: 10px; padding: 10px 12px; border: 0; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    #extract { background: #0f172a; color: white; }
+    #open-shopopti { background: #2563eb; color: white; }
+    #status { margin-top: 10px; min-height: 16px; }
+    #product-title { margin: 10px 0 4px; font-size: 14px; line-height: 1.35; }
+    #product-price { margin: 0; font-weight: 700; }
+  </style>
 </head>
-<body class="w-80 p-4 bg-gray-50">
-  <div class="flex items-center justify-between mb-4">
-    <h1 class="text-lg font-semibold">Shopopti+</h1>
-    <div id="status" class="text-sm"></div>
+<body>
+  <h1>ShopOpti</h1>
+  <div class="muted">Import assisté AliExpress</div>
+
+  <div class="card">
+    <div class="muted">Aucune clé AliExpress ni token Shopify n’est stocké par cette extension.</div>
+    <button id="extract">Analyser ce produit AliExpress</button>
+    <div id="status" class="muted"></div>
   </div>
 
-  <div id="login-form" class="hidden">
-    <input type="text" id="shop-url" placeholder="your-store.myshopify.com" class="w-full mb-2 p-2 border rounded">
-    <input type="password" id="access-token" placeholder="Access Token" class="w-full mb-2 p-2 border rounded">
-    <button id="login" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Connect Store</button>
-  </div>
-
-  <div id="import-panel" class="hidden">
-    <div id="product-preview" class="mb-4">
-      <img id="product-image" class="w-full h-40 object-cover rounded mb-2">
-      <h2 id="product-title" class="text-sm font-medium mb-1"></h2>
-      <p id="product-price" class="text-sm text-gray-600"></p>
-    </div>
-
-    <button id="import" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-2">
-      Import to Shopify
-    </button>
-
-    <div id="settings" class="text-sm">
-      <label class="flex items-center mb-2">
-        <input type="checkbox" id="optimize-title" checked class="mr-2">
-        Optimize title with AI
-      </label>
-      <label class="flex items-center">
-        <input type="checkbox" id="optimize-description" checked class="mr-2">
-        Generate optimized description
-      </label>
-    </div>
+  <div id="preview" class="card hidden">
+    <img id="product-image" alt="">
+    <div id="product-title"></div>
+    <p id="product-price"></p>
+    <div id="verification" class="muted"></div>
+    <button id="open-shopopti">Continuer dans ShopOpti</button>
   </div>
 
   <script src="popup.js"></script>
