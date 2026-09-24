@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 );
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-
 GRANT SELECT ON public.user_roles TO authenticated;
 
 DROP POLICY IF EXISTS "user_roles_select_own_v2" ON public.user_roles;
@@ -51,44 +50,47 @@ CREATE POLICY "user_roles_admin_manage_v2"
     AND public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
   );
 
--- Replace legacy policies that queried auth.users.role directly.
-DROP POLICY IF EXISTS "Admin manage inventory settings" ON public.inventory_settings;
-CREATE POLICY "Admin manage inventory settings"
-  ON public.inventory_settings
-  FOR ALL
-  TO authenticated
-  USING (
-    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
-  )
-  WITH CHECK (
-    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
-  );
+DO $$
+BEGIN
+  IF to_regclass('public.inventory_settings') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Admin manage inventory settings" ON public.inventory_settings';
+    EXECUTE $policy$
+      CREATE POLICY "Admin manage inventory settings"
+        ON public.inventory_settings
+        FOR ALL
+        TO authenticated
+        USING (public.has_role((SELECT auth.uid()), 'admin'::public.app_role))
+        WITH CHECK (public.has_role((SELECT auth.uid()), 'admin'::public.app_role))
+    $policy$;
+  END IF;
 
-DROP POLICY IF EXISTS "Users manage own AB tests" ON public.ab_tests;
-DROP POLICY IF EXISTS "Admins manage AB tests" ON public.ab_tests;
-CREATE POLICY "Admins manage AB tests"
-  ON public.ab_tests
-  FOR ALL
-  TO authenticated
-  USING (
-    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
-  )
-  WITH CHECK (
-    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
-  );
+  IF to_regclass('public.ab_tests') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Users manage own AB tests" ON public.ab_tests';
+    EXECUTE 'DROP POLICY IF EXISTS "Admins manage AB tests" ON public.ab_tests';
+    EXECUTE $policy$
+      CREATE POLICY "Admins manage AB tests"
+        ON public.ab_tests
+        FOR ALL
+        TO authenticated
+        USING (public.has_role((SELECT auth.uid()), 'admin'::public.app_role))
+        WITH CHECK (public.has_role((SELECT auth.uid()), 'admin'::public.app_role))
+    $policy$;
+  END IF;
 
-DROP POLICY IF EXISTS "Users manage own funnels" ON public.funnels;
-DROP POLICY IF EXISTS "Admins manage funnels" ON public.funnels;
-CREATE POLICY "Admins manage funnels"
-  ON public.funnels
-  FOR ALL
-  TO authenticated
-  USING (
-    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
-  )
-  WITH CHECK (
-    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
-  );
+  IF to_regclass('public.funnels') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Users manage own funnels" ON public.funnels';
+    EXECUTE 'DROP POLICY IF EXISTS "Admins manage funnels" ON public.funnels';
+    EXECUTE $policy$
+      CREATE POLICY "Admins manage funnels"
+        ON public.funnels
+        FOR ALL
+        TO authenticated
+        USING (public.has_role((SELECT auth.uid()), 'admin'::public.app_role))
+        WITH CHECK (public.has_role((SELECT auth.uid()), 'admin'::public.app_role))
+    $policy$;
+  END IF;
+END
+$$;
 
 COMMENT ON TABLE public.user_roles IS
   'Authoritative application role assignments. Role mutation is controlled by admin/server-side authorization.';
