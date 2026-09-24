@@ -11,6 +11,7 @@ import { RoleProvider } from './context/RoleContext';
 // Layouts
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 
 // Components
 import ChatbotWidget from './components/ChatbotWidget';
@@ -168,7 +169,7 @@ const AppRoutes = () => {
                   <Route path="ab-testing" element={<ABTestingPage />} />
                   
                   {/* Admin routes */}
-                  <Route path="admin">
+                  <Route path="admin" element={<AdminRoute />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="users" element={<UsersAdmin />} />
