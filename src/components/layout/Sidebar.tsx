@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 
 import Logo from './Logo';
+import { useRole } from '@/context/RoleContext';
 
 const sections = [
   {
@@ -124,6 +125,10 @@ const sections = [
 ];
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const { isAdmin } = useRole();
+  const visibleSections = sections.filter(
+    section => section.title !== 'Administration' || isAdmin
+  );
 
   return (
     <>
@@ -142,7 +147,7 @@ export default function Sidebar() {
               <button onClick={() => setOpen(false)}><X size={20} /></button>
             </div>
             <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-80px)]">
-              {sections.map((section, i) => (
+              {visibleSections.map((section, i) => (
                 <div key={i} className="mb-4">
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
                   <div className="flex flex-col gap-1">
@@ -172,7 +177,7 @@ export default function Sidebar() {
           <Logo />
         </div>
         <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-100px)]">
-          {sections.map((section, i) => (
+          {visibleSections.map((section, i) => (
             <div key={i} className="mb-4">
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
               <div className="flex flex-col gap-1">
