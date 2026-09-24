@@ -1,112 +1,94 @@
 -- P0 Admin RBAC hardening.
--- This migration is additive and fail-closed: authenticated users can read only
--- their own role row; role mutation remains reserved to service-role / database admin.
+-- Aligns the app with ShopOpti's existing role model and remains safe to replay.
 
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-    CREATE TYPE public.app_role AS ENUM ('user', 'admin', 'superadmin');
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public' AND t.typname = 'app_role'
+  ) THEN
+    CREATE TYPE public.app_role AS ENUM ('admin', 'user', 'staff', 'agency');
   END IF;
 END
 $$;
 
 CREATE TABLE IF NOT EXISTS public.user_roles (
-  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  role public.app_role NOT NULL DEFAULT 'user',
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role public.app_role NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, role)
 );
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
-REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM anon, authenticated;
 GRANT SELECT ON public.user_roles TO authenticated;
 
--- Preserve only roles that were already issued by trusted server-side app_metadata.
-INSERT INTO public.user_roles (user_id, role)
-SELECT
-  u.id,
-  (u.raw_app_meta_data ->> 'role')::public.app_role
-FROM auth.users AS u
-WHERE u.raw_app_meta_data ->> 'role' IN ('user', 'admin', 'superadmin')
-ON CONFLICT (user_id) DO NOTHING;
-
-DROP POLICY IF EXISTS "Users can view own role" ON public.user_roles;
-CREATE POLICY "Users can view own role"
+DROP POLICY IF EXISTS "user_roles_select_own_v2" ON public.user_roles;
+CREATE POLICY "user_roles_select_own_v2"
   ON public.user_roles
   FOR SELECT
   TO authenticated
-  USING (user_id = auth.uid());
-
-CREATE OR REPLACE FUNCTION public.current_app_role()
-RETURNS public.app_role
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT COALESCE(
-    (SELECT ur.role FROM public.user_roles AS ur WHERE ur.user_id = auth.uid()),
-    'user'::public.app_role
+  USING (
+    (SELECT auth.uid()) IS NOT NULL
+    AND (SELECT auth.uid()) = user_id
   );
-$$;
 
-REVOKE ALL ON FUNCTION public.current_app_role() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.current_app_role() TO authenticated;
+DROP POLICY IF EXISTS "user_roles_admin_manage_v2" ON public.user_roles;
+CREATE POLICY "user_roles_admin_manage_v2"
+  ON public.user_roles
+  FOR ALL
+  TO authenticated
+  USING (
+    (SELECT auth.uid()) IS NOT NULL
+    AND public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  )
+  WITH CHECK (
+    (SELECT auth.uid()) IS NOT NULL
+    AND public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  );
 
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT public.current_app_role() IN ('admin'::public.app_role, 'superadmin'::public.app_role);
-$$;
-
-REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.is_superadmin()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT public.current_app_role() = 'superadmin'::public.app_role;
-$$;
-
-REVOKE ALL ON FUNCTION public.is_superadmin() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.is_superadmin() TO authenticated;
-
--- Replace legacy policies that attempted to read auth.users.role directly.
+-- Replace legacy policies that queried auth.users.role directly.
 DROP POLICY IF EXISTS "Admin manage inventory settings" ON public.inventory_settings;
 CREATE POLICY "Admin manage inventory settings"
   ON public.inventory_settings
   FOR ALL
   TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
+  USING (
+    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  )
+  WITH CHECK (
+    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  );
 
 DROP POLICY IF EXISTS "Users manage own AB tests" ON public.ab_tests;
+DROP POLICY IF EXISTS "Admins manage AB tests" ON public.ab_tests;
 CREATE POLICY "Admins manage AB tests"
   ON public.ab_tests
   FOR ALL
   TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
+  USING (
+    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  )
+  WITH CHECK (
+    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  );
 
 DROP POLICY IF EXISTS "Users manage own funnels" ON public.funnels;
+DROP POLICY IF EXISTS "Admins manage funnels" ON public.funnels;
 CREATE POLICY "Admins manage funnels"
   ON public.funnels
   FOR ALL
   TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
+  USING (
+    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  )
+  WITH CHECK (
+    public.has_role((SELECT auth.uid()), 'admin'::public.app_role)
+  );
 
 COMMENT ON TABLE public.user_roles IS
-  'Authoritative application RBAC roles. Mutations must be performed only by trusted server-side code.';
-
-COMMENT ON FUNCTION public.current_app_role() IS
-  'Returns the authenticated user application role, defaulting to user when no assignment exists.';
+  'Authoritative application role assignments. Role mutation is controlled by admin/server-side authorization.';
