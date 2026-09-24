@@ -19,6 +19,18 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
+REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM anon, authenticated;
+GRANT SELECT ON public.user_roles TO authenticated;
+
+-- Preserve only roles that were already issued by trusted server-side app_metadata.
+INSERT INTO public.user_roles (user_id, role)
+SELECT
+  u.id,
+  (u.raw_app_meta_data ->> 'role')::public.app_role
+FROM auth.users AS u
+WHERE u.raw_app_meta_data ->> 'role' IN ('user', 'admin', 'superadmin')
+ON CONFLICT (user_id) DO NOTHING;
+
 DROP POLICY IF EXISTS "Users can view own role" ON public.user_roles;
 CREATE POLICY "Users can view own role"
   ON public.user_roles
