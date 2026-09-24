@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 );
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Keep browser access read-only. Role mutations must go through trusted
+-- server-side/admin paths; RLS remains the final authorization boundary.
+REVOKE ALL ON public.user_roles FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM authenticated;
 GRANT SELECT ON public.user_roles TO authenticated;
 
 DROP POLICY IF EXISTS "user_roles_select_own_v2" ON public.user_roles;
