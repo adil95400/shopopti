@@ -2,12 +2,11 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 
 import { supabase } from '@/lib/supabase';
 
-export type UserRole = 'user' | 'admin' | 'superadmin';
+export type UserRole = 'user' | 'admin';
 
 interface RoleContextType {
   role: UserRole;
   isAdmin: boolean;
-  isSuperAdmin: boolean;
   hasPermission: (permission: string) => boolean;
   permissions: string[];
   loading: boolean;
@@ -33,21 +32,6 @@ const rolePermissions: Record<UserRole, string[]> = {
     'orders.view.any',
     'orders.create',
     'orders.update.any',
-    'suppliers.view',
-    'suppliers.create',
-    'suppliers.edit',
-    'analytics.view.advanced',
-    'users.view',
-    'users.edit'
-  ],
-  superadmin: [
-    'products.view',
-    'products.create',
-    'products.edit.any',
-    'products.delete.any',
-    'orders.view.any',
-    'orders.create',
-    'orders.update.any',
     'orders.delete.any',
     'suppliers.view',
     'suppliers.create',
@@ -64,9 +48,6 @@ const rolePermissions: Record<UserRole, string[]> = {
     'billing.edit'
   ]
 };
-
-const isUserRole = (value: unknown): value is UserRole =>
-  value === 'user' || value === 'admin' || value === 'superadmin';
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<UserRole>('user');
@@ -90,15 +71,14 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', userId)
-          .maybeSingle();
+          .eq('user_id', userId);
 
         if (error) throw error;
 
-        const nextRole = isUserRole(data?.role) ? data.role : 'user';
+        const isAdmin = (data ?? []).some(row => row.role === 'admin');
 
         if (mounted) {
-          setRole(nextRole);
+          setRole(isAdmin ? 'admin' : 'user');
           setLoading(false);
         }
       } catch (error) {
@@ -148,8 +128,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     <RoleContext.Provider
       value={{
         role,
-        isAdmin: role === 'admin' || role === 'superadmin',
-        isSuperAdmin: role === 'superadmin',
+        isAdmin: role === 'admin',
         hasPermission,
         permissions: rolePermissions[role],
         loading
