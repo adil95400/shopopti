@@ -2,7 +2,6 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 
 import { supabase } from '@/lib/supabase';
 
-// Define user roles
 export type UserRole = 'user' | 'admin' | 'superadmin';
 
 interface RoleContextType {
@@ -16,7 +15,6 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Define permissions for each role
 const rolePermissions: Record<UserRole, string[]> = {
   user: [
     'products.view',
@@ -67,65 +65,77 @@ const rolePermissions: Record<UserRole, string[]> = {
   ]
 };
 
+const isUserRole = (value: unknown): value is UserRole =>
+  value === 'user' || value === 'admin' || value === 'superadmin';
+
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<UserRole>('user');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.user) {
+    let mounted = true;
+
+    const resolveRole = async (userId?: string) => {
+      if (!userId) {
+        if (mounted) {
           setRole('user');
           setLoading(false);
-          return;
         }
-        
-        // In a real app, you would fetch the user's role from your database
-        // For now, we'll check if the user's email contains 'admin' or 'superadmin'
-        const email = session.user.email || '';
-        
-        if (email.includes('superadmin')) {
-          setRole('superadmin');
-        } else if (email.includes('admin')) {
-          setRole('admin');
-        } else {
-          setRole('user');
+        return;
+      }
+
+      if (mounted) setLoading(true);
+
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const nextRole = isUserRole(data?.role) ? data.role : 'user';
+
+        if (mounted) {
+          setRole(nextRole);
+          setLoading(false);
         }
-        
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching user role:', error);
-        setRole('user');
-        setLoading(false);
+        if (mounted) {
+          setRole('user');
+          setLoading(false);
+        }
       }
     };
-    
-    fetchUserRole();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          const email = session.user.email || '';
-          
-          if (email.includes('superadmin')) {
-            setRole('superadmin');
-          } else if (email.includes('admin')) {
-            setRole('admin');
-          } else {
-            setRole('user');
-          }
-        } else {
+
+    const initializeRole = async () => {
+      try {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+
+        await resolveRole(session?.user?.id);
+      } catch (error) {
+        console.error('Error reading auth session for role:', error);
+        if (mounted) {
           setRole('user');
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
-    );
-    
+    };
+
+    initializeRole();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void resolveRole(session?.user?.id);
+    });
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
