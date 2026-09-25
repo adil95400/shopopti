@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -12,25 +13,22 @@ import {
   Trash2,
   ShoppingBag,
   ArrowRight,
-  X,
   Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { supabase } from '@/lib/supabase';
 import { supplierService } from '@/services/supplierService';
 import {
-  ExternalSupplier,
   SupplierSummary,
   SupplierProduct,
   ImportFilter,
-  SupplierCategory,
-  SupplierProviderType
+  SupplierCategory
 } from '@/types/supplier';
 import { Button } from '@/components/ui/button';
 
 
 const Imports: React.FC = () => {
+  const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierSummary | null>(null);
   const [products, setProducts] = useState<SupplierProduct[]>([]);
@@ -39,16 +37,6 @@ const Imports: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [showAddSupplier, setShowAddSupplier] = useState(false);
-  const [newSupplier, setNewSupplier] = useState<Omit<ExternalSupplier, 'id' | 'created_at'>>({
-    name: '',
-    type: 'bigbuy',
-    apiKey: '',
-    apiSecret: '',
-    baseUrl: '',
-    status: 'inactive',
-    user_id: ''
-  });
   const [filters, setFilters] = useState<ImportFilter>({
     search: '',
     minPrice: undefined,
@@ -61,16 +49,6 @@ const Imports: React.FC = () => {
 
   useEffect(() => {
     fetchSuppliers();
-    
-    // Get the current user ID
-    const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setNewSupplier(prev => ({ ...prev, user_id: data.user!.id }));
-      }
-    };
-    
-    getCurrentUser();
   }, []);
 
   const fetchSuppliers = async () => {
@@ -128,63 +106,6 @@ const Imports: React.FC = () => {
       fetchProducts();
     }
   }, [filters]);
-
-  const handleAddSupplier = async () => {
-    try {
-      setLoading(true);
-      
-      if (!newSupplier.name || !newSupplier.apiKey || !newSupplier.type) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-      
-      // Set default base URL based on supplier type if not provided
-      if (!newSupplier.baseUrl) {
-        switch (newSupplier.type) {
-          case 'cj_dropshipping':
-            newSupplier.baseUrl = 'https://developers.cjdropshipping.com/api2.0/v1';
-            break;
-          case 'bigbuy':
-            newSupplier.baseUrl = 'https://api.bigbuy.eu';
-            break;
-          case 'aliexpress':
-          case 'alibaba':
-          case 'banggood':
-          case 'dhgate':
-          case 'cdiscount':
-          case 'spocket':
-          case 'eprolo':
-            break;
-          default:
-            break;
-        }
-      }
-      
-      const createdSupplier = await supplierService.createSupplier(newSupplier);
-      const fetchedSuppliers = await supplierService.getSupplierSummaries();
-      setSuppliers(fetchedSuppliers);
-      setSelectedSupplier(
-        fetchedSuppliers.find((supplier) => supplier.id === createdSupplier.id) ?? null
-      );
-      setShowAddSupplier(false);
-      setNewSupplier({
-        name: '',
-        type: 'bigbuy',
-        apiKey: '',
-        apiSecret: '',
-        baseUrl: '',
-        status: 'inactive',
-        user_id: newSupplier.user_id
-      });
-      
-      toast.success('Supplier added successfully');
-    } catch (error) {
-      console.error('Error adding supplier:', error);
-      toast.error('Failed to add supplier');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteSupplier = async (id: string) => {
     if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
@@ -311,9 +232,9 @@ const Imports: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setShowAddSupplier(true)}>
+          <Button onClick={() => navigate('/app/suppliers')}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Supplier
+            Open Supplier Hub
           </Button>
         </div>
       </div>
@@ -335,11 +256,11 @@ const Imports: React.FC = () => {
                     <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-700 mb-2">No suppliers yet</h3>
                     <p className="text-gray-500 mb-4">
-                      Add your first supplier to start importing products
+                      Connect your first supplier in Supplier Hub to start importing products
                     </p>
-                    <Button onClick={() => setShowAddSupplier(true)}>
+                    <Button onClick={() => navigate('/app/suppliers')}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Supplier
+                      Open Supplier Hub
                     </Button>
                   </div>
                 ) : (
@@ -662,12 +583,12 @@ const Imports: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-700 mb-2">No supplier selected</h3>
                 <p className="text-gray-500 mb-4">
                   {suppliers.length === 0
-                    ? 'Add your first supplier to start importing products'
+                    ? 'Connect your first supplier in Supplier Hub to start importing products'
                     : 'Select a supplier from the list to view and import products'}
                 </p>
-                <Button onClick={() => setShowAddSupplier(true)}>
+                <Button onClick={() => navigate('/app/suppliers')}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Supplier
+                  Open Supplier Hub
                 </Button>
               </div>
             )}
@@ -675,13 +596,13 @@ const Imports: React.FC = () => {
         </div>
       )}
       
-      {/* Add Supplier Modal */}
+      {/* Open Supplier Hub Modal */}
       {showAddSupplier && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Add Supplier</h3>
+                <h3 className="text-lg font-medium">Open Supplier Hub</h3>
                 <button
                   onClick={() => setShowAddSupplier(false)}
                   className="text-gray-400 hover:text-gray-500"
@@ -797,7 +718,7 @@ const Imports: React.FC = () => {
                   ) : (
                     <Plus className="h-4 w-4 mr-2" />
                   )}
-                  Add Supplier
+                  Open Supplier Hub
                 </Button>
               </div>
             </div>
