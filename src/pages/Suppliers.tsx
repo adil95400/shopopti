@@ -129,6 +129,7 @@ const Suppliers = () => {
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error'>>({});
   const [showConnectCJ, setShowConnectCJ] = useState(false);
+  const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
   const [connectingCJ, setConnectingCJ] = useState(false);
   const [cjName, setCjName] = useState('Mon compte CJ');
   const [cjApiKey, setCjApiKey] = useState('');
@@ -218,6 +219,13 @@ const Suppliers = () => {
   const cjAvailability =
     availabilityByProvider.get('cj_dropshipping') ?? 'disabled';
 
+  const openCJConnectionPanel = (supplier?: SupplierSummary) => {
+    setEditingSupplierId(supplier?.id ?? null);
+    setCjName(supplier?.name ?? 'Mon compte CJ');
+    setCjApiKey('');
+    setShowConnectCJ(true);
+  };
+
   const handleConnectCJ = async () => {
     if (cjAvailability !== 'enabled') {
       toast.error(
@@ -238,18 +246,28 @@ const Suppliers = () => {
 
     setConnectingCJ(true);
     try {
-      const created = await supplierService.createSupplier({
-        name,
-        type: 'cj_dropshipping',
-        apiKey,
-        apiSecret: undefined,
-        baseUrl: '',
-        status: 'inactive',
-        user_id: '',
-      });
+      const created = editingSupplierId
+        ? await supplierService.updateSupplier(editingSupplierId, {
+            name,
+            apiKey,
+          })
+        : await supplierService.createSupplier({
+            name,
+            type: 'cj_dropshipping',
+            apiKey,
+            apiSecret: undefined,
+            baseUrl: '',
+            status: 'inactive',
+            user_id: '',
+          });
 
-      toast.success('CJdropshipping connecté et vérifié');
+      toast.success(
+        editingSupplierId
+          ? 'Connexion CJdropshipping mise à jour et vérifiée'
+          : 'CJdropshipping connecté et vérifié'
+      );
       setShowConnectCJ(false);
+      setEditingSupplierId(null);
       setCjApiKey('');
       setCjName('Mon compte CJ');
       await loadSuppliers();
@@ -343,7 +361,7 @@ const Suppliers = () => {
           size="sm"
           variant="outline"
           className="w-full"
-          onClick={() => setShowConnectCJ(true)}
+          onClick={() => openCJConnectionPanel()}
         >
           Connecter un compte
         </Button>
@@ -381,7 +399,7 @@ const Suppliers = () => {
             </div>
 
             <Button
-              onClick={() => setShowConnectCJ(true)}
+              onClick={() => openCJConnectionPanel()}
               className="gap-2"
               disabled={cjAvailability !== 'enabled'}
             >
@@ -650,6 +668,18 @@ const Suppliers = () => {
                               </Button>
                             </div>
 
+                            {connection.type === 'cj_dropshipping' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="mt-2 w-full"
+                                disabled={connectingCJ || platformAvailability !== 'enabled'}
+                                onClick={() => openCJConnectionPanel(connection)}
+                              >
+                                {state === 'error' ? 'Reconnecter avec une nouvelle clé' : 'Mettre à jour la clé CJ'}
+                              </Button>
+                            )}
+
                             {connection.type === 'cj_dropshipping' && state === 'active' && (
                               <Button
                                 size="sm"
@@ -681,7 +711,7 @@ const Suppliers = () => {
                           variant="outline"
                           className="w-full"
                           disabled={platformAvailability !== 'enabled'}
-                          onClick={() => setShowConnectCJ(true)}
+                          onClick={() => openCJConnectionPanel()}
                         >
                           {platformAvailability === 'maintenance'
                             ? 'Connecteur en maintenance'
@@ -725,7 +755,9 @@ const Suppliers = () => {
                     CJ
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">Connecter CJdropshipping</h2>
+                    <h2 className="text-xl font-semibold">
+                      {editingSupplierId ? 'Reconnecter CJdropshipping' : 'Connecter CJdropshipping'}
+                    </h2>
                     <p className="mt-1 text-sm text-muted-foreground">
                       Connectez votre compte CJ pour importer des produits et utiliser les fonctions
                       validées du connecteur ShopOpti.
@@ -734,7 +766,10 @@ const Suppliers = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowConnectCJ(false)}
+                  onClick={() => {
+                    setShowConnectCJ(false);
+                    setEditingSupplierId(null);
+                  }}
                   disabled={connectingCJ}
                   className="rounded-md p-1 text-muted-foreground hover:bg-muted disabled:opacity-50"
                   aria-label="Fermer"
@@ -809,7 +844,10 @@ const Suppliers = () => {
                   variant="outline"
                   className="flex-1"
                   disabled={connectingCJ}
-                  onClick={() => setShowConnectCJ(false)}
+                  onClick={() => {
+                    setShowConnectCJ(false);
+                    setEditingSupplierId(null);
+                  }}
                 >
                   Annuler
                 </Button>
@@ -823,7 +861,7 @@ const Suppliers = () => {
                   ) : (
                     <PlugZap className="h-4 w-4" />
                   )}
-                  Tester et connecter
+                  {editingSupplierId ? 'Vérifier et mettre à jour' : 'Tester et connecter'}
                 </Button>
               </div>
             </div>
