@@ -40,6 +40,8 @@ describe('supplierService server-side supplier contracts', () => {
       created_at: '2026-09-25T00:00:00.000Z',
     })
     vi.mocked(axios.post).mockReset()
+    vi.mocked(cjSupplierService.createOrder).mockReset()
+    vi.mocked(cjSupplierService.getOrderDetail).mockReset()
   })
 
   it('loads CJ products without sending supplier credentials from the browser', async () => {
