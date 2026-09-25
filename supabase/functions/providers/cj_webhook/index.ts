@@ -184,10 +184,21 @@ serve(async (req) => {
     }
   }
 
+  const processedAt = new Date().toISOString();
+
   await admin
     .from("cj_webhook_events")
-    .update({ processed_at: new Date().toISOString() })
+    .update({ processed_at: processedAt })
     .eq("message_id", messageId);
+
+  await admin
+    .from("external_suppliers")
+    .update({
+      webhook_status: "enabled",
+      webhook_last_event_at: processedAt,
+      last_sync: processedAt,
+    })
+    .eq("id", supplier.id);
 
   return json({ success: true, duplicate: false, messageId });
 });
