@@ -190,7 +190,15 @@ serve(async (req) => {
           refresh_token_expires_at: refreshTokenExpiryDate,
           updated_at: new Date().toISOString(),
         });
-      if (credentialError) throw credentialError;
+
+      if (credentialError) {
+        await admin
+          .from("external_suppliers")
+          .delete()
+          .eq("id", data.id)
+          .eq("user_id", user.id);
+        throw credentialError;
+      }
 
       row = data;
     }
