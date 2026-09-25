@@ -17,6 +17,9 @@ const assertions = [
   [checkout.includes('service.auth.getUser(token)'), 'checkout must derive user from JWT'],
   [checkout.includes('.from("subscription_plans")'), 'checkout must resolve plan server-side'],
   [checkout.includes('stripe_price_id_monthly'), 'checkout must use server-side Stripe Price mapping'],
+  [checkout.includes('invalid_billing_cycle'), 'checkout must reject unsupported billing cycles'],
+  [checkout.includes('subscription_already_exists'), 'checkout must prevent duplicate subscriptions'],
+  [checkout.includes('trial_period_days'), 'checkout must apply trial configuration server-side'],
   [!checkout.includes('payload.price_id'), 'checkout must not accept price_id from client'],
   [!checkout.includes('payload.user_id'), 'checkout must not accept user_id from client'],
   [!checkout.includes('payload.customer_id'), 'checkout must not accept customer_id from client'],
@@ -30,10 +33,13 @@ const assertions = [
   [webhook.includes('.from("stripe_webhooks")'), 'webhook must persist idempotency records'],
   [webhook.includes('processed: false'), 'webhook must record unprocessed events before work'],
   [webhook.includes('processed: true'), 'webhook must mark processed events after success'],
+  [webhook.includes('insertError?.code === "23505"'), 'webhook must stop concurrent duplicate processing'],
   [client.includes("body: {\n      plan,\n      billing_cycle: billingCycle"), 'client must send plan + cycle only'],
   [!client.includes('price_id:'), 'client must not send Stripe Price IDs'],
   [!client.includes('customer_id:'), 'client must not send Stripe customer IDs'],
   [!pricing.includes('VITE_STRIPE_PRICE_PRO'), 'pricing must not depend on browser Stripe Price IDs'],
+  [pricing.includes(".from('subscription_plans')"), 'pricing must read plan prices from the server configuration'],
+  [pricing.includes("setBillingCycle('yearly')"), 'pricing must support yearly billing selection'],
   [legacyCheckout.includes('status_code=410'), 'legacy checkout must fail closed'],
   [legacyWebhook.includes('status_code=410'), 'legacy webhook must fail closed']
 ];
