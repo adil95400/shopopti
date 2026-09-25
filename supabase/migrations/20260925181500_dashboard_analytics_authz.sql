@@ -105,7 +105,7 @@ BEGIN
     'revenueGrowth', COALESCE(revenue_growth, 0),
     'ordersGrowth', COALESCE(orders_growth, 0),
     'customersGrowth', COALESCE(customers_growth, 0),
-    'lastUpdated', pg_catalog.extract(epoch from pg_catalog.now())
+    'lastUpdated', EXTRACT(EPOCH FROM pg_catalog.now())
   );
 
   RETURN result;
