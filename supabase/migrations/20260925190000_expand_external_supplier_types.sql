@@ -180,6 +180,53 @@ CREATE POLICY "Users can view own supplier variant stock"
   USING ((select auth.uid()) = user_id);
 
 
+-- Server-only supplier credentials. Keep tokens out of the exposed public schema.
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
+
+CREATE TABLE IF NOT EXISTS private.supplier_credentials (
+  supplier_id uuid PRIMARY KEY REFERENCES public.external_suppliers(id) ON DELETE CASCADE,
+  provider text NOT NULL,
+  access_token text NOT NULL,
+  refresh_token text,
+  open_id text,
+  access_token_expires_at timestamptz,
+  refresh_token_expires_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+REVOKE ALL ON TABLE private.supplier_credentials FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA private TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE private.supplier_credentials TO service_role;
+
+-- Migrate any legacy CJ access token/openId before clearing public credential columns.
+INSERT INTO private.supplier_credentials (
+  supplier_id,
+  provider,
+  access_token,
+  open_id,
+  updated_at
+)
+SELECT
+  id,
+  type,
+  api_key,
+  api_secret,
+  now()
+FROM public.external_suppliers
+WHERE type = 'cj_dropshipping'
+  AND api_key IS NOT NULL
+  AND api_key <> ''
+  AND api_key <> 'server-managed'
+ON CONFLICT (supplier_id) DO NOTHING;
+
+UPDATE public.external_suppliers
+SET api_key = 'server-managed',
+    api_secret = NULL
+WHERE type = 'cj_dropshipping'
+  AND api_key IS NOT NULL
+  AND api_key <> '';
+
 -- Prevent browser clients from reading supplier credentials.
 REVOKE ALL ON TABLE public.external_suppliers FROM anon;
 REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLE public.external_suppliers FROM authenticated;
@@ -197,25 +244,10 @@ GRANT SELECT (
   user_id
 ) ON TABLE public.external_suppliers TO authenticated;
 
-GRANT INSERT (
-  name,
-  type,
-  api_key,
-  api_secret,
-  base_url,
-  status,
-  created_at,
-  user_id
-) ON TABLE public.external_suppliers TO authenticated;
-
-GRANT UPDATE (
-  name,
-  type,
-  api_key,
-  api_secret,
-  base_url
-) ON TABLE public.external_suppliers TO authenticated;
-
 GRANT DELETE ON TABLE public.external_suppliers TO authenticated;
+
+-- Supplier creation/update is server-only so browser sessions cannot write credentials
+-- or mark a supplier active without a verified provider probe.
+REVOKE INSERT, UPDATE ON TABLE public.external_suppliers FROM authenticated;
 
 
