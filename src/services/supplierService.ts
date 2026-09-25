@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { supabase } from '@/lib/supabase';
 import { ExternalSupplier, SupplierSummary, SupplierProduct, ImportFilter, ImportResult, OrderRequest, OrderResult } from '@/types/supplier';
+import { cjSupplierService } from '@/services/cjSupplierService';
 
 export const supplierService = {
   async getSupplierSummaries(): Promise<SupplierSummary[]> {
@@ -319,15 +320,53 @@ export const supplierService = {
     }
   },
 
-  async createOrder(_supplierId: string, _orderData: OrderRequest): Promise<OrderResult> {
-    throw new Error('Supplier order automation is not available until a verified provider connector implements it');
+  async createOrder(supplierId: string, orderData: OrderRequest): Promise<OrderResult> {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier order automation is not implemented for this supplier yet');
+    }
+
+    const result = await cjSupplierService.createOrder(
+      supplierId,
+      orderData as unknown as Record<string, unknown>
+    );
+    const remote = result.data as any;
+    const data = remote?.data ?? remote;
+    const externalOrderId =
+      data?.orderId ?? data?.orderNum ?? data?.orderNumber ?? data?.orderCode;
+
+    if (!externalOrderId) {
+      throw new Error('CJdropshipping did not return an order identifier');
+    }
+
+    return {
+      success: true,
+      externalOrderId: String(externalOrderId),
+      status: String(data?.orderStatus ?? data?.status ?? 'created'),
+    };
   },
 
-  async getOrderStatus(_supplierId: string, _externalOrderId: string): Promise<{
+  async getOrderStatus(supplierId: string, externalOrderId: string): Promise<{
     status: string;
     trackingNumber?: string;
     estimatedDelivery?: string;
   }> {
-    throw new Error('Supplier tracking is not available until a verified provider connector implements it');
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier tracking is not implemented for this supplier yet');
+    }
+
+    const result = await cjSupplierService.getOrderDetail(supplierId, {
+      orderId: externalOrderId,
+    });
+    const remote = result.data as any;
+    const data = remote?.data ?? remote;
+
+    return {
+      status: String(data?.orderStatus ?? data?.status ?? 'unknown'),
+      trackingNumber:
+        data?.trackingNumber ?? data?.trackingNumberList?.[0] ?? data?.trackNumber,
+      estimatedDelivery: data?.estimatedDelivery ?? data?.logisticsTimeliness?.endTime,
+    };
   }
 };
