@@ -136,6 +136,7 @@ describe('supplierService server-side supplier contracts', () => {
       })
     ).resolves.toMatchObject({
       success: true,
+      message: 'CJdropshipping order created',
       externalOrderId: 'cj-order-1',
       status: 'CREATED',
     })
