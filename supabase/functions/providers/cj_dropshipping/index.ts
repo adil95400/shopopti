@@ -150,6 +150,86 @@ serve(async (req) => {
       Accept: "application/json",
     };
 
+    if (action === "categories") {
+      const response = await fetch(`${baseUrl}/product/getCategory`, {
+        method: "GET",
+        headers: cjHeaders,
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        return json(
+          {
+            success: false,
+            error: payload?.message || "CJ category query failed",
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      const rows = Array.isArray(payload?.data) ? payload.data : [];
+      const categories = rows.flatMap((first: any) => {
+        const firstId = String(first?.categoryId ?? first?.id ?? "");
+        const firstName = String(first?.categoryName ?? first?.name ?? "");
+        const secondRows = Array.isArray(first?.categoryFirstList)
+          ? first.categoryFirstList
+          : Array.isArray(first?.children)
+            ? first.children
+            : [];
+
+        if (secondRows.length === 0 && firstId) {
+          return [{ id: firstId, externalId: firstId, name: firstName, level: 1, supplier_id: supplierId }];
+        }
+
+        return secondRows.flatMap((second: any) => {
+          const secondId = String(second?.categoryId ?? second?.id ?? "");
+          const secondName = String(second?.categoryName ?? second?.name ?? "");
+          const thirdRows = Array.isArray(second?.categorySecondList)
+            ? second.categorySecondList
+            : Array.isArray(second?.children)
+              ? second.children
+              : [];
+
+          if (thirdRows.length === 0 && secondId) {
+            return [{
+              id: secondId,
+              externalId: secondId,
+              name: secondName,
+              parentId: firstId || undefined,
+              level: 2,
+              supplier_id: supplierId,
+            }];
+          }
+
+          return thirdRows
+            .map((third: any) => {
+              const id = String(third?.categoryId ?? third?.id ?? "");
+              if (!id) return null;
+              return {
+                id,
+                externalId: id,
+                name: String(third?.categoryName ?? third?.name ?? ""),
+                parentId: secondId || firstId || undefined,
+                level: 3,
+                supplier_id: supplierId,
+              };
+            })
+            .filter(Boolean);
+        });
+      });
+
+      return json({
+        success: true,
+        categories,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint: "product/getCategory",
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
     if (action === "search") {
       const filters = body?.filters ?? {};
       const params = new URLSearchParams();
