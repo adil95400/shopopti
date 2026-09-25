@@ -7,6 +7,13 @@ vi.mock('axios', () => ({
   },
 }))
 
+vi.mock('../cjSupplierService', () => ({
+  cjSupplierService: {
+    createOrder: vi.fn(),
+    getOrderDetail: vi.fn(),
+  },
+}))
+
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     auth: {
@@ -19,6 +26,7 @@ vi.mock('../../lib/supabase', () => ({
 
 import axios from 'axios'
 
+import { cjSupplierService } from '../cjSupplierService'
 import { supplierService } from '../supplierService'
 
 describe('supplierService server-side supplier contracts', () => {
@@ -80,7 +88,12 @@ describe('supplierService server-side supplier contracts', () => {
     )
   })
 
-  it('does not create supplier orders without a verified connector', async () => {
+  it('creates CJ orders through the credential-free CJ facade', async () => {
+    vi.mocked(cjSupplierService.createOrder).mockResolvedValueOnce({
+      success: true,
+      data: { data: { orderId: 'cj-order-1', orderStatus: 'CREATED' } },
+    })
+
     await expect(
       supplierService.createOrder('supplier-1', {
         external_order_id: 'order-1',
@@ -94,16 +107,25 @@ describe('supplierService server-side supplier contracts', () => {
         },
         items: [],
       })
-    ).rejects.toThrow(
-      'Supplier order automation is not available until a verified provider connector implements it'
-    )
+    ).resolves.toMatchObject({
+      success: true,
+      externalOrderId: 'cj-order-1',
+      status: 'CREATED',
+    })
   })
 
-  it('does not invent supplier tracking without a verified connector', async () => {
+  it('returns CJ order status without inventing tracking data', async () => {
+    vi.mocked(cjSupplierService.getOrderDetail).mockResolvedValueOnce({
+      success: true,
+      data: { data: { orderStatus: 'SHIPPED', trackingNumber: 'TRACK-1' } },
+    })
+
     await expect(
       supplierService.getOrderStatus('supplier-1', 'remote-1')
-    ).rejects.toThrow(
-      'Supplier tracking is not available until a verified provider connector implements it'
-    )
+    ).resolves.toEqual({
+      status: 'SHIPPED',
+      trackingNumber: 'TRACK-1',
+      estimatedDelivery: undefined,
+    })
   })
 })
