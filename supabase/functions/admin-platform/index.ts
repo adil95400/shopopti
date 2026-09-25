@@ -121,36 +121,21 @@ serve(async (req) => {
         return json({ error: "invalid_flag_update" }, 400);
       }
 
-      const { data: current, error: currentError } = await service
-        .from("feature_flags")
-        .select("id,key,is_enabled")
-        .eq("id", flagId)
-        .single();
+      const { data: result, error } = await service.rpc(
+        "admin_set_feature_flag_enabled_atomic",
+        {
+          p_flag_id: flagId,
+          p_enabled: enabled,
+          p_actor_id: actor.id,
+        },
+      );
 
-      if (currentError || !current) return json({ error: "flag_not_found" }, 404);
+      if (error) {
+        if (error.code === "P0002") return json({ error: "flag_not_found" }, 404);
+        throw error;
+      }
 
-      const { data: updated, error: updateError } = await service
-        .from("feature_flags")
-        .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
-        .eq("id", flagId)
-        .select("id,key,is_enabled")
-        .single();
-
-      if (updateError) throw updateError;
-
-      const { error: auditError } = await service.from("feature_flag_audit_log").insert({
-        flag_id: current.id,
-        flag_key: current.key,
-        action: enabled ? "enabled" : "disabled",
-        actor_id: actor.id,
-        old_value: { is_enabled: current.is_enabled },
-        new_value: { is_enabled: enabled },
-        metadata: { source: "admin-platform-controls" },
-      });
-
-      if (auditError) throw auditError;
-
-      return json({ success: true, flag: updated });
+      return json({ success: true, flag: result });
     }
 
     if (action === "set_ticket_status") {
@@ -162,31 +147,20 @@ serve(async (req) => {
         return json({ error: "invalid_ticket_update" }, 400);
       }
 
-      const { data, error } = await service
-        .from("support_tickets")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", ticketId)
-        .select("id,status")
-        .single();
+      const { data, error } = await service.rpc(
+        "admin_set_support_ticket_status_atomic",
+        {
+          p_ticket_id: ticketId,
+          p_status: status,
+          p_actor_id: actor.id,
+          p_actor_email: actor.email ?? "",
+        },
+      );
 
-      if (error) throw error;
-
-      const { error: auditError } = await service.from("audit_logs").insert({
-        user_id: actor.id,
-        actor: actor.id,
-        actor_type: "admin",
-        actor_email: actor.email ?? null,
-        action: "SUPPORT_TICKET_STATUS_CHANGED",
-        action_category: "support",
-        severity: "info",
-        resource_type: "support_ticket",
-        resource_id: ticketId,
-        description: "Support ticket status changed",
-        new_values: { status },
-        metadata: { source: "admin-platform-controls" },
-      });
-
-      if (auditError) throw auditError;
+      if (error) {
+        if (error.code === "P0002") return json({ error: "ticket_not_found" }, 404);
+        throw error;
+      }
 
       return json({ success: true, ticket: data });
     }
