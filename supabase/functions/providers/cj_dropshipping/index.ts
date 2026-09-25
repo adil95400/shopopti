@@ -468,6 +468,11 @@ serve(async (req) => {
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true) {
+        await admin
+          .from("external_suppliers")
+          .update({ webhook_status: "error" })
+          .eq("id", supplierId);
+
         return json(
           {
             success: false,
@@ -477,6 +482,11 @@ serve(async (req) => {
           response.status >= 400 ? response.status : 502
         );
       }
+
+      await admin
+        .from("external_suppliers")
+        .update({ webhook_status: "enabled" })
+        .eq("id", supplierId);
 
       return json({
         success: true,
