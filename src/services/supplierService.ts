@@ -53,6 +53,16 @@ export const supplierService = {
     };
   },
 
+  async configureRealtimeSync(supplierId: string): Promise<boolean> {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Realtime supplier sync is not implemented for this supplier yet');
+    }
+
+    await cjSupplierService.configureWebhooks(supplierId);
+    return true;
+  },
+
   async testConnectionById(supplierId: string): Promise<boolean> {
     try {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
@@ -333,6 +343,19 @@ export const supplierService = {
           `${failure.externalId || 'unknown'}: ${failure.error || 'import failed'}`
         )
       : undefined;
+
+    if (importedCount > 0 && supplier.webhookStatus === 'enabled') {
+      try {
+        for (let index = 0; index < productIds.length; index += 100) {
+          await cjSupplierService.subscribeWebhookProducts(
+            supplierId,
+            productIds.slice(index, index + 100)
+          );
+        }
+      } catch (error) {
+        console.warn('CJ product webhook subscription was not confirmed:', error);
+      }
+    }
 
     return {
       success: response.data?.success === true,
