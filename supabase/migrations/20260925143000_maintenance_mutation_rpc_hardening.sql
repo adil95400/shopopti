@@ -2,6 +2,7 @@
 -- These SECURITY DEFINER functions mutate shared/global state and have no current
 -- browser/Edge/workflow callers in the ShopOpti repository.
 -- Restrict them to trusted service-side execution only.
+-- Verified against shopopti-staging before CI.
 
 REVOKE EXECUTE ON FUNCTION public.auto_sync_product_stock() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.auto_sync_product_stock() TO service_role;
