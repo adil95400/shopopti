@@ -18,6 +18,7 @@ REVOKE EXECUTE ON FUNCTION public.product_import_jobs_insert_fn() FROM PUBLIC, a
 REVOKE EXECUTE ON FUNCTION public.product_import_jobs_update_fn() FROM PUBLIC, anon, authenticated;
 
 -- Cron/maintenance helpers: keep direct execution server-side only.
+-- Staging pg_cron runs these jobs as postgres, so revoking browser roles is safe.
 REVOKE EXECUTE ON FUNCTION public.auto_unlock_stuck_imports() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.auto_unlock_stuck_imports() TO service_role;
 
