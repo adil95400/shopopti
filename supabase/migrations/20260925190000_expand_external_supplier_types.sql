@@ -180,11 +180,10 @@ CREATE POLICY "Users can view own supplier variant stock"
   USING ((select auth.uid()) = user_id);
 
 
--- Server-only supplier credentials. Keep tokens out of the exposed public schema.
-CREATE SCHEMA IF NOT EXISTS private;
-REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
-
-CREATE TABLE IF NOT EXISTS private.supplier_credentials (
+-- Server-only supplier credentials.
+-- The table is in the Data API schema for Edge Function compatibility, but browser roles
+-- receive no privileges and RLS is enabled with no anon/authenticated policies.
+CREATE TABLE IF NOT EXISTS public.supplier_credentials (
   supplier_id uuid PRIMARY KEY REFERENCES public.external_suppliers(id) ON DELETE CASCADE,
   provider text NOT NULL,
   access_token text NOT NULL,
@@ -195,12 +194,12 @@ CREATE TABLE IF NOT EXISTS private.supplier_credentials (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-REVOKE ALL ON TABLE private.supplier_credentials FROM PUBLIC, anon, authenticated;
-GRANT USAGE ON SCHEMA private TO service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE private.supplier_credentials TO service_role;
+ALTER TABLE public.supplier_credentials ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.supplier_credentials FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.supplier_credentials TO service_role;
 
 -- Migrate any legacy CJ access token/openId before clearing public credential columns.
-INSERT INTO private.supplier_credentials (
+INSERT INTO public.supplier_credentials (
   supplier_id,
   provider,
   access_token,
