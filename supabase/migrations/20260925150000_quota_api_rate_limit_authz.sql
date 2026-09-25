@@ -1,5 +1,6 @@
 -- P0 quota/API rate-limit authorization hardening.
 -- Keep user quota checks authenticated and owner-scoped; keep API-key rate checks server-side.
+-- Staging proves own-user success, cross-user 42501 denial, and missing usage => 0.
 
 CREATE OR REPLACE FUNCTION public.check_quota(user_id_param uuid, quota_key_param text)
 RETURNS boolean
