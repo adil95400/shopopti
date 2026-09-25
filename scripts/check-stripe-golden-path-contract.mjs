@@ -33,6 +33,8 @@ const assertions = [
   [webhook.includes('.from("stripe_webhooks")'), 'webhook must persist idempotency records'],
   [webhook.includes('processed: false'), 'webhook must record unprocessed events before work'],
   [webhook.includes('processed: true'), 'webhook must mark processed events after success'],
+  [webhook.includes('customer.subscription.paused'), 'webhook must handle paused subscriptions'],
+  [webhook.includes('customer.subscription.resumed'), 'webhook must handle resumed subscriptions'],
   [webhook.includes('insertError?.code === "23505"'), 'webhook must stop concurrent duplicate processing'],
   [client.includes("body: {\n      plan,\n      billing_cycle: billingCycle"), 'client must send plan + cycle only'],
   [!client.includes('price_id:'), 'client must not send Stripe Price IDs'],
