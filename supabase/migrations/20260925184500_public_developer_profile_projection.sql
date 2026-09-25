@@ -1,5 +1,6 @@
 -- P0 public developer profile projection hardening.
 -- Split public profile data from the private developer_profiles table so the
+-- staging proof: public/private row counts match and sensitive columns are absent.
 -- public view can use security_invoker without exposing payout/tax fields.
 
 CREATE TABLE IF NOT EXISTS public.developer_public_profiles (
