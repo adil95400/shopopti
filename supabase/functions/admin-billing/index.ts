@@ -69,7 +69,7 @@ serve(async (req) => {
     ] = await Promise.all([
       service
         .from("subscription_plans")
-        .select("id,name,display_name,description,price_monthly,price_yearly,currency,is_active,trial_days,features,limits")
+        .select("id,name,display_name,description,price_monthly,price_yearly,currency,is_active,trial_days,features,limits,stripe_price_id_monthly,stripe_price_id_yearly,stripe_product_id")
         .order("price_monthly", { ascending: true }),
       service
         .from("subscriptions")
@@ -137,6 +137,62 @@ serve(async (req) => {
     const processedWebhookCount = stripeWebhooks.filter((row) => row.processed === true).length;
     const pendingWebhookCount = stripeWebhooks.filter((row) => row.processed !== true).length;
 
+    const activePlans = plans.filter((plan) => plan.is_active === true);
+    const mappedPlans = activePlans.filter(
+      (plan) =>
+        Boolean(plan.stripe_price_id_monthly) &&
+        Boolean(plan.stripe_price_id_yearly) &&
+        Boolean(plan.stripe_product_id),
+    );
+    const planMappingsComplete =
+      activePlans.length > 0 && mappedPlans.length === activePlans.length;
+
+    const stripeSecretConfigured = Boolean(Deno.env.get("STRIPE_SECRET_KEY"));
+    const stripeWebhookSecretConfigured = Boolean(
+      Deno.env.get("STRIPE_WEBHOOK_SECRET"),
+    );
+    const appUrlConfigured = Boolean(Deno.env.get("APP_URL"));
+
+    const billableStatuses = new Set(["active", "trialing"]);
+    let calculatedMrr = 0;
+    let activePaidSubscribers = 0;
+    let pricingCompleteForActiveSubscriptions = true;
+
+    for (const subscription of userSubscriptions) {
+      if (!billableStatuses.has(String(subscription.status ?? ""))) continue;
+
+      const plan = plans.find((candidate) => candidate.id === subscription.plan_id);
+      if (!plan) {
+        pricingCompleteForActiveSubscriptions = false;
+        continue;
+      }
+
+      const cycle = String(subscription.billing_cycle ?? "monthly");
+      const monthlyPrice = Number(plan.price_monthly ?? 0);
+      const yearlyPrice = Number(plan.price_yearly ?? 0);
+
+      if (cycle === "yearly") {
+        if (!Number.isFinite(yearlyPrice)) {
+          pricingCompleteForActiveSubscriptions = false;
+          continue;
+        }
+        calculatedMrr += yearlyPrice / 12;
+      } else {
+        if (!Number.isFinite(monthlyPrice)) {
+          pricingCompleteForActiveSubscriptions = false;
+          continue;
+        }
+        calculatedMrr += monthlyPrice;
+      }
+
+      activePaidSubscribers += 1;
+    }
+
+    const goldenPathObserved =
+      processedWebhookCount > 0 &&
+      userSubscriptions.length > 0 &&
+      pricingCompleteForActiveSubscriptions;
+
     return json({
       generatedAt: new Date().toISOString(),
       plans,
@@ -164,10 +220,21 @@ serve(async (req) => {
         pending: pendingWebhookCount,
       },
       derivedMetrics: {
-        mrr: null,
-        arr: null,
+        mrr: goldenPathObserved ? Number(calculatedMrr.toFixed(2)) : null,
+        arr: goldenPathObserved ? Number((calculatedMrr * 12).toFixed(2)) : null,
         churnRate: null,
-        activePaidSubscribers: null,
+        activePaidSubscribers: goldenPathObserved ? activePaidSubscribers : null,
+      },
+      billingReadiness: {
+        stripeSecretConfigured,
+        stripeWebhookSecretConfigured,
+        appUrlConfigured,
+        activePlans: activePlans.length,
+        fullyMappedPlans: mappedPlans.length,
+        planMappingsComplete,
+        processedWebhookObserved: processedWebhookCount > 0,
+        canonicalSubscriptionObserved: userSubscriptions.length > 0,
+        goldenPathObserved,
       },
       provenance: {
         plans: "public.subscription_plans",
@@ -182,7 +249,7 @@ serve(async (req) => {
         stripeLiveApiQueried: false,
         invoicesIncluded: false,
         chargesIncluded: false,
-        mrrDerivableFromCurrentTables: false,
+        mrrDerivableFromCurrentTables: goldenPathObserved,
       },
     });
   } catch (error) {
