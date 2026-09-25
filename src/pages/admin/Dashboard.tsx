@@ -1,53 +1,65 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import {
+  BarChart3,
+  DollarSign,
+  RefreshCw,
+  ShoppingBag,
+  Users
+} from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { supabase } from '@/lib/supabase';
 import { useRole } from '@/context/RoleContext';
+import {
+  adminMetricsService,
+  type AdminDashboardData
+} from '@/services/adminMetricsService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const formatMoney = (amount: number | null, currency: string | null) => {
+  if (amount === null || !currency) return 'Non vérifié';
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency
+  }).format(amount);
+};
+
+const growthLabel = (growth: number | null) =>
+  growth === null
+    ? 'Comparaison indisponible'
+    : growth === 0
+      ? 'Stable vs période précédente'
+      : `${growth > 0 ? '+' : ''}${growth.toFixed(1)}% vs période précédente`;
 
 const AdminDashboard: React.FC = () => {
-  const { isAdmin, loading } = useRole();
-  const [stats, setStats] = useState({
-    users: { total: 0, growth: 0 },
-    revenue: { total: 0, growth: 0 },
-    orders: { total: 0, growth: 0 },
-    products: { total: 0, growth: 0 }
-  });
-  const [dataLoading, setDataLoading] = useState(true);
+  const { isAdmin, loading: roleLoading } = useRole();
+  const navigate = useNavigate();
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (isAdmin) {
-      fetchAdminStats();
-    }
-  }, [isAdmin]);
-
-  const fetchAdminStats = async () => {
+  const fetchDashboard = async () => {
     try {
-      setDataLoading(true);
-      
-      // In a real app, you would fetch this data from your database
-      // For now, we'll use mock data
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStats({
-        users: { total: 1234, growth: 12.5 },
-        revenue: { total: 45678, growth: 8.3 },
-        orders: { total: 789, growth: 5.7 },
-        products: { total: 456, growth: -2.3 }
-      });
+      setLoading(true);
+      setData(await adminMetricsService.getDashboard('30days'));
     } catch (error) {
-      console.error('Error fetching admin stats:', error);
+      console.error('Error fetching admin dashboard:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de charger les métriques Admin'
+      );
+      setData(null);
     } finally {
-      setDataLoading(false);
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    if (isAdmin) void fetchDashboard();
+  }, [isAdmin]);
+
+  if (roleLoading) {
     return <div className="flex justify-center p-8">Chargement...</div>;
   }
 
@@ -57,178 +69,191 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Administration</h1>
-          <p className="text-gray-500">Vue d'ensemble de la plateforme</p>
+          <p className="text-gray-500">
+            Données réelles de la plateforme — période glissante de 30 jours
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Exporter les données</Button>
-          <Button>Paramètres</Button>
+          <Button variant="outline" onClick={() => void fetchDashboard()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualiser
+          </Button>
+          <Button onClick={() => navigate('/app/admin/analytics')}>
+            Analytics
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs</CardTitle>
-            <Users className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.users.total}</div>
-            <div className="flex items-center pt-1 text-xs">
-              {stats.users.growth > 0 ? (
-                <>
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                  <span className="text-green-500">{stats.users.growth}%</span>
-                </>
-              ) : (
-                <>
-                  <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                  <span className="text-red-500">{Math.abs(stats.users.growth)}%</span>
-                </>
-              )}
-              <span className="text-gray-500 ml-1">vs mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="rounded-lg border bg-white p-10 text-center">
+          Chargement des métriques vérifiées...
+        </div>
+      ) : !data ? (
+        <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
+          Métriques indisponibles. Aucune valeur simulée n'est affichée.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Utilisateurs</CardTitle>
+                <Users className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.metrics.users.total}</div>
+                <p className="pt-1 text-xs text-gray-500">
+                  {data.metrics.users.currentPeriodNew} nouveaux ·{' '}
+                  {growthLabel(data.metrics.users.growthPct)}
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Chiffre d'affaires</CardTitle>
-            <DollarSign className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.revenue.total.toLocaleString()}</div>
-            <div className="flex items-center pt-1 text-xs">
-              {stats.revenue.growth > 0 ? (
-                <>
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                  <span className="text-green-500">{stats.revenue.growth}%</span>
-                </>
-              ) : (
-                <>
-                  <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                  <span className="text-red-500">{Math.abs(stats.revenue.growth)}%</span>
-                </>
-              )}
-              <span className="text-gray-500 ml-1">vs mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Revenu payé vérifié</CardTitle>
+                <DollarSign className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatMoney(
+                    data.metrics.paidRevenue.amount,
+                    data.metrics.paidRevenue.currency
+                  )}
+                </div>
+                <p className="pt-1 text-xs text-gray-500">
+                  {data.metrics.paidRevenue.paidOrders} commande(s) payée(s) ·{' '}
+                  {growthLabel(data.metrics.paidRevenue.growthPct)}
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Commandes</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.orders.total}</div>
-            <div className="flex items-center pt-1 text-xs">
-              {stats.orders.growth > 0 ? (
-                <>
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                  <span className="text-green-500">{stats.orders.growth}%</span>
-                </>
-              ) : (
-                <>
-                  <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                  <span className="text-red-500">{Math.abs(stats.orders.growth)}%</span>
-                </>
-              )}
-              <span className="text-gray-500 ml-1">vs mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Commandes</CardTitle>
+                <ShoppingBag className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.metrics.orders.total}</div>
+                <p className="pt-1 text-xs text-gray-500">
+                  {data.metrics.orders.currentPeriod} sur 30 jours ·{' '}
+                  {growthLabel(data.metrics.orders.growthPct)}
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Produits</CardTitle>
-            <BarChart3 className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.products.total}</div>
-            <div className="flex items-center pt-1 text-xs">
-              {stats.products.growth > 0 ? (
-                <>
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                  <span className="text-green-500">{stats.products.growth}%</span>
-                </>
-              ) : (
-                <>
-                  <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                  <span className="text-red-500">{Math.abs(stats.products.growth)}%</span>
-                </>
-              )}
-              <span className="text-gray-500 ml-1">vs mois dernier</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Produits</CardTitle>
+                <BarChart3 className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.metrics.products.total}</div>
+                <p className="pt-1 text-xs text-gray-500">
+                  Comptage exact de public.products
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Utilisateurs récents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dataLoading ? (
-                <div className="text-center py-4">Chargement des données...</div>
-              ) : (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-                        <Users className="h-4 w-4 text-gray-500" />
-                      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Montant brut des commandes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatMoney(
+                  data.metrics.grossOrderValue.amount,
+                  data.metrics.grossOrderValue.currency
+                )}
+              </div>
+              <p className="mt-2 text-sm text-amber-700">
+                Ce montant additionne les commandes sans supposer qu'elles sont payées.
+                Il ne doit pas être interprété comme du chiffre d'affaires encaissé.
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Utilisateurs récents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {data.recentUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between border-b pb-2"
+                    >
                       <div>
-                        <div className="font-medium">Utilisateur {i + 1}</div>
-                        <div className="text-sm text-gray-500">utilisateur{i + 1}@exemple.com</div>
+                        <div className="font-medium">
+                          {user.name || 'Utilisateur sans nom'}
+                        </div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(user.created_at).toLocaleDateString('fr-FR')}
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(Date.now() - i * 86400000).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            <Button variant="outline" className="w-full mt-4">Voir tous les utilisateurs</Button>
-          </CardContent>
-        </Card>
+                  ))}
+                  {data.recentUsers.length === 0 && (
+                    <div className="text-sm text-gray-500">Aucun utilisateur.</div>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={() => navigate('/app/admin/users')}
+                >
+                  Voir tous les utilisateurs
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Commandes récentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dataLoading ? (
-                <div className="text-center py-4">Chargement des données...</div>
-              ) : (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-                        <ShoppingBag className="h-4 w-4 text-gray-500" />
-                      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Commandes récentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {data.recentOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between border-b pb-2"
+                    >
                       <div>
-                        <div className="font-medium">Commande #{1000 + i}</div>
-                        <div className="text-sm text-gray-500">{(99.99 * (i + 1)).toFixed(2)}€</div>
+                        <div className="font-medium">
+                          Commande #{order.order_number}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatMoney(order.total_amount, order.currency)}
+                          {' · '}
+                          {order.financial_status || 'statut financier inconnu'}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(order.created_at).toLocaleDateString('fr-FR')}
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(Date.now() - i * 43200000).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            <Button variant="outline" className="w-full mt-4">Voir toutes les commandes</Button>
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                  {data.recentOrders.length === 0 && (
+                    <div className="text-sm text-gray-500">Aucune commande.</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-xs text-gray-500">
+            Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Sources :
+            Supabase Auth, public.products et public.orders.
+          </div>
+        </>
+      )}
     </div>
   );
 };
