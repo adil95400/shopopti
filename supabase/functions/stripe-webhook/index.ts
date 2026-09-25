@@ -93,7 +93,11 @@ serve(async (req) => {
       },
     });
 
-    if (insertError && insertError.code !== "23505") {
+    if (insertError?.code === "23505") {
+      return json({ received: true, duplicate: true, processing: true });
+    }
+
+    if (insertError) {
       console.error("stripe webhook insert failed", insertError);
       return json({ error: "webhook_store_failed" }, 500);
     }
