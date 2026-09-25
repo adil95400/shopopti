@@ -263,7 +263,7 @@ CREATE TABLE IF NOT EXISTS public.supplier_connector_settings (
 
 INSERT INTO public.supplier_connector_settings (provider, status)
 VALUES
-  ('cj_dropshipping', 'enabled'),
+  ('cj_dropshipping', 'disabled'),
   ('bigbuy', 'disabled'),
   ('aliexpress', 'disabled'),
   ('alibaba', 'disabled'),
