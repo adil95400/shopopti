@@ -170,6 +170,11 @@ const Suppliers = () => {
     return map;
   }, [suppliers]);
 
+  const availabilityByProvider = useMemo(
+    () => new Map(connectorSettings.map((setting) => [setting.provider, setting.status])),
+    [connectorSettings]
+  );
+
   const filteredProviders = useMemo(() => {
     const term = search.trim().toLowerCase();
 
@@ -187,19 +192,14 @@ const Suppliers = () => {
         return connections.length > 0;
       }
       if (activeTab === 'available') {
-        return provider.stage === 'implemented';
+        return availabilityByProvider.get(provider.type) === 'enabled';
       }
       if (activeTab === 'planned') {
         return provider.stage === 'planned';
       }
       return true;
     });
-  }, [activeTab, connectionsByType, search]);
-
-  const availabilityByProvider = useMemo(
-    () => new Map(connectorSettings.map((setting) => [setting.provider, setting.status])),
-    [connectorSettings]
-  );
+  }, [activeTab, availabilityByProvider, connectionsByType, search]);
 
   const connectedCount = suppliers.filter(
     (supplier) => getConnectionState(supplier) === 'active'
