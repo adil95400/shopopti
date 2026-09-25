@@ -190,3 +190,40 @@ CREATE POLICY "Users can view own supplier variant stock"
   FOR SELECT
   TO authenticated
   USING ((select auth.uid()) = user_id);
+
+
+-- Prevent browser clients from reading supplier credentials.
+REVOKE ALL ON TABLE public.external_suppliers FROM anon;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLE public.external_suppliers FROM authenticated;
+
+GRANT SELECT (
+  id,
+  name,
+  type,
+  base_url,
+  status,
+  last_sync,
+  created_at,
+  user_id
+) ON TABLE public.external_suppliers TO authenticated;
+
+GRANT INSERT (
+  name,
+  type,
+  api_key,
+  api_secret,
+  base_url,
+  status,
+  created_at,
+  user_id
+) ON TABLE public.external_suppliers TO authenticated;
+
+GRANT UPDATE (
+  name,
+  type,
+  api_key,
+  api_secret,
+  base_url
+) ON TABLE public.external_suppliers TO authenticated;
+
+GRANT DELETE ON TABLE public.external_suppliers TO authenticated;
