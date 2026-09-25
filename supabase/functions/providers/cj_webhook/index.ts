@@ -70,12 +70,13 @@ serve(async (req) => {
   const messageId = typeof event.messageId === "string" ? event.messageId : "";
   const eventType = typeof event.type === "string" ? event.type : "";
   const messageType = typeof event.messageType === "string" ? event.messageType : null;
-  const openIdValue =
+  const eventOpenId =
     typeof event.openId === "string" || typeof event.openId === "number"
       ? String(event.openId)
       : "";
+  const supplierId = new URL(req.url).searchParams.get("supplierId") || "";
 
-  if (!messageId || !eventType || !openIdValue) {
+  if (!messageId || !eventType || !supplierId) {
     return json({ success: false, error: "Missing CJ webhook identifiers" }, 400);
   }
 
@@ -89,15 +90,21 @@ serve(async (req) => {
   });
 
   // For CJ connections, api_secret stores the CJ openId used as the webhook HMAC secret.
+  // Some CJ event types do not include openId in the body, so the callback is bound
+  // to the supplier connection and the stored openId is used for verification.
   const { data: supplier, error: supplierError } = await admin
     .from("external_suppliers")
     .select("id,user_id,type,api_secret")
+    .eq("id", supplierId)
     .eq("type", "cj_dropshipping")
-    .eq("api_secret", openIdValue)
     .maybeSingle();
 
   if (supplierError || !supplier?.api_secret) {
     return json({ success: false, error: "Unknown CJ webhook account" }, 404);
+  }
+
+  if (eventOpenId && eventOpenId !== String(supplier.api_secret)) {
+    return json({ success: false, error: "CJ webhook account mismatch" }, 401);
   }
 
   const signatureValid = await verifySignature(
