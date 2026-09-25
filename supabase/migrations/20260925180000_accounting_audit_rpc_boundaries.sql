@@ -1,6 +1,7 @@
 -- P0 accounting/audit mutation RPC hardening.
 -- These privileged mutations are internal accounting/security operations.
 -- No current browser/Edge callers exist in the ShopOpti repository.
+-- Verified on shopopti-staging before CI.
 
 REVOKE EXECUTE ON FUNCTION public.create_audit_log(
   text,text,text,text,text,text,jsonb,jsonb,text,jsonb,text
