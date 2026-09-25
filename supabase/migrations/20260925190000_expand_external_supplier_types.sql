@@ -1,11 +1,35 @@
--- Expand ShopOpti supplier provider types while removing AutoDS from new writes.
--- Existing legacy AutoDS rows are intentionally not deleted or rewritten.
--- The NOT VALID constraint is enforced for new/updated rows while allowing a safe cleanup
--- of any historical AutoDS records before a later VALIDATE CONSTRAINT.
+-- Supplier Hub P0 schema.
+-- Self-contained for environments where the historical external_suppliers migration
+-- was never applied. Existing rows are preserved and AutoDS is blocked from new writes.
+
+CREATE TABLE IF NOT EXISTS public.external_suppliers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  type text NOT NULL,
+  api_key text NOT NULL DEFAULT 'server-managed',
+  api_secret text,
+  base_url text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'inactive',
+  last_sync timestamptz,
+  webhook_status text NOT NULL DEFAULT 'not_configured',
+  webhook_last_event_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+ALTER TABLE public.external_suppliers
+  ADD COLUMN IF NOT EXISTS api_key text NOT NULL DEFAULT 'server-managed',
+  ADD COLUMN IF NOT EXISTS api_secret text,
+  ADD COLUMN IF NOT EXISTS base_url text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'inactive',
+  ADD COLUMN IF NOT EXISTS last_sync timestamptz,
+  ADD COLUMN IF NOT EXISTS webhook_status text NOT NULL DEFAULT 'not_configured',
+  ADD COLUMN IF NOT EXISTS webhook_last_event_at timestamptz,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
 
 ALTER TABLE public.external_suppliers
   DROP CONSTRAINT IF EXISTS external_suppliers_type_check;
-
 ALTER TABLE public.external_suppliers
   ADD CONSTRAINT external_suppliers_type_check
   CHECK (
@@ -27,39 +51,38 @@ ALTER TABLE public.external_suppliers
   ) NOT VALID;
 
 ALTER TABLE public.external_suppliers
-  ADD COLUMN IF NOT EXISTS webhook_status text NOT NULL DEFAULT 'not_configured',
-  ADD COLUMN IF NOT EXISTS webhook_last_event_at timestamptz;
+  DROP CONSTRAINT IF EXISTS external_suppliers_status_check;
+ALTER TABLE public.external_suppliers
+  ADD CONSTRAINT external_suppliers_status_check
+  CHECK (status IN ('active', 'inactive', 'error')) NOT VALID;
 
--- Harden supplier ownership policies for authenticated callers.
-DROP POLICY IF EXISTS "Users can view their own external suppliers" ON public.external_suppliers;
+CREATE INDEX IF NOT EXISTS idx_external_suppliers_user_id
+  ON public.external_suppliers(user_id);
+CREATE INDEX IF NOT EXISTS idx_external_suppliers_type
+  ON public.external_suppliers(type);
+CREATE INDEX IF NOT EXISTS idx_external_suppliers_status
+  ON public.external_suppliers(status);
+
+ALTER TABLE public.external_suppliers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own external suppliers"
+  ON public.external_suppliers;
 CREATE POLICY "Users can view their own external suppliers"
   ON public.external_suppliers
-  FOR SELECT
-  TO authenticated
-  USING ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
+  FOR SELECT TO authenticated
+  USING ((select auth.uid()) = user_id);
 
-DROP POLICY IF EXISTS "Users can insert their own external suppliers" ON public.external_suppliers;
-CREATE POLICY "Users can insert their own external suppliers"
-  ON public.external_suppliers
-  FOR INSERT
-  TO authenticated
-  WITH CHECK ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
+DROP POLICY IF EXISTS "Users can insert their own external suppliers"
+  ON public.external_suppliers;
+DROP POLICY IF EXISTS "Users can update their own external suppliers"
+  ON public.external_suppliers;
 
-DROP POLICY IF EXISTS "Users can update their own external suppliers" ON public.external_suppliers;
-CREATE POLICY "Users can update their own external suppliers"
-  ON public.external_suppliers
-  FOR UPDATE
-  TO authenticated
-  USING ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id)
-  WITH CHECK ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "Users can delete their own external suppliers" ON public.external_suppliers;
+DROP POLICY IF EXISTS "Users can delete their own external suppliers"
+  ON public.external_suppliers;
 CREATE POLICY "Users can delete their own external suppliers"
   ON public.external_suppliers
-  FOR DELETE
-  TO authenticated
-  USING ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
-
+  FOR DELETE TO authenticated
+  USING ((select auth.uid()) = user_id);
 
 -- Durable, idempotent supplier snapshots used by the canonical import pipeline.
 CREATE TABLE IF NOT EXISTS public.supplier_product_snapshots (
@@ -78,28 +101,30 @@ CREATE TABLE IF NOT EXISTS public.supplier_product_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_supplier_product_snapshots_supplier
   ON public.supplier_product_snapshots (supplier_id);
-
 CREATE INDEX IF NOT EXISTS idx_supplier_product_snapshots_user
   ON public.supplier_product_snapshots (user_id);
 
 ALTER TABLE public.supplier_product_snapshots ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view own supplier snapshots" ON public.supplier_product_snapshots;
+DROP POLICY IF EXISTS "Users can view own supplier snapshots"
+  ON public.supplier_product_snapshots;
 CREATE POLICY "Users can view own supplier snapshots"
   ON public.supplier_product_snapshots
-  FOR SELECT
-  TO authenticated
+  FOR SELECT TO authenticated
   USING ((select auth.uid()) = user_id);
 
-DROP POLICY IF EXISTS "Users can insert own supplier snapshots" ON public.supplier_product_snapshots;
-DROP POLICY IF EXISTS "Users can update own supplier snapshots" ON public.supplier_product_snapshots;
-DROP POLICY IF EXISTS "Users can delete own supplier snapshots" ON public.supplier_product_snapshots;
+DROP POLICY IF EXISTS "Users can insert own supplier snapshots"
+  ON public.supplier_product_snapshots;
+DROP POLICY IF EXISTS "Users can update own supplier snapshots"
+  ON public.supplier_product_snapshots;
+DROP POLICY IF EXISTS "Users can delete own supplier snapshots"
+  ON public.supplier_product_snapshots;
 
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.supplier_product_snapshots FROM authenticated;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.supplier_product_snapshots
+  FROM authenticated;
 GRANT SELECT ON TABLE public.supplier_product_snapshots TO authenticated;
 
-
--- CJ webhook event ledger. message_id is stable across CJ retries and prevents duplicate processing.
+-- CJ webhook event ledger. message_id is stable across CJ retries.
 CREATE TABLE IF NOT EXISTS public.cj_webhook_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id text NOT NULL UNIQUE,
@@ -117,13 +142,14 @@ CREATE INDEX IF NOT EXISTS idx_cj_webhook_events_supplier
 
 ALTER TABLE public.cj_webhook_events ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view own CJ webhook events" ON public.cj_webhook_events;
+DROP POLICY IF EXISTS "Users can view own CJ webhook events"
+  ON public.cj_webhook_events;
 CREATE POLICY "Users can view own CJ webhook events"
   ON public.cj_webhook_events
-  FOR SELECT
-  TO authenticated
+  FOR SELECT TO authenticated
   USING ((select auth.uid()) = user_id);
 
+GRANT SELECT ON TABLE public.cj_webhook_events TO authenticated;
 
 -- Idempotent supplier order dispatch ledger.
 CREATE TABLE IF NOT EXISTS public.supplier_order_dispatches (
@@ -146,13 +172,14 @@ CREATE INDEX IF NOT EXISTS idx_supplier_order_dispatches_supplier
 
 ALTER TABLE public.supplier_order_dispatches ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view own supplier order dispatches" ON public.supplier_order_dispatches;
+DROP POLICY IF EXISTS "Users can view own supplier order dispatches"
+  ON public.supplier_order_dispatches;
 CREATE POLICY "Users can view own supplier order dispatches"
   ON public.supplier_order_dispatches
-  FOR SELECT
-  TO authenticated
+  FOR SELECT TO authenticated
   USING ((select auth.uid()) = user_id);
 
+GRANT SELECT ON TABLE public.supplier_order_dispatches TO authenticated;
 
 -- Webhook-driven CJ variant stock cache.
 CREATE TABLE IF NOT EXISTS public.supplier_variant_stock (
@@ -172,18 +199,18 @@ CREATE INDEX IF NOT EXISTS idx_supplier_variant_stock_supplier
 
 ALTER TABLE public.supplier_variant_stock ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view own supplier variant stock" ON public.supplier_variant_stock;
+DROP POLICY IF EXISTS "Users can view own supplier variant stock"
+  ON public.supplier_variant_stock;
 CREATE POLICY "Users can view own supplier variant stock"
   ON public.supplier_variant_stock
-  FOR SELECT
-  TO authenticated
+  FOR SELECT TO authenticated
   USING ((select auth.uid()) = user_id);
 
+GRANT SELECT ON TABLE public.supplier_variant_stock TO authenticated;
 
--- Server-only supplier credentials.
--- The table is in the Data API schema for Edge Function compatibility, but browser roles
--- receive no privileges and RLS is enabled with no anon/authenticated policies.
-CREATE TABLE IF NOT EXISTS public.supplier_credentials (
+-- Server-only CJ credential store.
+-- A separate name avoids colliding with ShopOpti's existing supplier_credentials table.
+CREATE TABLE IF NOT EXISTS public.supplier_connection_secrets (
   supplier_id uuid PRIMARY KEY REFERENCES public.external_suppliers(id) ON DELETE CASCADE,
   provider text NOT NULL,
   access_token text NOT NULL,
@@ -194,12 +221,14 @@ CREATE TABLE IF NOT EXISTS public.supplier_credentials (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.supplier_credentials ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON TABLE public.supplier_credentials FROM PUBLIC, anon, authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.supplier_credentials TO service_role;
+ALTER TABLE public.supplier_connection_secrets ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.supplier_connection_secrets
+  FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE
+  ON TABLE public.supplier_connection_secrets TO service_role;
 
--- Migrate any legacy CJ access token/openId before clearing public credential columns.
-INSERT INTO public.supplier_credentials (
+-- Move legacy CJ access tokens out of external_suppliers if any exist.
+INSERT INTO public.supplier_connection_secrets (
   supplier_id,
   provider,
   access_token,
@@ -226,9 +255,10 @@ WHERE type = 'cj_dropshipping'
   AND api_key IS NOT NULL
   AND api_key <> '';
 
--- Prevent browser clients from reading supplier credentials.
+-- Browser clients can read only non-secret supplier metadata and delete owned connections.
 REVOKE ALL ON TABLE public.external_suppliers FROM anon;
-REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLE public.external_suppliers FROM authenticated;
+REVOKE SELECT, INSERT, UPDATE, DELETE
+  ON TABLE public.external_suppliers FROM authenticated;
 
 GRANT SELECT (
   id,
@@ -245,14 +275,7 @@ GRANT SELECT (
 
 GRANT DELETE ON TABLE public.external_suppliers TO authenticated;
 
--- Supplier creation/update is server-only so browser sessions cannot write credentials
--- or mark a supplier active without a verified provider probe.
-REVOKE INSERT, UPDATE ON TABLE public.external_suppliers FROM authenticated;
-
-
-
-
--- Platform-level connector availability controlled by verified admin roles.
+-- Platform-level connector availability controlled by canonical user_roles.
 CREATE TABLE IF NOT EXISTS public.supplier_connector_settings (
   provider text PRIMARY KEY,
   status text NOT NULL DEFAULT 'disabled'
@@ -295,9 +318,9 @@ CREATE POLICY "Admins can insert supplier connector settings"
   WITH CHECK (
     EXISTS (
       SELECT 1
-      FROM public.users
-      WHERE users.id = (select auth.uid())
-        AND users.role IN ('admin', 'superadmin')
+      FROM public.user_roles
+      WHERE user_roles.user_id = (select auth.uid())
+        AND user_roles.role::text = 'admin'
     )
   );
 
@@ -309,18 +332,19 @@ CREATE POLICY "Admins can update supplier connector settings"
   USING (
     EXISTS (
       SELECT 1
-      FROM public.users
-      WHERE users.id = (select auth.uid())
-        AND users.role IN ('admin', 'superadmin')
+      FROM public.user_roles
+      WHERE user_roles.user_id = (select auth.uid())
+        AND user_roles.role::text = 'admin'
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1
-      FROM public.users
-      WHERE users.id = (select auth.uid())
-        AND users.role IN ('admin', 'superadmin')
+      FROM public.user_roles
+      WHERE user_roles.user_id = (select auth.uid())
+        AND user_roles.role::text = 'admin'
     )
   );
 
-GRANT SELECT, INSERT, UPDATE ON TABLE public.supplier_connector_settings TO authenticated;
+GRANT SELECT, INSERT, UPDATE
+  ON TABLE public.supplier_connector_settings TO authenticated;
