@@ -1,9 +1,24 @@
 import { ProductVariant } from './product';
 
+export type SupplierProviderType =
+  | 'aliexpress'
+  | 'cj_dropshipping'
+  | 'bigbuy'
+  | 'alibaba'
+  | 'banggood'
+  | 'dhgate'
+  | 'cdiscount'
+  | 'spocket'
+  | 'eprolo'
+  | 'custom_api'
+  | 'custom_csv'
+  | 'custom_xml'
+  | 'custom_ftp';
+
 export interface SupplierSummary {
   id: string;
   name: string;
-  type: 'bigbuy' | 'eprolo' | 'cdiscount' | 'spocket';
+  type: SupplierProviderType;
   status: 'active' | 'inactive' | 'error';
   lastSync?: string;
   created_at: string;
@@ -12,7 +27,7 @@ export interface SupplierSummary {
 export interface ExternalSupplier {
   id: string;
   name: string;
-  type: 'bigbuy' | 'eprolo' | 'cdiscount' | 'spocket';
+  type: SupplierProviderType;
   apiKey: string;
   apiSecret?: string;
   baseUrl: string;
