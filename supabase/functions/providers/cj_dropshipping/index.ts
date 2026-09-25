@@ -99,8 +99,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const clientKey =
       Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!supabaseUrl || !clientKey) {
+    if (!supabaseUrl || !clientKey || !serviceRoleKey) {
       return json({ success: false, error: "CJ connector is not configured" }, 503);
     }
 
@@ -116,6 +117,9 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     const {
       data: { user },
@@ -128,7 +132,7 @@ serve(async (req) => {
 
     const { data: supplier, error: supplierError } = await supabase
       .from("external_suppliers")
-      .select("id,type,api_key,base_url,user_id,status")
+      .select("id,type,base_url,user_id,status")
       .eq("id", supplierId)
       .single();
 
@@ -141,13 +145,19 @@ serve(async (req) => {
       return json({ success: false, error: "CJ supplier not found" }, 404);
     }
 
-    if (!supplier.api_key) {
+    const { data: credentials, error: credentialError } = await admin
+      .from("external_suppliers")
+      .select("api_key,api_secret")
+      .eq("id", supplierId)
+      .single();
+
+    if (credentialError || !credentials?.api_key) {
       return json({ success: false, error: "CJ credential is missing" }, 422);
     }
 
     const baseUrl = normalizeBaseUrl(supplier.base_url);
     const cjHeaders = {
-      "CJ-Access-Token": supplier.api_key,
+      "CJ-Access-Token": credentials.api_key,
       Accept: "application/json",
     };
 
@@ -564,6 +574,13 @@ serve(async (req) => {
 
 
     if (action === "webhook_set") {
+      if (!credentials.api_secret) {
+        return json(
+          { success: false, error: "CJ openId is required before enabling signed webhooks" },
+          422
+        );
+      }
+
       const callbackUrl = `${supabaseUrl}/functions/v1/providers/cj_webhook`;
       const setting = {
         product: { type: "ENABLE", callbackUrls: [callbackUrl] },
@@ -745,7 +762,7 @@ serve(async (req) => {
       }
 
       if (imported.length > 0) {
-        await supabase
+        await admin
           .from("external_suppliers")
           .update({ last_sync: new Date().toISOString() })
           .eq("id", supplierId);
@@ -812,7 +829,7 @@ serve(async (req) => {
         return json({ success: false, error: "orderNumber is required" }, 400);
       }
 
-      const { data: existing } = await supabase
+      const { data: existing } = await admin
         .from("supplier_order_dispatches")
         .select("id,remote_order_id,status,response_payload")
         .eq("supplier_id", supplierId)
@@ -840,7 +857,7 @@ serve(async (req) => {
       }
 
       if (!existing) {
-        const { error: reserveError } = await supabase
+        const { error: reserveError } = await admin
           .from("supplier_order_dispatches")
           .insert({
             user_id: user.id,
@@ -861,7 +878,7 @@ serve(async (req) => {
           return json({ success: false, error: "Order reservation failed" }, 500);
         }
       } else {
-        await supabase
+        await admin
           .from("supplier_order_dispatches")
           .update({
             status: "pending",
@@ -880,7 +897,7 @@ serve(async (req) => {
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true) {
-        await supabase
+        await admin
           .from("supplier_order_dispatches")
           .update({
             status: "failed",
@@ -908,7 +925,7 @@ serve(async (req) => {
         remoteData?.cjOrderCode ??
         null;
 
-      await supabase
+      await admin
         .from("supplier_order_dispatches")
         .update({
           remote_order_id: remoteOrderId ? String(remoteOrderId) : null,
