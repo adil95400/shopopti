@@ -82,12 +82,35 @@ describe('supplierService server-side supplier contracts', () => {
     expect(payload).not.toHaveProperty('apiKey')
   })
 
-  it('keeps canonical supplier import disabled until verified snapshots are wired', async () => {
+  it('imports CJ products through the verified snapshot pipeline without credentials', async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({
+      data: {
+        success: true,
+        importedCount: 1,
+        failedCount: 0,
+        imported: [{ externalId: 'product-1', snapshotId: 'snapshot-1' }],
+        failed: [],
+      },
+    })
+
     await expect(
       supplierService.importProducts('supplier-1', ['product-1'])
-    ).rejects.toThrow(
-      'Supplier import is disabled until the canonical import pipeline accepts verified server-side product snapshots'
-    )
+    ).resolves.toEqual({
+      success: true,
+      message: 'Imported 1 verified CJdropshipping product snapshots',
+      importedCount: 1,
+      failedCount: 0,
+      errors: [],
+    })
+
+    const [, payload] = vi.mocked(axios.post).mock.calls[0]
+    expect(payload).toEqual({
+      supplierId: 'supplier-1',
+      action: 'snapshot_import',
+      productIds: ['product-1'],
+    })
+    expect(payload).not.toHaveProperty('apiKey')
+    expect(payload).not.toHaveProperty('apiSecret')
   })
 
   it('creates CJ orders through the credential-free CJ facade', async () => {
