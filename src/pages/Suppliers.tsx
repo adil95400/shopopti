@@ -23,6 +23,10 @@ import {
   type SupplierProviderDefinition,
 } from '@/config/supplierProviders';
 import { supplierService } from '@/services/supplierService';
+import {
+  supplierConnectorSettingsService,
+  type SupplierConnectorSetting,
+} from '@/services/supplierConnectorSettingsService';
 import type { SupplierProviderType, SupplierSummary } from '@/types/supplier';
 
 type ConnectionState = 'active' | 'inactive' | 'error' | 'unknown';
@@ -115,6 +119,7 @@ const stageClassName = (provider: SupplierProviderDefinition) => {
 const Suppliers = () => {
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
+  const [connectorSettings, setConnectorSettings] = useState<SupplierConnectorSetting[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -133,8 +138,12 @@ const Suppliers = () => {
     setLoadError(null);
 
     try {
-      const data = await supplierService.getSupplierSummaries();
+      const [data, settings] = await Promise.all([
+        supplierService.getSupplierSummaries(),
+        supplierConnectorSettingsService.list(),
+      ]);
       setSuppliers(data);
+      setConnectorSettings(settings);
     } catch (error) {
       console.error('Unable to load supplier hub:', error);
       setSuppliers([]);
@@ -186,6 +195,11 @@ const Suppliers = () => {
     });
   }, [activeTab, connectionsByType, search]);
 
+  const availabilityByProvider = useMemo(
+    () => new Map(connectorSettings.map((setting) => [setting.provider, setting.status])),
+    [connectorSettings]
+  );
+
   const connectedCount = suppliers.filter(
     (supplier) => getConnectionState(supplier) === 'active'
   ).length;
@@ -195,8 +209,8 @@ const Suppliers = () => {
   const errorCount = suppliers.filter(
     (supplier) => getConnectionState(supplier) === 'error'
   ).length;
-  const availableConnectorCount = supplierProviders.filter(
-    (provider) => provider.stage === 'implemented'
+  const availableConnectorCount = connectorSettings.filter(
+    (setting) => setting.status === 'enabled'
   ).length;
   const plannedConnectorCount = supplierProviders.filter(
     (provider) => provider.stage === 'planned'
@@ -306,7 +320,13 @@ const Suppliers = () => {
   };
 
   const renderProviderAction = (provider: SupplierProviderDefinition) => {
-    if (provider.type === 'cj_dropshipping' && provider.stage === 'implemented') {
+    const availability = availabilityByProvider.get(provider.type) ?? 'disabled';
+
+    if (
+      provider.type === 'cj_dropshipping' &&
+      provider.stage === 'implemented' &&
+      availability === 'enabled'
+    ) {
       return (
         <Button
           size="sm"
@@ -321,7 +341,11 @@ const Suppliers = () => {
 
     return (
       <Button size="sm" variant="outline" className="w-full" disabled>
-        {provider.stage === 'planned' ? 'Bientôt disponible' : 'Non disponible'}
+        {availability === 'maintenance'
+          ? 'En maintenance'
+          : provider.stage === 'planned'
+            ? 'Bientôt disponible'
+            : 'Non disponible'}
       </Button>
     );
   };
@@ -444,6 +468,8 @@ const Suppliers = () => {
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredProviders.map((provider) => {
               const connections = connectionsByType.get(provider.type) ?? [];
+              const platformAvailability =
+                availabilityByProvider.get(provider.type) ?? 'disabled';
               const capabilityEntries = (Object.entries(provider.capabilities) as Array<
                 [SupplierCapability, string]
               >).filter(([, status]) => status === 'implemented');
@@ -469,14 +495,22 @@ const Suppliers = () => {
 
                     <span
                       className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
-                        connections.some((connection) => connection.status === 'active')
-                          ? STATUS_COPY.active.className
-                          : stageClassName(provider)
+                        platformAvailability === 'maintenance'
+                          ? 'border-amber-200 bg-amber-50 text-amber-700'
+                          : platformAvailability === 'disabled'
+                            ? 'border-slate-200 bg-slate-50 text-slate-600'
+                            : connections.some((connection) => connection.status === 'active')
+                              ? STATUS_COPY.active.className
+                              : stageClassName(provider)
                       }`}
                     >
-                      {connections.some((connection) => connection.status === 'active')
-                        ? 'Connecté'
-                        : stageLabel(provider)}
+                      {platformAvailability === 'maintenance'
+                        ? 'Maintenance'
+                        : platformAvailability === 'disabled'
+                          ? 'Désactivé'
+                          : connections.some((connection) => connection.status === 'active')
+                            ? 'Connecté'
+                            : stageLabel(provider)}
                     </span>
                   </div>
 
@@ -555,7 +589,9 @@ const Suppliers = () => {
                               <Button
                                 size="sm"
                                 className="flex-1"
-                                disabled={state !== 'active'}
+                                disabled={
+                                  state !== 'active' || platformAvailability !== 'enabled'
+                                }
                                 onClick={() =>
                                   navigate(
                                     `/app/import-products?supplier=${encodeURIComponent(connection.id)}`
@@ -567,7 +603,10 @@ const Suppliers = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={testingId === connection.id}
+                                disabled={
+                                  testingId === connection.id ||
+                                  platformAvailability !== 'enabled'
+                                }
                                 onClick={() => void handleTestConnection(connection)}
                                 aria-label={`Tester ${connection.name}`}
                               >
@@ -597,7 +636,10 @@ const Suppliers = () => {
                                 size="sm"
                                 variant="ghost"
                                 className="mt-2 w-full gap-2"
-                                disabled={syncingId === connection.id}
+                                disabled={
+                                  syncingId === connection.id ||
+                                  platformAvailability !== 'enabled'
+                                }
                                 onClick={() => void handleConfigureRealtimeSync(connection)}
                               >
                                 <RefreshCw
@@ -619,9 +661,14 @@ const Suppliers = () => {
                           size="sm"
                           variant="outline"
                           className="w-full"
+                          disabled={platformAvailability !== 'enabled'}
                           onClick={() => setShowConnectCJ(true)}
                         >
-                          Connecter un autre compte
+                          {platformAvailability === 'maintenance'
+                            ? 'Connecteur en maintenance'
+                            : platformAvailability === 'disabled'
+                              ? 'Connecteur désactivé'
+                              : 'Connecter un autre compte'}
                         </Button>
                       )}
                     </div>
