@@ -65,7 +65,7 @@ export const supplierService = {
 
   async testConnectionById(supplierId: string): Promise<boolean> {
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supplier-provider-test`;
       const session = (await supabase.auth.getSession()).data.session;
 
       if (!session?.access_token) {
@@ -96,7 +96,7 @@ export const supplierService = {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session?.access_token) throw new Error('Authentication required');
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_connect`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-connect`;
       const response = await axios.post(
         apiUrl,
         {
@@ -133,7 +133,7 @@ export const supplierService = {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session?.access_token) throw new Error('Authentication required');
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_connect`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-connect`;
       const response = await axios.post(
         apiUrl,
         {
@@ -169,7 +169,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_disconnect`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-disconnect`;
     const response = await axios.post(
       apiUrl,
       { supplierId: id },
@@ -213,7 +213,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
     const response = await axios.post(
       apiUrl,
       { supplierId, action: 'search', filters },
@@ -237,7 +237,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
     const response = await axios.post(
       apiUrl,
       { supplierId, action: 'detail', productId },
@@ -270,7 +270,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
     const response = await axios.post(
       apiUrl,
       { supplierId, action: 'categories' },
@@ -298,7 +298,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
     const response = await axios.post(
       apiUrl,
       { supplierId, action: 'variants', productId, countryCode },
@@ -322,7 +322,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
     const response = await axios.post(
       apiUrl,
       { supplierId, action: 'stock', variantId },
@@ -355,7 +355,7 @@ export const supplierService = {
     const session = (await supabase.auth.getSession()).data.session;
     if (!session?.access_token) throw new Error('Authentication required');
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
     const response = await axios.post(
       apiUrl,
       { supplierId, action: 'snapshot_import', productIds },
