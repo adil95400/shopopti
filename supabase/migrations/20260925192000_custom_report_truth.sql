@@ -1,5 +1,6 @@
 -- P1 Content Truth: custom reports must use real order data.
 -- Removes random/simulated revenue, order, AOV and conversion metrics.
+-- Verified on shopopti-staging before CI.
 
 CREATE OR REPLACE FUNCTION public.generate_custom_report(
   p_report_id uuid,
