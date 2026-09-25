@@ -251,3 +251,77 @@ GRANT DELETE ON TABLE public.external_suppliers TO authenticated;
 REVOKE INSERT, UPDATE ON TABLE public.external_suppliers FROM authenticated;
 
 
+
+
+-- Platform-level connector availability controlled by verified admin roles.
+CREATE TABLE IF NOT EXISTS public.supplier_connector_settings (
+  provider text PRIMARY KEY,
+  status text NOT NULL DEFAULT 'disabled'
+    CHECK (status IN ('enabled', 'maintenance', 'disabled')),
+  updated_by uuid REFERENCES auth.users(id),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.supplier_connector_settings (provider, status)
+VALUES
+  ('cj_dropshipping', 'enabled'),
+  ('bigbuy', 'disabled'),
+  ('aliexpress', 'disabled'),
+  ('alibaba', 'disabled'),
+  ('banggood', 'disabled'),
+  ('dhgate', 'disabled'),
+  ('cdiscount', 'disabled'),
+  ('spocket', 'disabled'),
+  ('eprolo', 'disabled'),
+  ('custom_api', 'disabled'),
+  ('custom_csv', 'disabled'),
+  ('custom_xml', 'disabled'),
+  ('custom_ftp', 'disabled')
+ON CONFLICT (provider) DO NOTHING;
+
+ALTER TABLE public.supplier_connector_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view supplier connector settings"
+  ON public.supplier_connector_settings;
+CREATE POLICY "Authenticated users can view supplier connector settings"
+  ON public.supplier_connector_settings
+  FOR SELECT TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins can insert supplier connector settings"
+  ON public.supplier_connector_settings;
+CREATE POLICY "Admins can insert supplier connector settings"
+  ON public.supplier_connector_settings
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.users
+      WHERE users.id = (select auth.uid())
+        AND users.role IN ('admin', 'superadmin')
+    )
+  );
+
+DROP POLICY IF EXISTS "Admins can update supplier connector settings"
+  ON public.supplier_connector_settings;
+CREATE POLICY "Admins can update supplier connector settings"
+  ON public.supplier_connector_settings
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.users
+      WHERE users.id = (select auth.uid())
+        AND users.role IN ('admin', 'superadmin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.users
+      WHERE users.id = (select auth.uid())
+        AND users.role IN ('admin', 'superadmin')
+    )
+  );
+
+GRANT SELECT, INSERT, UPDATE ON TABLE public.supplier_connector_settings TO authenticated;
