@@ -1,5 +1,6 @@
 import { serve } from "npm:@supabase/functions-js";
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
+import { requireConnectorEnabled } from "../../_shared/connectorAvailability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,6 +45,19 @@ serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+
+    try {
+      await requireConnectorEnabled(admin, "cj_dropshipping");
+    } catch (error) {
+      return json(
+        {
+          success: false,
+          status: "connector_unavailable",
+          error: error instanceof Error ? error.message : "CJ connector unavailable",
+        },
+        503
+      );
+    }
 
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
