@@ -14,6 +14,9 @@ export interface AdminBillingData {
     trial_days: number | null;
     features: unknown;
     limits: unknown;
+    stripe_price_id_monthly: string | null;
+    stripe_price_id_yearly: string | null;
+    stripe_product_id: string | null;
   }>;
   subscriptions: Array<{
     id: string;
@@ -75,6 +78,17 @@ export interface AdminBillingData {
     arr: number | null;
     churnRate: number | null;
     activePaidSubscribers: number | null;
+  };
+  billingReadiness: {
+    stripeSecretConfigured: boolean;
+    stripeWebhookSecretConfigured: boolean;
+    appUrlConfigured: boolean;
+    activePlans: number;
+    fullyMappedPlans: number;
+    planMappingsComplete: boolean;
+    processedWebhookObserved: boolean;
+    canonicalSubscriptionObserved: boolean;
+    goldenPathObserved: boolean;
   };
   provenance: Record<string, string>;
   completeness: Record<string, boolean>;
