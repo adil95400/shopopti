@@ -159,15 +159,25 @@ serve(async (req) => {
       ["paid", "partially_paid"].includes(String(order.financial_status ?? "").toLowerCase()),
     );
 
-    const currencies = Array.from(
+    const currentCurrencies = Array.from(
       new Set(
         currentOrders
           .map((order) => String(order.currency ?? "").trim())
           .filter(Boolean),
       ),
     );
-
-    const singleCurrency = currencies.length === 1 ? currencies[0] : null;
+    const previousCurrencies = Array.from(
+      new Set(
+        previousOrders
+          .map((order) => String(order.currency ?? "").trim())
+          .filter(Boolean),
+      ),
+    );
+    const singleCurrency =
+      currentCurrencies.length === 1 ? currentCurrencies[0] : null;
+    const comparableCurrency =
+      singleCurrency !== null &&
+      previousCurrencies.every((currency) => currency === singleCurrency);
 
     const sumAmount = (orders: typeof currentOrders) =>
       orders.reduce((sum, order) => sum + Number(order.total_amount ?? 0), 0);
@@ -282,7 +292,7 @@ serve(async (req) => {
             currency: singleCurrency,
             paidOrders: currentPaidOrders.length,
             growthPct:
-              singleCurrency && currencies.length === 1
+              comparableCurrency
                 ? pctGrowth(currentPaid, previousPaid)
                 : null,
             verified: singleCurrency !== null,
@@ -291,7 +301,7 @@ serve(async (req) => {
             amount: singleCurrency ? currentGross : null,
             currency: singleCurrency,
             growthPct:
-              singleCurrency && currencies.length === 1
+              comparableCurrency
                 ? pctGrowth(currentGross, previousGross)
                 : null,
             verified: singleCurrency !== null,
@@ -320,11 +330,11 @@ serve(async (req) => {
         paidRevenue: singleCurrency ? currentPaid : null,
         paidRevenueCurrency: singleCurrency,
         paidRevenueGrowthPct:
-          singleCurrency ? pctGrowth(currentPaid, previousPaid) : null,
+          comparableCurrency ? pctGrowth(currentPaid, previousPaid) : null,
         grossOrderValue: singleCurrency ? currentGross : null,
         grossOrderValueCurrency: singleCurrency,
         grossOrderValueGrowthPct:
-          singleCurrency ? pctGrowth(currentGross, previousGross) : null,
+          comparableCurrency ? pctGrowth(currentGross, previousGross) : null,
         averageOrderValue,
         conversionRate: null,
       },
