@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { supplierService } from '@/services/supplierService';
-import type { ExternalSupplier } from '@/types/supplier';
+import type { SupplierSummary } from '@/types/supplier';
 
 type ConnectionState = 'active' | 'inactive' | 'error' | 'unknown';
 
@@ -51,7 +51,7 @@ const formatDate = (value?: string) => {
   }).format(date);
 };
 
-const getConnectionState = (supplier: ExternalSupplier): ConnectionState => {
+const getConnectionState = (supplier: SupplierSummary): ConnectionState => {
   if (supplier.status === 'active') return 'active';
   if (supplier.status === 'inactive') return 'inactive';
   if (supplier.status === 'error') return 'error';
@@ -60,7 +60,7 @@ const getConnectionState = (supplier: ExternalSupplier): ConnectionState => {
 
 const Suppliers = () => {
   const navigate = useNavigate();
-  const [suppliers, setSuppliers] = useState<ExternalSupplier[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -73,7 +73,7 @@ const Suppliers = () => {
     setLoadError(null);
 
     try {
-      const data = await supplierService.getSuppliers();
+      const data = await supplierService.getSupplierSummaries();
       setSuppliers(data);
     } catch (error) {
       console.error('Unable to load supplier hub:', error);
@@ -113,7 +113,7 @@ const Suppliers = () => {
   ).length;
   const verifiedSyncCount = suppliers.filter((supplier) => Boolean(supplier.lastSync)).length;
 
-  const handleTestConnection = async (supplier: ExternalSupplier) => {
+  const handleTestConnection = async (supplier: SupplierSummary) => {
     setTestingId(supplier.id);
     setTestResults((current) => {
       const next = { ...current };
@@ -122,7 +122,7 @@ const Suppliers = () => {
     });
 
     try {
-      const success = await supplierService.testConnection(supplier);
+      const success = await supplierService.testConnectionById(supplier.id);
       setTestResults((current) => ({
         ...current,
         [supplier.id]: success ? 'success' : 'error',
