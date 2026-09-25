@@ -2,8 +2,8 @@ import { supabase } from '@/lib/supabase';
 
 type CjAction =
   | 'categories'
-  | 'products'
-  | 'product_detail'
+  | 'search'
+  | 'detail'
   | 'variants'
   | 'stock'
   | 'freight'
@@ -35,7 +35,7 @@ const invoke = async <T = unknown>(request: CjRequest): Promise<CjResponse<T>> =
   if (!session?.access_token) throw new Error('Authentication required');
 
   const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj`,
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`,
     {
       method: 'POST',
       headers: {
@@ -70,11 +70,11 @@ export const cjSupplierService = {
       maxPrice?: number;
     } = {}
   ) {
-    return invoke({ supplierId, action: 'products', params: filters });
+    return invoke({ supplierId, action: 'search', params: filters });
   },
 
   getProductDetail(supplierId: string, params: { pid?: string; productSku?: string; variantSku?: string }) {
-    return invoke({ supplierId, action: 'product_detail', params });
+    return invoke({ supplierId, action: 'detail', params });
   },
 
   getVariants(supplierId: string, params: { pid?: string; productSku?: string; variantSku?: string; countryCode?: string }) {
