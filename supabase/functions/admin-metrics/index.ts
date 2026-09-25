@@ -30,6 +30,21 @@ const pctGrowth = (current: number, previous: number) => {
   return ((current - previous) / previous) * 100;
 };
 
+const getJwtSessionId = (token: string) => {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded)) as Record<string, unknown>;
+
+    return typeof payload.session_id === "string" ? payload.session_id : null;
+  } catch {
+    return null;
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -59,6 +74,24 @@ serve(async (req) => {
   } = await service.auth.getUser(token);
 
   if (actorError || !actor) {
+    return json({ error: "invalid_session" }, 401);
+  }
+
+  const sessionId = getJwtSessionId(token);
+  if (!sessionId) {
+    return json({ error: "invalid_session" }, 401);
+  }
+
+  const { data: sessionActive, error: sessionError } = await service.rpc(
+    "admin_session_is_active",
+    {
+      p_user_id: actor.id,
+      p_session_id: sessionId,
+    },
+  );
+
+  if (sessionError || sessionActive !== true) {
+    console.error("admin session validation failed", sessionError);
     return json({ error: "invalid_session" }, 401);
   }
 
