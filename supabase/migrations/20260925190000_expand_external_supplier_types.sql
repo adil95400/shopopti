@@ -25,3 +25,34 @@ ALTER TABLE public.external_suppliers
       'custom_ftp'
     )
   ) NOT VALID;
+
+
+-- Harden supplier ownership policies for authenticated callers.
+DROP POLICY IF EXISTS "Users can view their own external suppliers" ON public.external_suppliers;
+CREATE POLICY "Users can view their own external suppliers"
+  ON public.external_suppliers
+  FOR SELECT
+  TO authenticated
+  USING ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own external suppliers" ON public.external_suppliers;
+CREATE POLICY "Users can insert their own external suppliers"
+  ON public.external_suppliers
+  FOR INSERT
+  TO authenticated
+  WITH CHECK ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own external suppliers" ON public.external_suppliers;
+CREATE POLICY "Users can update their own external suppliers"
+  ON public.external_suppliers
+  FOR UPDATE
+  TO authenticated
+  USING ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own external suppliers" ON public.external_suppliers;
+CREATE POLICY "Users can delete their own external suppliers"
+  ON public.external_suppliers
+  FOR DELETE
+  TO authenticated
+  USING ((select auth.uid()) IS NOT NULL AND (select auth.uid()) = user_id);
