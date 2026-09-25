@@ -13,10 +13,11 @@ const toIso = (seconds: number | null | undefined) =>
 
 const canonicalStatus = (
   status: Stripe.Subscription.Status,
-): "trialing" | "active" | "past_due" | "canceled" | "unpaid" => {
+): "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "paused" => {
   if (status === "trialing") return "trialing";
   if (status === "active") return "active";
   if (status === "unpaid") return "unpaid";
+  if (status === "paused") return "paused";
   if (status === "canceled" || status === "incomplete_expired") return "canceled";
   return "past_due";
 };
@@ -25,6 +26,7 @@ const legacyStatus = (status: Stripe.Subscription.Status) => {
   if (status === "active" || status === "trialing") return "active";
   if (status === "past_due") return "past_due";
   if (status === "unpaid") return "unpaid";
+  if (status === "paused") return "paused";
   if (status === "canceled" || status === "incomplete_expired") return "cancelled";
   return "inactive";
 };
@@ -227,7 +229,9 @@ serve(async (req) => {
     } else if (
       event.type === "customer.subscription.created" ||
       event.type === "customer.subscription.updated" ||
-      event.type === "customer.subscription.deleted"
+      event.type === "customer.subscription.deleted" ||
+      event.type === "customer.subscription.paused" ||
+      event.type === "customer.subscription.resumed"
     ) {
       const subscription = event.data.object as Stripe.Subscription;
       await syncSubscription(subscription.id);
