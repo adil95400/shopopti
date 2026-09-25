@@ -50,3 +50,6 @@ jobs:
       - name: 📦 Admin Imports security contract
         run: node scripts/check-admin-imports-contract.mjs
 
+      - name: 🔁 Admin Operations action contract
+        run: node scripts/check-admin-ops-actions-contract.mjs
+
