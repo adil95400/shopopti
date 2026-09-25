@@ -53,7 +53,6 @@ serve(async (req) => {
     const body = await req.json();
     const name = typeof body?.name === "string" ? body.name.trim() : "";
     const apiKey = typeof body?.apiKey === "string" ? body.apiKey.trim() : "";
-    const openId = typeof body?.openId === "string" ? body.openId.trim() : "";
     const supplierId = typeof body?.supplierId === "string" ? body.supplierId : null;
 
     if (!name || !apiKey) {
@@ -71,6 +70,16 @@ serve(async (req) => {
     const tokenData = tokenPayload?.data ?? {};
     const accessToken =
       tokenData?.accessToken ?? tokenData?.access_token ?? tokenPayload?.accessToken ?? null;
+    const refreshToken =
+      tokenData?.refreshToken ?? tokenData?.refresh_token ?? tokenPayload?.refreshToken ?? null;
+    const openId =
+      tokenData?.openId !== undefined && tokenData?.openId !== null
+        ? String(tokenData.openId)
+        : "";
+    const accessTokenExpiryDate =
+      tokenData?.accessTokenExpiryDate ?? tokenData?.access_token_expiry_date ?? null;
+    const refreshTokenExpiryDate =
+      tokenData?.refreshTokenExpiryDate ?? tokenData?.refresh_token_expiry_date ?? null;
 
     if (!tokenResponse.ok || tokenPayload?.result !== true || !accessToken) {
       return json(
@@ -108,8 +117,8 @@ serve(async (req) => {
         .from("external_suppliers")
         .update({
           name,
-          api_key: String(accessToken),
-          api_secret: openId || null,
+          api_key: "server-managed",
+          api_secret: null,
           base_url: CJ_BASE_URL,
           status: "active",
           last_sync: new Date().toISOString(),
@@ -119,6 +128,25 @@ serve(async (req) => {
         .select("id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at")
         .single();
       if (error) throw error;
+
+      const { error: credentialError } = await admin
+        .schema("private")
+        .from("supplier_credentials")
+        .upsert(
+          {
+            supplier_id: supplierId,
+            provider: "cj_dropshipping",
+            access_token: String(accessToken),
+            refresh_token: refreshToken ? String(refreshToken) : null,
+            open_id: openId || null,
+            access_token_expires_at: accessTokenExpiryDate,
+            refresh_token_expires_at: refreshTokenExpiryDate,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "supplier_id" }
+        );
+      if (credentialError) throw credentialError;
+
       row = data;
     } else {
       const { data, error } = await admin
@@ -127,8 +155,8 @@ serve(async (req) => {
           user_id: user.id,
           name,
           type: "cj_dropshipping",
-          api_key: String(accessToken),
-          api_secret: openId || null,
+          api_key: "server-managed",
+          api_secret: null,
           base_url: CJ_BASE_URL,
           status: "active",
           last_sync: new Date().toISOString(),
@@ -136,6 +164,22 @@ serve(async (req) => {
         .select("id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at")
         .single();
       if (error) throw error;
+
+      const { error: credentialError } = await admin
+        .schema("private")
+        .from("supplier_credentials")
+        .insert({
+          supplier_id: data.id,
+          provider: "cj_dropshipping",
+          access_token: String(accessToken),
+          refresh_token: refreshToken ? String(refreshToken) : null,
+          open_id: openId || null,
+          access_token_expires_at: accessTokenExpiryDate,
+          refresh_token_expires_at: refreshTokenExpiryDate,
+          updated_at: new Date().toISOString(),
+        });
+      if (credentialError) throw credentialError;
+
       row = data;
     }
 
