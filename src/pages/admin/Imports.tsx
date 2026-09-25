@@ -23,7 +23,8 @@ import {
   ExternalSupplier,
   SupplierProduct,
   ImportFilter,
-  SupplierCategory
+  SupplierCategory,
+  SupplierProviderType
 } from '@/types/supplier';
 import { Button } from '@/components/ui/button';
 
@@ -139,17 +140,21 @@ const Imports: React.FC = () => {
       // Set default base URL based on supplier type if not provided
       if (!newSupplier.baseUrl) {
         switch (newSupplier.type) {
+          case 'cj_dropshipping':
+            newSupplier.baseUrl = 'https://developers.cjdropshipping.com/api2.0/v1';
+            break;
           case 'bigbuy':
             newSupplier.baseUrl = 'https://api.bigbuy.eu';
             break;
-          case 'eprolo':
-            newSupplier.baseUrl = 'https://api.eprolo.com';
-            break;
+          case 'aliexpress':
+          case 'alibaba':
+          case 'banggood':
+          case 'dhgate':
           case 'cdiscount':
-            newSupplier.baseUrl = 'https://api.cdiscount.com';
-            break;
           case 'spocket':
-            newSupplier.baseUrl = 'https://api.spocket.co';
+          case 'eprolo':
+            break;
+          default:
             break;
         }
       }
@@ -691,13 +696,17 @@ const Imports: React.FC = () => {
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={newSupplier.type}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, type: e.target.value as any })}
+                    onChange={(e) => setNewSupplier({ ...newSupplier, type: e.target.value as SupplierProviderType, baseUrl: '' })}
                   >
+                    <option value="cj_dropshipping">CJdropshipping</option>
                     <option value="bigbuy">BigBuy</option>
-                    <option value="eprolo">EPROLO</option>
+                    <option value="aliexpress">AliExpress</option>
+                    <option value="alibaba">Alibaba</option>
+                    <option value="banggood">Banggood</option>
+                    <option value="dhgate">DHgate</option>
                     <option value="cdiscount">Cdiscount</option>
-                    <option value="autods">AutoDS</option>
                     <option value="spocket">Spocket</option>
+                    <option value="eprolo">EPROLO</option>
                   </select>
                 </div>
                 
