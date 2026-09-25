@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { supplierService } from '@/services/supplierService';
 import {
   ExternalSupplier,
+  SupplierSummary,
   SupplierProduct,
   ImportFilter,
   SupplierCategory,
@@ -30,8 +31,8 @@ import { Button } from '@/components/ui/button';
 
 
 const Imports: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<ExternalSupplier[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<ExternalSupplier | null>(null);
+  const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<SupplierSummary | null>(null);
   const [products, setProducts] = useState<SupplierProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [categories, setCategories] = useState<SupplierCategory[]>([]);
@@ -75,7 +76,7 @@ const Imports: React.FC = () => {
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
-      const fetchedSuppliers = await supplierService.getSuppliers();
+      const fetchedSuppliers = await supplierService.getSupplierSummaries();
       setSuppliers(fetchedSuppliers);
       
       // If there are suppliers, select the first one
@@ -160,8 +161,11 @@ const Imports: React.FC = () => {
       }
       
       const createdSupplier = await supplierService.createSupplier(newSupplier);
-      setSuppliers([...suppliers, createdSupplier]);
-      setSelectedSupplier(createdSupplier);
+      const fetchedSuppliers = await supplierService.getSupplierSummaries();
+      setSuppliers(fetchedSuppliers);
+      setSelectedSupplier(
+        fetchedSuppliers.find((supplier) => supplier.id === createdSupplier.id) ?? null
+      );
       setShowAddSupplier(false);
       setNewSupplier({
         name: '',
