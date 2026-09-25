@@ -314,35 +314,28 @@ serve(async (req) => {
         { roles: (oldRoles ?? []).map((row) => row.role) },
       );
 
-      const { error: upsertError } = await service
-        .from("user_roles")
-        .upsert(
-          { user_id: targetUserId, role: nextRole },
-          { onConflict: "user_id,role" },
-        );
+      const { data: roleResult, error: roleError } = await service.rpc(
+        "admin_replace_user_role_atomic",
+        {
+          p_target_user_id: targetUserId,
+          p_new_role: nextRole,
+          p_actor_id: actor.id,
+        },
+      );
 
-      if (upsertError) {
-        await finishAudit(auditId, "failed", null, upsertError.message);
-        throw upsertError;
+      if (roleError) {
+        await finishAudit(auditId, "failed", null, roleError.message);
+        throw roleError;
       }
 
-      const { error: deleteOtherRolesError } = await service
-        .from("user_roles")
-        .delete()
-        .eq("user_id", targetUserId)
-        .neq("role", nextRole);
-
-      if (deleteOtherRolesError) {
-        await finishAudit(
-          auditId,
-          "failed",
-          { role: nextRole },
-          deleteOtherRolesError.message,
-        );
-        throw deleteOtherRolesError;
-      }
-
-      await finishAudit(auditId, "success", { role: nextRole });
+      await finishAudit(auditId, "success", {
+        role: nextRole,
+        atomic: true,
+        old_roles:
+          roleResult && typeof roleResult === "object" && "old_roles" in roleResult
+            ? roleResult.old_roles
+            : null,
+      });
       return json({ success: true, role: nextRole });
     }
 
@@ -388,15 +381,26 @@ serve(async (req) => {
         },
       );
 
+      const { data: revokeResult, error: revokeError } = await service.rpc(
+        "admin_revoke_user_sessions",
+        { p_target_user_id: targetUserId },
+      );
+
+      if (revokeError) {
+        await finishAudit(auditId, "failed", null, revokeError.message);
+        throw revokeError;
+      }
+
       const { error } = await service.auth.admin.deleteUser(targetUserId);
       if (error) {
-        await finishAudit(auditId, "failed", null, error.message);
+        await finishAudit(auditId, "failed", { sessions_revoked: true }, error.message);
         throw error;
       }
 
       await finishAudit(auditId, "success", {
         deleted: true,
         user_id: targetUserId,
+        session_revocation: revokeResult ?? null,
       });
 
       return json({ success: true });
