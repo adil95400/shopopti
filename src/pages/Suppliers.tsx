@@ -15,6 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
+import { supplierProviders } from '@/config/supplierProviders';
 import { supplierService } from '@/services/supplierService';
 import type { SupplierSummary } from '@/types/supplier';
 
@@ -370,6 +371,52 @@ const Suppliers = () => {
           })}
         </div>
       )}
+
+      <section className="rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold">Connecteurs fournisseurs</h2>
+          <p className="text-sm text-muted-foreground">
+            Portefeuille cible ShopOpti. « Documenté » signifie que la capacité existe chez le fournisseur,
+            pas qu'elle est déjà implémentée dans ShopOpti.
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {supplierProviders.map((provider) => {
+            const documented = Object.values(provider.capabilities).filter(
+              (value) => value === 'documented'
+            ).length;
+            const stageLabel =
+              provider.stage === 'planned'
+                ? 'À intégrer'
+                : provider.stage === 'legacy'
+                  ? 'Compatibilité héritée'
+                  : 'Connecteur personnalisé';
+
+            return (
+              <div key={provider.type} className="rounded-xl border bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{provider.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{provider.region}</p>
+                  </div>
+                  <span className="rounded-full border px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                    {stageLabel}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Priorité</span>
+                  <span className="font-medium">P{provider.priority}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Capacités documentées</span>
+                  <span className="font-medium">{documented}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
         <p className="font-semibold">Principe de vérité des données</p>
