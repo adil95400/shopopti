@@ -116,6 +116,8 @@ export const supplierService = {
         type: data.type,
         status: data.status,
         lastSync: data.last_sync ?? undefined,
+        webhookStatus: data.webhook_status ?? 'not_configured',
+        webhookLastEventAt: data.webhook_last_event_at ?? undefined,
         created_at: data.created_at,
       };
     } catch (error) {
