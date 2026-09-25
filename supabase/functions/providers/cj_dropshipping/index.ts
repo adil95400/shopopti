@@ -517,7 +517,7 @@ serve(async (req) => {
         );
       }
 
-      const callbackUrl = `${supabaseUrl}/functions/v1/providers/cj_webhook?supplierId=${encodeURIComponent(supplierId)}`;
+      const callbackUrl = `${supabaseUrl}/functions/v1/cj-webhook?supplierId=${encodeURIComponent(supplierId)}`;
       const setting = {
         product: { type: "ENABLE", callbackUrls: [callbackUrl] },
         stock: { type: "ENABLE", callbackUrls: [callbackUrl] },
