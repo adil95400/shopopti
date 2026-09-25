@@ -370,10 +370,35 @@ export const supplierService = {
       throw new Error('Supplier order automation is not implemented for this supplier yet');
     }
 
-    const result = await cjSupplierService.createOrder(
-      supplierId,
-      orderData as unknown as Record<string, unknown>
-    );
+    if (!orderData.logisticName) {
+      throw new Error('CJdropshipping logisticName is required before creating an order');
+    }
+
+    const cjPayload: Record<string, unknown> = {
+      orderNumber: orderData.external_order_id,
+      shippingZip: orderData.shipping_address.zip,
+      shippingCountryCode: orderData.shipping_address.country,
+      shippingCountry:
+        orderData.shipping_address.country_name || orderData.shipping_address.country,
+      shippingProvince: orderData.shipping_address.state,
+      shippingCity: orderData.shipping_address.city,
+      shippingAddress: orderData.shipping_address.address1,
+      shippingAddress2: orderData.shipping_address.address2,
+      shippingCustomerName: orderData.shipping_address.name,
+      shippingPhone: orderData.shipping_address.phone,
+      email: orderData.shipping_address.email,
+      logisticName: orderData.logisticName,
+      fromCountryCode: orderData.fromCountryCode || 'CN',
+      payType: orderData.payType ?? 3,
+      orderFlow: orderData.orderFlow ?? 1,
+      platform: orderData.platform || 'shopopti',
+      products: orderData.items.map((item) => ({
+        vid: item.product_id,
+        quantity: item.quantity,
+      })),
+    };
+
+    const result = await cjSupplierService.createOrder(supplierId, cjPayload);
     const remote = result.data as any;
     const data = remote?.data ?? remote;
     const externalOrderId =
