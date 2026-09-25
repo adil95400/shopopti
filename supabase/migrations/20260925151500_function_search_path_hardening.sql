@@ -1,5 +1,6 @@
 -- P0 function search_path hardening.
 -- Pin search_path for functions flagged by Supabase Database Advisor.
+-- Verified on shopopti-staging: Advisor search_path finding count 13 -> 0.
 -- Keep public first because existing bodies use unqualified public objects; pg_temp remains available last.
 
 ALTER FUNCTION public.amazon_set_updated_at() SET search_path TO public, pg_temp;
