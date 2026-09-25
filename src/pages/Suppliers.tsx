@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   Store,
+  Trash2,
   Unplug,
   X,
 } from 'lucide-react';
@@ -120,12 +121,12 @@ const Suppliers = () => {
   const [activeTab, setActiveTab] = useState<HubTab>('all');
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error'>>({});
   const [showConnectCJ, setShowConnectCJ] = useState(false);
   const [connectingCJ, setConnectingCJ] = useState(false);
   const [cjName, setCjName] = useState('Mon compte CJ');
   const [cjApiKey, setCjApiKey] = useState('');
-  const [cjOpenId, setCjOpenId] = useState('');
 
   const loadSuppliers = useCallback(async () => {
     setLoading(true);
@@ -149,10 +150,12 @@ const Suppliers = () => {
     void loadSuppliers();
   }, [loadSuppliers]);
 
-  const connectedByType = useMemo(() => {
-    const map = new Map<SupplierProviderType, SupplierSummary>();
+  const connectionsByType = useMemo(() => {
+    const map = new Map<SupplierProviderType, SupplierSummary[]>();
     for (const supplier of suppliers) {
-      if (!map.has(supplier.type)) map.set(supplier.type, supplier);
+      const current = map.get(supplier.type) ?? [];
+      current.push(supplier);
+      map.set(supplier.type, current);
     }
     return map;
   }, [suppliers]);
@@ -161,7 +164,7 @@ const Suppliers = () => {
     const term = search.trim().toLowerCase();
 
     return supplierProviders.filter((provider) => {
-      const connection = connectedByType.get(provider.type);
+      const connections = connectionsByType.get(provider.type) ?? [];
       const matchesSearch =
         !term ||
         provider.name.toLowerCase().includes(term) ||
@@ -171,7 +174,7 @@ const Suppliers = () => {
       if (!matchesSearch) return false;
 
       if (activeTab === 'connected') {
-        return Boolean(connection);
+        return connections.length > 0;
       }
       if (activeTab === 'available') {
         return provider.stage === 'implemented';
@@ -181,7 +184,7 @@ const Suppliers = () => {
       }
       return true;
     });
-  }, [activeTab, connectedByType, search]);
+  }, [activeTab, connectionsByType, search]);
 
   const connectedCount = suppliers.filter(
     (supplier) => getConnectionState(supplier) === 'active'
@@ -214,7 +217,7 @@ const Suppliers = () => {
         name,
         type: 'cj_dropshipping',
         apiKey,
-        apiSecret: cjOpenId.trim() || undefined,
+        apiSecret: undefined,
         baseUrl: '',
         status: 'inactive',
         user_id: '',
@@ -223,7 +226,6 @@ const Suppliers = () => {
       toast.success('CJdropshipping connecté et vérifié');
       setShowConnectCJ(false);
       setCjApiKey('');
-      setCjOpenId('');
       setCjName('Mon compte CJ');
       await loadSuppliers();
 
@@ -235,6 +237,31 @@ const Suppliers = () => {
       toast.error(error instanceof Error ? error.message : 'Connexion CJ impossible');
     } finally {
       setConnectingCJ(false);
+    }
+  };
+
+  const handleDisconnectSupplier = async (supplier: SupplierSummary) => {
+    const confirmed = window.confirm(
+      `Déconnecter ${supplier.name} ? Cette action supprimera la connexion ShopOpti.`
+    );
+    if (!confirmed) return;
+
+    setDisconnectingId(supplier.id);
+    try {
+      const result = await supplierService.disconnectSupplier(supplier.id);
+      toast.success(
+        result.remoteLogoutConfirmed
+          ? 'Connexion CJ révoquée et supprimée'
+          : 'Connexion supprimée de ShopOpti'
+      );
+      await loadSuppliers();
+    } catch (error) {
+      console.error(`Supplier disconnect failed for ${supplier.id}:`, error);
+      toast.error(
+        error instanceof Error ? error.message : 'Impossible de déconnecter ce fournisseur'
+      );
+    } finally {
+      setDisconnectingId(null);
     }
   };
 
