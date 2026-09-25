@@ -33,11 +33,16 @@ BEGIN
     RETURN true;
   END IF;
 
-  SELECT COALESCE(uq.current_count, 0) INTO current_usage
-  FROM public.user_quotas uq
-  WHERE uq.user_id = user_id_param
-    AND uq.quota_key = quota_key_param
-    AND uq.reset_date > now();
+  SELECT COALESCE((
+    SELECT uq.current_count
+    FROM public.user_quotas uq
+    WHERE uq.user_id = user_id_param
+      AND uq.quota_key = quota_key_param
+      AND uq.reset_date > now()
+    ORDER BY uq.reset_date DESC
+    LIMIT 1
+  ), 0)
+  INTO current_usage;
 
   RETURN current_usage < limit_value;
 END;
