@@ -3,13 +3,12 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
-  ExternalLink,
   PackageSearch,
   PlugZap,
   RefreshCw,
   Search,
-  ServerCog,
   ShieldCheck,
+  Store,
   Unplug,
   X,
 } from 'lucide-react';
@@ -17,11 +16,16 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { supplierProviders } from '@/config/supplierProviders';
+import {
+  supplierProviders,
+  type SupplierCapability,
+  type SupplierProviderDefinition,
+} from '@/config/supplierProviders';
 import { supplierService } from '@/services/supplierService';
-import type { SupplierSummary } from '@/types/supplier';
+import type { SupplierProviderType, SupplierSummary } from '@/types/supplier';
 
 type ConnectionState = 'active' | 'inactive' | 'error' | 'unknown';
+type HubTab = 'all' | 'connected' | 'available' | 'planned';
 
 const STATUS_COPY: Record<ConnectionState, { label: string; className: string }> = {
   active: {
@@ -42,9 +46,35 @@ const STATUS_COPY: Record<ConnectionState, { label: string; className: string }>
   },
 };
 
+const CAPABILITY_LABELS: Record<SupplierCapability, string> = {
+  catalog: 'Catalogue',
+  import: 'Import',
+  price: 'Prix',
+  stock: 'Stock',
+  variants: 'Variantes',
+  shipping: 'Livraison',
+  orders: 'Commandes',
+  tracking: 'Tracking',
+};
+
+const PROVIDER_BADGES: Partial<Record<SupplierProviderType, string>> = {
+  cj_dropshipping: 'CJ',
+  bigbuy: 'BIG',
+  aliexpress: 'Ali',
+  alibaba: 'A',
+  banggood: 'BG',
+  dhgate: 'DH',
+  cdiscount: 'C',
+  spocket: 'S',
+  eprolo: 'E',
+  custom_api: 'API',
+  custom_csv: 'CSV',
+  custom_xml: 'XML',
+  custom_ftp: 'FTP',
+};
+
 const formatDate = (value?: string) => {
   if (!value) return 'Non vérifié';
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Non vérifié';
 
@@ -61,19 +91,39 @@ const getConnectionState = (supplier: SupplierSummary): ConnectionState => {
   return 'unknown';
 };
 
+const stageLabel = (provider: SupplierProviderDefinition) => {
+  if (provider.stage === 'implemented') return 'Disponible';
+  if (provider.stage === 'planned') return 'Bientôt';
+  if (provider.stage === 'legacy') return 'Legacy';
+  return 'Personnalisé';
+};
+
+const stageClassName = (provider: SupplierProviderDefinition) => {
+  if (provider.stage === 'implemented') {
+    return 'border-blue-200 bg-blue-50 text-blue-700';
+  }
+  if (provider.stage === 'planned') {
+    return 'border-violet-200 bg-violet-50 text-violet-700';
+  }
+  if (provider.stage === 'legacy') {
+    return 'border-slate-200 bg-slate-50 text-slate-700';
+  }
+  return 'border-cyan-200 bg-cyan-50 text-cyan-700';
+};
+
 const Suppliers = () => {
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ConnectionState | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<HubTab>('all');
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error'>>({});
   const [showConnectCJ, setShowConnectCJ] = useState(false);
   const [connectingCJ, setConnectingCJ] = useState(false);
-  const [cjName, setCjName] = useState('CJdropshipping');
+  const [cjName, setCjName] = useState('Mon compte CJ');
   const [cjApiKey, setCjApiKey] = useState('');
   const [cjOpenId, setCjOpenId] = useState('');
 
@@ -99,28 +149,55 @@ const Suppliers = () => {
     void loadSuppliers();
   }, [loadSuppliers]);
 
-  const filteredSuppliers = useMemo(() => {
+  const connectedByType = useMemo(() => {
+    const map = new Map<SupplierProviderType, SupplierSummary>();
+    for (const supplier of suppliers) {
+      if (!map.has(supplier.type)) map.set(supplier.type, supplier);
+    }
+    return map;
+  }, [suppliers]);
+
+  const filteredProviders = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    return suppliers.filter((supplier) => {
-      const state = getConnectionState(supplier);
-      const matchesStatus = statusFilter === 'all' || state === statusFilter;
+    return supplierProviders.filter((provider) => {
+      const connection = connectedByType.get(provider.type);
       const matchesSearch =
         !term ||
-        supplier.name.toLowerCase().includes(term) ||
-        supplier.type.toLowerCase().includes(term);
+        provider.name.toLowerCase().includes(term) ||
+        provider.type.toLowerCase().includes(term) ||
+        provider.region.toLowerCase().includes(term);
 
-      return matchesStatus && matchesSearch;
+      if (!matchesSearch) return false;
+
+      if (activeTab === 'connected') {
+        return Boolean(connection);
+      }
+      if (activeTab === 'available') {
+        return provider.stage === 'implemented';
+      }
+      if (activeTab === 'planned') {
+        return provider.stage === 'planned';
+      }
+      return true;
     });
-  }, [search, statusFilter, suppliers]);
+  }, [activeTab, connectedByType, search]);
 
   const connectedCount = suppliers.filter(
     (supplier) => getConnectionState(supplier) === 'active'
   ).length;
+  const realtimeCount = suppliers.filter(
+    (supplier) => supplier.webhookStatus === 'enabled'
+  ).length;
   const errorCount = suppliers.filter(
     (supplier) => getConnectionState(supplier) === 'error'
   ).length;
-  const verifiedSyncCount = suppliers.filter((supplier) => Boolean(supplier.lastSync)).length;
+  const availableConnectorCount = supplierProviders.filter(
+    (provider) => provider.stage === 'implemented'
+  ).length;
+  const plannedConnectorCount = supplierProviders.filter(
+    (provider) => provider.stage === 'planned'
+  ).length;
 
   const handleConnectCJ = async () => {
     const name = cjName.trim();
@@ -147,7 +224,7 @@ const Suppliers = () => {
       setShowConnectCJ(false);
       setCjApiKey('');
       setCjOpenId('');
-      setCjName('CJdropshipping');
+      setCjName('Mon compte CJ');
       await loadSuppliers();
 
       if (created.status === 'active') {
@@ -201,431 +278,446 @@ const Suppliers = () => {
     }
   };
 
-  return (
-    <div className="space-y-6 p-4 md:p-6">
-      <section className="rounded-2xl border bg-card p-5 shadow-sm md:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
-              <ServerCog className="h-4 w-4" />
-              Supplier Hub
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              Gestion multi-fournisseurs
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
-              Connectez et contrôlez vos sources fournisseurs depuis un seul endroit.
-              ShopOpti n’affiche ici que les états réellement disponibles dans votre compte.
-            </p>
-          </div>
-
-          <Button onClick={() => setShowConnectCJ(true)} className="gap-2">
-            <PlugZap className="h-4 w-4" />
-            Connecter CJdropshipping
-          </Button>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border bg-background p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Fournisseurs
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{suppliers.length}</p>
-          </div>
-          <div className="rounded-xl border bg-background p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Connectés
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{connectedCount}</p>
-          </div>
-          <div className="rounded-xl border bg-background p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Synchronisation datée
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{verifiedSyncCount}</p>
-          </div>
-          <div className="rounded-xl border bg-background p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              En erreur
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{errorCount}</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border bg-card p-4 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Rechercher par nom ou type de connecteur…"
-              className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as ConnectionState | 'all')
+  const renderProviderAction = (
+    provider: SupplierProviderDefinition,
+    connection?: SupplierSummary
+  ) => {
+    if (connection) {
+      const state = getConnectionState(connection);
+      return (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="flex-1"
+            disabled={state !== 'active'}
+            onClick={() =>
+              navigate(`/app/import-products?supplier=${encodeURIComponent(connection.id)}`)
             }
-            className="h-10 rounded-md border bg-background px-3 text-sm"
           >
-            <option value="all">Tous les états</option>
-            <option value="active">Connectés</option>
-            <option value="inactive">Inactifs</option>
-            <option value="error">En erreur</option>
-            <option value="unknown">Non vérifiés</option>
-          </select>
-
-          <Button variant="outline" onClick={() => void loadSuppliers()} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Actualiser
+            Gérer
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={testingId === connection.id}
+            onClick={() => void handleTestConnection(connection)}
+          >
+            {testingId === connection.id ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
           </Button>
         </div>
-      </section>
+      );
+    }
 
-      {loadError && (
-        <div className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold">Données fournisseurs indisponibles</p>
-            <p className="mt-1">{loadError}</p>
+    if (provider.type === 'cj_dropshipping' && provider.stage === 'implemented') {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          onClick={() => setShowConnectCJ(true)}
+        >
+          Connecter
+        </Button>
+      );
+    }
+
+    return (
+      <Button size="sm" variant="outline" className="w-full" disabled>
+        {provider.stage === 'planned' ? 'Bientôt disponible' : 'Non disponible'}
+      </Button>
+    );
+  };
+
+  return (
+    <div className="min-h-full bg-muted/20">
+      <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6">
+        <section className="rounded-2xl border bg-card p-5 shadow-sm md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
+                <Store className="h-4 w-4" />
+                Supplier Hub
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+                Connectez vos fournisseurs
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
+                Gérez vos comptes fournisseurs, contrôlez leur état et accédez aux produits
+                depuis une seule interface.
+              </p>
+            </div>
+
+            <Button onClick={() => setShowConnectCJ(true)} className="gap-2">
+              <PlugZap className="h-4 w-4" />
+              Connecter CJdropshipping
+            </Button>
           </div>
-        </div>
-      )}
 
-      {loading ? (
-        <div className="flex min-h-64 items-center justify-center rounded-2xl border bg-card">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            Chargement des fournisseurs…
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border bg-background p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Fournisseurs connectés
+              </p>
+              <p className="mt-2 text-2xl font-semibold">{connectedCount}</p>
+            </div>
+            <div className="rounded-xl border bg-background p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Synchronisations actives
+              </p>
+              <p className="mt-2 text-2xl font-semibold">{realtimeCount}</p>
+            </div>
+            <div className="rounded-xl border bg-background p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                À vérifier
+              </p>
+              <p className="mt-2 text-2xl font-semibold">{errorCount}</p>
+            </div>
+            <div className="rounded-xl border bg-background p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Connecteurs disponibles
+              </p>
+              <p className="mt-2 text-2xl font-semibold">{availableConnectorCount}</p>
+            </div>
           </div>
-        </div>
-      ) : filteredSuppliers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
-          <Unplug className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h2 className="mt-4 text-lg font-semibold">Aucun fournisseur disponible</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-            Aucun fournisseur ne correspond aux données actuellement disponibles.
-            ShopOpti ne crée pas de fournisseur, de score ou de statut fictif pour remplir cette vue.
-          </p>
-          <Button className="mt-5" onClick={() => setShowConnectCJ(true)}>
-            Connecter CJdropshipping
-          </Button>
-        </div>
-      ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {filteredSuppliers.map((supplier) => {
-            const state = getConnectionState(supplier);
-            const statusCopy = STATUS_COPY[state];
-            const testResult = testResults[supplier.id];
+        </section>
 
-            return (
-              <article key={supplier.id} className="rounded-2xl border bg-card p-5 shadow-sm">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-lg font-semibold">{supplier.name}</h2>
+        <section className="rounded-2xl border bg-card p-4 shadow-sm">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {([
+                ['all', `Tous les fournisseurs (${supplierProviders.length})`],
+                ['connected', `Connectés (${suppliers.length})`],
+                ['available', `Disponibles (${availableConnectorCount})`],
+                ['planned', `Bientôt (${plannedConnectorCount})`],
+              ] as Array<[HubTab, string]>).map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === tab
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full xl:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Rechercher un fournisseur..."
+                className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+          </div>
+        </section>
+
+        {loadError && (
+          <div className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">Données fournisseurs indisponibles</p>
+              <p className="mt-1">{loadError}</p>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex min-h-64 items-center justify-center rounded-2xl border bg-card">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <RefreshCw className="h-5 w-5 animate-spin" />
+              Chargement des fournisseurs…
+            </div>
+          </div>
+        ) : filteredProviders.length === 0 ? (
+          <div className="rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
+            <Unplug className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h2 className="mt-4 text-lg font-semibold">Aucun fournisseur correspondant</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+              Modifiez la recherche ou choisissez un autre filtre.
+            </p>
+          </div>
+        ) : (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredProviders.map((provider) => {
+              const connection = connectedByType.get(provider.type);
+              const state = connection ? getConnectionState(connection) : null;
+              const capabilityEntries = (Object.entries(provider.capabilities) as Array<
+                [SupplierCapability, string]
+              >).filter(([, status]) => status === 'implemented');
+
+              return (
+                <article
+                  key={provider.type}
+                  className="rounded-2xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-muted text-sm font-bold">
+                        {PROVIDER_BADGES[provider.type] ?? provider.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="truncate font-semibold">{provider.name}</h2>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{provider.region}</p>
+                      </div>
+                    </div>
+
+                    {connection && state ? (
                       <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusCopy.className}`}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                          STATUS_COPY[state].className
+                        }`}
                       >
-                        {statusCopy.label}
+                        {STATUS_COPY[state].label}
                       </span>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Connecteur : <span className="font-medium text-foreground">{supplier.type}</span>
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs">
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      Dernière synchro
-                    </div>
-                    <p className="mt-1 text-muted-foreground">{formatDate(supplier.lastSync)}</p>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-xl border p-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <ShieldCheck className="h-4 w-4" />
-                      Connexion
-                    </div>
-                    <p className="mt-2 text-sm font-semibold">{statusCopy.label}</p>
-                  </div>
-                  <div className="rounded-xl border p-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <PackageSearch className="h-4 w-4" />
-                      Catalogue
-                    </div>
-                    <p className="mt-2 text-sm font-semibold">
-                      {state === 'active' ? 'Accessible via connecteur' : 'Non vérifié'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border p-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <RefreshCw className="h-4 w-4" />
-                      Prix / stock
-                    </div>
-                    <p className="mt-2 text-sm font-semibold">Non vérifié</p>
-                  </div>
-                  <div className="rounded-xl border p-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <RefreshCw className="h-4 w-4" />
-                      Temps réel
-                    </div>
-                    <p className="mt-2 text-sm font-semibold">
-                      {supplier.type !== 'cj_dropshipping'
-                        ? 'Non disponible'
-                        : supplier.webhookStatus === 'enabled'
-                          ? 'Webhook actif'
-                          : supplier.webhookStatus === 'error'
-                            ? 'Erreur webhook'
-                            : 'Non configuré'}
-                    </p>
-                    {supplier.webhookLastEventAt && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Dernier événement : {formatDate(supplier.webhookLastEventAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {testResult && (
-                  <div
-                    className={`mt-4 flex items-center gap-2 rounded-lg border p-3 text-sm ${
-                      testResult === 'success'
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : 'border-red-200 bg-red-50 text-red-800'
-                    }`}
-                  >
-                    {testResult === 'success' ? (
-                      <CheckCircle2 className="h-4 w-4" />
                     ) : (
-                      <AlertCircle className="h-4 w-4" />
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${stageClassName(
+                          provider
+                        )}`}
+                      >
+                        {stageLabel(provider)}
+                      </span>
                     )}
-                    {testResult === 'success'
-                      ? 'Connexion confirmée par le serveur.'
-                      : 'Connexion non confirmée. Aucune réussite n’a été supposée.'}
                   </div>
-                )}
 
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={testingId === supplier.id}
-                    onClick={() => void handleTestConnection(supplier)}
-                    className="gap-2"
-                  >
-                    {testingId === supplier.id ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
+                  <div className="mt-4 flex min-h-16 flex-wrap content-start gap-2">
+                    {capabilityEntries.length > 0 ? (
+                      capabilityEntries.map(([capability]) => (
+                        <span
+                          key={capability}
+                          className="rounded-md bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                        >
+                          {CAPABILITY_LABELS[capability]}
+                        </span>
+                      ))
                     ) : (
-                      <PlugZap className="h-4 w-4" />
+                      <span className="text-xs text-muted-foreground">
+                        Capacités ShopOpti non encore validées
+                      </span>
                     )}
-                    Tester la connexion
-                  </Button>
+                  </div>
 
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      navigate(`/app/import-products?supplier=${encodeURIComponent(supplier.id)}`)
-                    }
-                    disabled={state !== 'active'}
-                    className="gap-2"
-                  >
-                    <PackageSearch className="h-4 w-4" />
-                    Voir les produits
-                  </Button>
-
-                  {supplier.type === 'cj_dropshipping' && state === 'active' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={syncingId === supplier.id}
-                      onClick={() => void handleConfigureRealtimeSync(supplier)}
-                      className="gap-2"
-                    >
-                      <RefreshCw
-                        className={`h-4 w-4 ${syncingId === supplier.id ? 'animate-spin' : ''}`}
-                      />
-                      {supplier.webhookStatus === 'enabled'
-                        ? 'Reconfigurer synchro CJ'
-                        : 'Activer synchro CJ'}
-                    </Button>
+                  {connection && (
+                    <div className="mt-4 space-y-2 rounded-xl border bg-muted/30 p-3 text-xs">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">Dernière synchro</span>
+                        <span className="font-medium">{formatDate(connection.lastSync)}</span>
+                      </div>
+                      {connection.type === 'cj_dropshipping' && (
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">Temps réel</span>
+                          <span className="font-medium">
+                            {connection.webhookStatus === 'enabled'
+                              ? 'Webhook actif'
+                              : connection.webhookStatus === 'error'
+                                ? 'Erreur webhook'
+                                : 'Non configuré'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   )}
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => navigate('/app/integrations')}
-                    className="gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Configurer
-                  </Button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                  {connection && testResults[connection.id] && (
+                    <div
+                      className={`mt-3 flex items-center gap-2 rounded-lg border p-2.5 text-xs ${
+                        testResults[connection.id] === 'success'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                          : 'border-red-200 bg-red-50 text-red-800'
+                      }`}
+                    >
+                      {testResults[connection.id] === 'success' ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4" />
+                      )}
+                      {testResults[connection.id] === 'success'
+                        ? 'Connexion confirmée'
+                        : 'Connexion non confirmée'}
+                    </div>
+                  )}
 
-      <section className="rounded-2xl border bg-card p-5 shadow-sm">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold">Connecteurs fournisseurs</h2>
-          <p className="text-sm text-muted-foreground">
-            Portefeuille cible ShopOpti. « Documenté » signifie que la capacité existe chez le fournisseur,
-            pas qu'elle est déjà implémentée dans ShopOpti.
+                  <div className="mt-5">{renderProviderAction(provider, connection)}</div>
+
+                  {connection?.type === 'cj_dropshipping' && state === 'active' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="mt-2 w-full gap-2"
+                      disabled={syncingId === connection.id}
+                      onClick={() => void handleConfigureRealtimeSync(connection)}
+                    >
+                      <RefreshCw
+                        className={`h-4 w-4 ${syncingId === connection.id ? 'animate-spin' : ''}`}
+                      />
+                      {connection.webhookStatus === 'enabled'
+                        ? 'Reconfigurer la synchro CJ'
+                        : 'Activer la synchro CJ'}
+                    </Button>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        )}
+
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Principe de vérité des données</p>
+          <p className="mt-1">
+            ShopOpti n’affiche pas de volume produits, prix, stock ou automatisation comme vérifiés
+            tant qu’une source serveur ne les confirme pas.
           </p>
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {supplierProviders.map((provider) => {
-            const implemented = Object.values(provider.capabilities).filter(
-              (value) => value === 'implemented'
-            ).length;
-            const documented = Object.values(provider.capabilities).filter(
-              (value) => value === 'documented'
-            ).length;
-            const stageLabel =
-              provider.stage === 'implemented'
-                ? 'Implémenté'
-                : provider.stage === 'planned'
-                  ? 'À intégrer'
-                  : provider.stage === 'legacy'
-                    ? 'Compatibilité héritée'
-                    : 'Connecteur personnalisé';
-
-            return (
-              <div key={provider.type} className="rounded-xl border bg-background p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">{provider.name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{provider.region}</p>
-                  </div>
-                  <span className="rounded-full border px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                    {stageLabel}
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Priorité</span>
-                  <span className="font-medium">P{provider.priority}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Implémentées ShopOpti</span>
-                  <span className="font-medium">{implemented}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Documentées fournisseur</span>
-                  <span className="font-medium">{documented}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        </section>
+      </div>
 
       {showConnectCJ && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl border bg-background p-6 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold">Connecter CJdropshipping</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  La clé API est envoyée uniquement à la fonction serveur ShopOpti pour obtenir et vérifier le token CJ.
-                </p>
+        <div className="fixed inset-0 z-50 bg-black/40">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            onClick={() => !connectingCJ && setShowConnectCJ(false)}
+            aria-label="Fermer le panneau"
+          />
+          <aside className="absolute right-0 top-0 h-full w-full max-w-xl overflow-y-auto border-l bg-background p-6 shadow-2xl md:p-8">
+            <div className="relative z-10">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border bg-orange-50 font-bold text-orange-600">
+                    CJ
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Connecter CJdropshipping</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Connectez votre compte CJ pour importer des produits et utiliser les fonctions
+                      validées du connecteur ShopOpti.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowConnectCJ(false)}
+                  disabled={connectingCJ}
+                  className="rounded-md p-1 text-muted-foreground hover:bg-muted disabled:opacity-50"
+                  aria-label="Fermer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowConnectCJ(false)}
-                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
-                aria-label="Fermer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+
+              <div className="mt-7 space-y-5">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    Nom de la connexion <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={cjName}
+                    onChange={(event) => setCjName(event.target.value)}
+                    className="h-11 w-full rounded-lg border bg-background px-3 text-sm"
+                    placeholder="Mon compte CJ"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Nom interne pour identifier cette connexion.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    Clé API CJ <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={cjApiKey}
+                    onChange={(event) => setCjApiKey(event.target.value)}
+                    className="h-11 w-full rounded-lg border bg-background px-3 text-sm"
+                    placeholder="Collez votre clé API CJ"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    La clé est envoyée uniquement au serveur ShopOpti pour obtenir et vérifier le token CJ.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    CJ openId <span className="font-normal text-muted-foreground">(optionnel)</span>
+                  </label>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={cjOpenId}
+                    onChange={(event) => setCjOpenId(event.target.value)}
+                    className="h-11 w-full rounded-lg border bg-background px-3 text-sm"
+                    placeholder="Requis pour les webhooks signés"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Vous pouvez connecter CJ maintenant et configurer les webhooks plus tard.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <ShieldCheck className="h-4 w-4" />
+                    Connexion sécurisée
+                  </div>
+                  <p className="mt-1 text-xs">
+                    Les identifiants sont traités côté serveur. ShopOpti ne réaffiche jamais votre clé API.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border p-4">
+                  <p className="text-sm font-semibold">Fonctionnalités ShopOpti implémentées</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {(Object.entries(
+                      supplierProviders.find((provider) => provider.type === 'cj_dropshipping')
+                        ?.capabilities ?? {}
+                    ) as Array<[SupplierCapability, string]>)
+                      .filter(([, status]) => status === 'implemented')
+                      .map(([capability]) => (
+                        <div key={capability} className="flex items-center gap-2 text-xs">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          {CAPABILITY_LABELS[capability]}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-7 flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={connectingCJ}
+                  onClick={() => setShowConnectCJ(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  className="flex-1 gap-2"
+                  disabled={connectingCJ || !cjName.trim() || !cjApiKey.trim()}
+                  onClick={() => void handleConnectCJ()}
+                >
+                  {connectingCJ ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlugZap className="h-4 w-4" />
+                  )}
+                  Tester et connecter
+                </Button>
+              </div>
             </div>
-
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">Nom du compte</label>
-                <input
-                  value={cjName}
-                  onChange={(event) => setCjName(event.target.value)}
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  placeholder="CJdropshipping"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">Clé API CJ</label>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={cjApiKey}
-                  onChange={(event) => setCjApiKey(event.target.value)}
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  placeholder="Collez votre clé API CJ"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  ShopOpti ne réaffiche jamais cette clé dans le navigateur.
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  CJ openId <span className="font-normal text-muted-foreground">(optionnel)</span>
-                </label>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={cjOpenId}
-                  onChange={(event) => setCjOpenId(event.target.value)}
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  placeholder="Nécessaire pour les webhooks signés"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Vous pourrez connecter CJ sans openId, puis activer les webhooks quand il sera disponible.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                disabled={connectingCJ}
-                onClick={() => setShowConnectCJ(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                disabled={connectingCJ || !cjName.trim() || !cjApiKey.trim()}
-                onClick={() => void handleConnectCJ()}
-                className="gap-2"
-              >
-                {connectingCJ ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ShieldCheck className="h-4 w-4" />
-                )}
-                Vérifier et connecter
-              </Button>
-            </div>
-          </div>
+          </aside>
         </div>
       )}
-
-      <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
-        <p className="font-semibold">Principe de vérité des données</p>
-        <p className="mt-1">
-          Les métriques de performance, délais, prix, stock, nombre de produits et capacités
-          d’automatisation ne sont volontairement pas inventés. Ils pourront être affichés
-          lorsqu’une source serveur vérifiable les expose.
-        </p>
-      </section>
     </div>
   );
 };
