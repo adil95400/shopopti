@@ -1,38 +1,36 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-vi.mock('axios', () => ({ default: { post: vi.fn(), get: vi.fn() } }))
-vi.mock('../../lib/supabase', () => ({ supabase: { auth: { getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok' } } }) } } }))
-
-import axios from 'axios'
 import { supplierService } from '../supplierService'
 
-beforeEach(() => {
-  vi.spyOn(supplierService, 'getSupplierById').mockResolvedValue({
-    id: '1',
-    type: 'autods',
-    apiKey: 'k',
-    apiSecret: 's',
-    baseUrl: 'https://api.autods.com',
-    name: 'AutoDS'
-  } as any)
-  ;(axios.post as any).mockClear()
-  ;(axios.get as any).mockClear()
-})
+describe('supplierService fail-closed automation', () => {
+  it('does not expose categories without a verified connector', async () => {
+    await expect(supplierService.getCategories('supplier-1')).rejects.toThrow(
+      'Supplier categories are not available until a verified provider connector implements them'
+    )
+  })
 
-it('calls AutoDS categories endpoint', async () => {
-  ;(axios.post as any).mockResolvedValueOnce({ data: { categories: [] } })
-  await supplierService.getCategories('1')
-  expect((axios.post as any).mock.calls[0][0]).toContain('/providers/autods/categories')
-})
+  it('does not create supplier orders without a verified connector', async () => {
+    await expect(
+      supplierService.createOrder('supplier-1', {
+        external_order_id: 'order-1',
+        shipping_address: {
+          name: 'Test',
+          address1: '1 Test St',
+          city: 'Paris',
+          state: 'IDF',
+          zip: '75001',
+          country: 'FR',
+        },
+        items: [],
+      })
+    ).rejects.toThrow(
+      'Supplier order automation is not available until a verified provider connector implements it'
+    )
+  })
 
-it('creates order via AutoDS endpoint', async () => {
-  ;(axios.post as any).mockResolvedValueOnce({ data: { success: true } })
-  await supplierService.createOrder('1', { external_order_id: '1', shipping_address: { name: 'Test', address1: '1 Test St', city: 'Paris', state: 'IDF', zip: '75001', country: 'FR' }, items: [] })
-  expect((axios.post as any).mock.calls[0][0]).toContain('/providers/autods/orders')
-})
-
-it('checks order status via AutoDS endpoint', async () => {
-  ;(axios.get as any).mockResolvedValueOnce({ data: { status: 'processing' } })
-  await supplierService.getOrderStatus('1', '100')
-  expect((axios.get as any).mock.calls[0][0]).toContain('/providers/autods/orders/100')
+  it('does not invent supplier tracking without a verified connector', async () => {
+    await expect(supplierService.getOrderStatus('supplier-1', 'remote-1')).rejects.toThrow(
+      'Supplier tracking is not available until a verified provider connector implements it'
+    )
+  })
 })
