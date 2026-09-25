@@ -305,40 +305,7 @@ const Suppliers = () => {
     }
   };
 
-  const renderProviderAction = (
-    provider: SupplierProviderDefinition,
-    connection?: SupplierSummary
-  ) => {
-    if (connection) {
-      const state = getConnectionState(connection);
-      return (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            className="flex-1"
-            disabled={state !== 'active'}
-            onClick={() =>
-              navigate(`/app/import-products?supplier=${encodeURIComponent(connection.id)}`)
-            }
-          >
-            Gérer
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={testingId === connection.id}
-            onClick={() => void handleTestConnection(connection)}
-          >
-            {testingId === connection.id ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      );
-    }
-
+  const renderProviderAction = (provider: SupplierProviderDefinition) => {
     if (provider.type === 'cj_dropshipping' && provider.stage === 'implemented') {
       return (
         <Button
@@ -347,7 +314,7 @@ const Suppliers = () => {
           className="w-full"
           onClick={() => setShowConnectCJ(true)}
         >
-          Connecter
+          Connecter un compte
         </Button>
       );
     }
@@ -476,8 +443,7 @@ const Suppliers = () => {
         ) : (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredProviders.map((provider) => {
-              const connection = connectedByType.get(provider.type);
-              const state = connection ? getConnectionState(connection) : null;
+              const connections = connectionsByType.get(provider.type) ?? [];
               const capabilityEntries = (Object.entries(provider.capabilities) as Array<
                 [SupplierCapability, string]
               >).filter(([, status]) => status === 'implemented');
@@ -494,27 +460,24 @@ const Suppliers = () => {
                       </div>
                       <div className="min-w-0">
                         <h2 className="truncate font-semibold">{provider.name}</h2>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{provider.region}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {provider.region}
+                          {connections.length > 1 ? ` · ${connections.length} comptes` : ''}
+                        </p>
                       </div>
                     </div>
 
-                    {connection && state ? (
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
-                          STATUS_COPY[state].className
-                        }`}
-                      >
-                        {STATUS_COPY[state].label}
-                      </span>
-                    ) : (
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs font-medium ${stageClassName(
-                          provider
-                        )}`}
-                      >
-                        {stageLabel(provider)}
-                      </span>
-                    )}
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                        connections.some((connection) => connection.status === 'active')
+                          ? STATUS_COPY.active.className
+                          : stageClassName(provider)
+                      }`}
+                    >
+                      {connections.some((connection) => connection.status === 'active')
+                        ? 'Connecté'
+                        : stageLabel(provider)}
+                    </span>
                   </div>
 
                   <div className="mt-4 flex min-h-16 flex-wrap content-start gap-2">
@@ -534,63 +497,136 @@ const Suppliers = () => {
                     )}
                   </div>
 
-                  {connection && (
-                    <div className="mt-4 space-y-2 rounded-xl border bg-muted/30 p-3 text-xs">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-muted-foreground">Dernière synchro</span>
-                        <span className="font-medium">{formatDate(connection.lastSync)}</span>
-                      </div>
-                      {connection.type === 'cj_dropshipping' && (
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-muted-foreground">Temps réel</span>
-                          <span className="font-medium">
-                            {connection.webhookStatus === 'enabled'
-                              ? 'Webhook actif'
-                              : connection.webhookStatus === 'error'
-                                ? 'Erreur webhook'
-                                : 'Non configuré'}
-                          </span>
-                        </div>
+                  {connections.length > 0 ? (
+                    <div className="mt-4 space-y-3">
+                      {connections.map((connection) => {
+                        const state = getConnectionState(connection);
+                        const testResult = testResults[connection.id];
+
+                        return (
+                          <div key={connection.id} className="rounded-xl border bg-muted/20 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">{connection.name}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Dernière synchro : {formatDate(connection.lastSync)}
+                                </p>
+                              </div>
+                              <span
+                                className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_COPY[state].className}`}
+                              >
+                                {STATUS_COPY[state].label}
+                              </span>
+                            </div>
+
+                            {connection.type === 'cj_dropshipping' && (
+                              <div className="mt-2 flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">Temps réel</span>
+                                <span className="font-medium">
+                                  {connection.webhookStatus === 'enabled'
+                                    ? 'Webhook actif'
+                                    : connection.webhookStatus === 'error'
+                                      ? 'Erreur webhook'
+                                      : 'Non configuré'}
+                                </span>
+                              </div>
+                            )}
+
+                            {testResult && (
+                              <div
+                                className={`mt-2 flex items-center gap-2 rounded-md border p-2 text-xs ${
+                                  testResult === 'success'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                                    : 'border-red-200 bg-red-50 text-red-800'
+                                }`}
+                              >
+                                {testResult === 'success' ? (
+                                  <CheckCircle2 className="h-4 w-4" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4" />
+                                )}
+                                {testResult === 'success'
+                                  ? 'Connexion confirmée'
+                                  : 'Connexion non confirmée'}
+                              </div>
+                            )}
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                disabled={state !== 'active'}
+                                onClick={() =>
+                                  navigate(
+                                    `/app/import-products?supplier=${encodeURIComponent(connection.id)}`
+                                  )
+                                }
+                              >
+                                Gérer
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={testingId === connection.id}
+                                onClick={() => void handleTestConnection(connection)}
+                                aria-label={`Tester ${connection.name}`}
+                              >
+                                <RefreshCw
+                                  className={`h-4 w-4 ${
+                                    testingId === connection.id ? 'animate-spin' : ''
+                                  }`}
+                                />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={disconnectingId === connection.id}
+                                onClick={() => void handleDisconnectSupplier(connection)}
+                                aria-label={`Déconnecter ${connection.name}`}
+                              >
+                                <Trash2
+                                  className={`h-4 w-4 ${
+                                    disconnectingId === connection.id ? 'animate-pulse' : ''
+                                  }`}
+                                />
+                              </Button>
+                            </div>
+
+                            {connection.type === 'cj_dropshipping' && state === 'active' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="mt-2 w-full gap-2"
+                                disabled={syncingId === connection.id}
+                                onClick={() => void handleConfigureRealtimeSync(connection)}
+                              >
+                                <RefreshCw
+                                  className={`h-4 w-4 ${
+                                    syncingId === connection.id ? 'animate-spin' : ''
+                                  }`}
+                                />
+                                {connection.webhookStatus === 'enabled'
+                                  ? 'Reconfigurer la synchro CJ'
+                                  : 'Activer la synchro CJ'}
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {provider.type === 'cj_dropshipping' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShowConnectCJ(true)}
+                        >
+                          Connecter un autre compte
+                        </Button>
                       )}
                     </div>
-                  )}
-
-                  {connection && testResults[connection.id] && (
-                    <div
-                      className={`mt-3 flex items-center gap-2 rounded-lg border p-2.5 text-xs ${
-                        testResults[connection.id] === 'success'
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                          : 'border-red-200 bg-red-50 text-red-800'
-                      }`}
-                    >
-                      {testResults[connection.id] === 'success' ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4" />
-                      )}
-                      {testResults[connection.id] === 'success'
-                        ? 'Connexion confirmée'
-                        : 'Connexion non confirmée'}
-                    </div>
-                  )}
-
-                  <div className="mt-5">{renderProviderAction(provider, connection)}</div>
-
-                  {connection?.type === 'cj_dropshipping' && state === 'active' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="mt-2 w-full gap-2"
-                      disabled={syncingId === connection.id}
-                      onClick={() => void handleConfigureRealtimeSync(connection)}
-                    >
-                      <RefreshCw
-                        className={`h-4 w-4 ${syncingId === connection.id ? 'animate-spin' : ''}`}
-                      />
-                      {connection.webhookStatus === 'enabled'
-                        ? 'Reconfigurer la synchro CJ'
-                        : 'Activer la synchro CJ'}
-                    </Button>
+                  ) : (
+                    <div className="mt-5">{renderProviderAction(provider)}</div>
                   )}
                 </article>
               );
@@ -674,30 +710,13 @@ const Suppliers = () => {
                   </p>
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium">
-                    CJ openId <span className="font-normal text-muted-foreground">(optionnel)</span>
-                  </label>
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    value={cjOpenId}
-                    onChange={(event) => setCjOpenId(event.target.value)}
-                    className="h-11 w-full rounded-lg border bg-background px-3 text-sm"
-                    placeholder="Requis pour les webhooks signés"
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Vous pouvez connecter CJ maintenant et configurer les webhooks plus tard.
-                  </p>
-                </div>
-
                 <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
                   <div className="flex items-center gap-2 font-semibold">
                     <ShieldCheck className="h-4 w-4" />
                     Connexion sécurisée
                   </div>
                   <p className="mt-1 text-xs">
-                    Les identifiants sont traités côté serveur. ShopOpti ne réaffiche jamais votre clé API.
+                    La clé API est échangée côté serveur contre les tokens CJ. L’openId et le refresh token sont récupérés automatiquement et ne sont jamais exposés au navigateur.
                   </p>
                 </div>
 
