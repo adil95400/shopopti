@@ -11,6 +11,7 @@ import { RoleProvider } from './context/RoleContext';
 // Layouts
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 
 // Components
 import ChatbotWidget from './components/ChatbotWidget';
@@ -71,6 +72,9 @@ import AdminDashboard from './pages/admin/Dashboard';
 import UsersAdmin from './pages/admin/Users';
 import AdminAnalytics from './pages/admin/Analytics';
 import Imports from './pages/admin/Imports';
+import AdminOperations from './pages/admin/Operations';
+import AdminBilling from './pages/admin/Billing';
+import AdminPlatform from './pages/admin/Platform';
 
 // Missing modules pages
 import RepricingPage from './pages/repricing';
@@ -168,12 +172,15 @@ const AppRoutes = () => {
                   <Route path="ab-testing" element={<ABTestingPage />} />
                   
                   {/* Admin routes */}
-                  <Route path="admin">
+                  <Route path="admin" element={<AdminRoute />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="users" element={<UsersAdmin />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="imports" element={<Imports />} />
+                    <Route path="operations" element={<AdminOperations />} />
+                    <Route path="billing" element={<AdminBilling />} />
+                    <Route path="platform" element={<AdminPlatform />} />
                   </Route>
                 </Route>
                 
