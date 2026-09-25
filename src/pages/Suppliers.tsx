@@ -11,6 +11,7 @@ import {
   ServerCog,
   ShieldCheck,
   Unplug,
+  X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -70,6 +71,11 @@ const Suppliers = () => {
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error'>>({});
+  const [showConnectCJ, setShowConnectCJ] = useState(false);
+  const [connectingCJ, setConnectingCJ] = useState(false);
+  const [cjName, setCjName] = useState('CJdropshipping');
+  const [cjApiKey, setCjApiKey] = useState('');
+  const [cjOpenId, setCjOpenId] = useState('');
 
   const loadSuppliers = useCallback(async () => {
     setLoading(true);
@@ -115,6 +121,45 @@ const Suppliers = () => {
     (supplier) => getConnectionState(supplier) === 'error'
   ).length;
   const verifiedSyncCount = suppliers.filter((supplier) => Boolean(supplier.lastSync)).length;
+
+  const handleConnectCJ = async () => {
+    const name = cjName.trim();
+    const apiKey = cjApiKey.trim();
+
+    if (!name || !apiKey) {
+      toast.error('Le nom du compte et la clé API CJ sont obligatoires');
+      return;
+    }
+
+    setConnectingCJ(true);
+    try {
+      const created = await supplierService.createSupplier({
+        name,
+        type: 'cj_dropshipping',
+        apiKey,
+        apiSecret: cjOpenId.trim() || undefined,
+        baseUrl: '',
+        status: 'inactive',
+        user_id: '',
+      });
+
+      toast.success('CJdropshipping connecté et vérifié');
+      setShowConnectCJ(false);
+      setCjApiKey('');
+      setCjOpenId('');
+      setCjName('CJdropshipping');
+      await loadSuppliers();
+
+      if (created.status === 'active') {
+        setTestResults((current) => ({ ...current, [created.id]: 'success' }));
+      }
+    } catch (error) {
+      console.error('CJ connection failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Connexion CJ impossible');
+    } finally {
+      setConnectingCJ(false);
+    }
+  };
 
   const handleConfigureRealtimeSync = async (supplier: SupplierSummary) => {
     setSyncingId(supplier.id);
@@ -174,9 +219,9 @@ const Suppliers = () => {
             </p>
           </div>
 
-          <Button onClick={() => navigate('/app/integrations')} className="gap-2">
+          <Button onClick={() => setShowConnectCJ(true)} className="gap-2">
             <PlugZap className="h-4 w-4" />
-            Ajouter / configurer
+            Connecter CJdropshipping
           </Button>
         </div>
 
@@ -266,8 +311,8 @@ const Suppliers = () => {
             Aucun fournisseur ne correspond aux données actuellement disponibles.
             ShopOpti ne crée pas de fournisseur, de score ou de statut fictif pour remplir cette vue.
           </p>
-          <Button className="mt-5" onClick={() => navigate('/app/integrations')}>
-            Configurer une intégration
+          <Button className="mt-5" onClick={() => setShowConnectCJ(true)}>
+            Connecter CJdropshipping
           </Button>
         </div>
       ) : (
@@ -483,6 +528,95 @@ const Suppliers = () => {
           })}
         </div>
       </section>
+
+      {showConnectCJ && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl border bg-background p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Connecter CJdropshipping</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  La clé API est envoyée uniquement à la fonction serveur ShopOpti pour obtenir et vérifier le token CJ.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConnectCJ(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+                aria-label="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium">Nom du compte</label>
+                <input
+                  value={cjName}
+                  onChange={(event) => setCjName(event.target.value)}
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  placeholder="CJdropshipping"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">Clé API CJ</label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={cjApiKey}
+                  onChange={(event) => setCjApiKey(event.target.value)}
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  placeholder="Collez votre clé API CJ"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  ShopOpti ne réaffiche jamais cette clé dans le navigateur.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  CJ openId <span className="font-normal text-muted-foreground">(optionnel)</span>
+                </label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={cjOpenId}
+                  onChange={(event) => setCjOpenId(event.target.value)}
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  placeholder="Nécessaire pour les webhooks signés"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Vous pourrez connecter CJ sans openId, puis activer les webhooks quand il sera disponible.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                disabled={connectingCJ}
+                onClick={() => setShowConnectCJ(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                disabled={connectingCJ || !cjName.trim() || !cjApiKey.trim()}
+                onClick={() => void handleConnectCJ()}
+                className="gap-2"
+              >
+                {connectingCJ ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4" />
+                )}
+                Vérifier et connecter
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
         <p className="font-semibold">Principe de vérité des données</p>
