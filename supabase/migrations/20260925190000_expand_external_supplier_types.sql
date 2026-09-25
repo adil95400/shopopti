@@ -109,3 +109,29 @@ CREATE POLICY "Users can delete own supplier snapshots"
   FOR DELETE
   TO authenticated
   USING ((select auth.uid()) = user_id);
+
+
+-- CJ webhook event ledger. message_id is stable across CJ retries and prevents duplicate processing.
+CREATE TABLE IF NOT EXISTS public.cj_webhook_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id text NOT NULL UNIQUE,
+  supplier_id uuid NOT NULL REFERENCES public.external_suppliers(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  event_type text NOT NULL,
+  message_type text,
+  payload jsonb NOT NULL,
+  received_at timestamptz NOT NULL DEFAULT now(),
+  processed_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_cj_webhook_events_supplier
+  ON public.cj_webhook_events (supplier_id, received_at DESC);
+
+ALTER TABLE public.cj_webhook_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own CJ webhook events" ON public.cj_webhook_events;
+CREATE POLICY "Users can view own CJ webhook events"
+  ON public.cj_webhook_events
+  FOR SELECT
+  TO authenticated
+  USING ((select auth.uid()) = user_id);
