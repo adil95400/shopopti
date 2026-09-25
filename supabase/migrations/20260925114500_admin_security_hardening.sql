@@ -1,4 +1,5 @@
 -- Targeted Admin security hardening.
+-- Keep this migration narrow: no global privilege reset is performed.
 -- Restricts legacy SECURITY DEFINER functions and makes Admin/stat views honor
 -- the querying role's privileges/RLS instead of the view owner's privileges.
 
