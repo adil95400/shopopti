@@ -18,7 +18,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         message: "Providers API is running. Use specific provider endpoints for operations.",
-        providers: ["bigbuy", "eprolo", "cdiscount", "autods", "spocket"]
+        providers: ["bigbuy", "eprolo", "cdiscount", "spocket"]
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
