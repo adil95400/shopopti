@@ -1,5 +1,6 @@
 -- P0 authenticated RPC boundary hardening.
 -- Preserve intentional signed-in user APIs, but remove anonymous access.
+-- Authenticated behavior was verified transactionally on shopopti-staging.
 -- Internal trigger/placeholder helpers are not browser APIs.
 
 -- Pure calculator does not need owner privileges; preserve public behavior under caller privileges.
