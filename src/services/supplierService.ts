@@ -74,94 +74,71 @@ export const supplierService = {
       return false;
     }
   },
-  async getSuppliers(): Promise<ExternalSupplier[]> {
-    try {
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .select('*')
-        .neq('type', 'autods')
-        .order('name');
-      
-      if (error) throw error;
-      return (data || []).map((supplier) => ({
-        id: supplier.id,
-        name: supplier.name,
-        type: supplier.type,
-        apiKey: supplier.api_key,
-        apiSecret: supplier.api_secret ?? undefined,
-        baseUrl: supplier.base_url,
-        status: supplier.status,
-        lastSync: supplier.last_sync ?? undefined,
-        created_at: supplier.created_at,
-        user_id: supplier.user_id,
-      }));
-    } catch (error) {
-      console.error('Error fetching suppliers:', error);
-      throw error;
-    }
-  },
-
-  async getSupplierById(id: string): Promise<ExternalSupplier> {
-    try {
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        apiKey: data.api_key,
-        apiSecret: data.api_secret ?? undefined,
-        baseUrl: data.base_url,
-        status: data.status,
-        lastSync: data.last_sync ?? undefined,
-        created_at: data.created_at,
-        user_id: data.user_id,
-      };
-    } catch (error) {
-      console.error(`Error fetching supplier with ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  async createSupplier(supplier: Omit<ExternalSupplier, 'id' | 'created_at'>): Promise<ExternalSupplier> {
+  async createSupplier(
+    supplier: Omit<ExternalSupplier, 'id' | 'created_at'>
+  ): Promise<SupplierSummary> {
     try {
       const { data, error } = await supabase
         .from('external_suppliers')
         .insert([{
-          ...supplier,
+          name: supplier.name,
+          type: supplier.type,
+          api_key: supplier.apiKey,
+          api_secret: supplier.apiSecret,
+          base_url: supplier.baseUrl,
           status: 'inactive',
-          created_at: new Date().toISOString()
+          user_id: supplier.user_id,
+          created_at: new Date().toISOString(),
         }])
-        .select()
+        .select('id,name,type,status,last_sync,created_at')
         .single();
 
       if (error) throw error;
 
-      // A stored credential is configuration, not proof of a working remote connection.
-      // New suppliers remain inactive until a provider-specific server probe verifies them.
-      return data;
+      return {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        lastSync: data.last_sync ?? undefined,
+        created_at: data.created_at,
+      };
     } catch (error) {
       console.error('Error creating supplier:', error);
       throw error;
     }
   },
 
-  async updateSupplier(id: string, updates: Partial<ExternalSupplier>): Promise<ExternalSupplier> {
+  async updateSupplier(
+    id: string,
+    updates: Partial<ExternalSupplier>
+  ): Promise<SupplierSummary> {
     try {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.apiKey !== undefined) dbUpdates.api_key = updates.apiKey;
+      if (updates.apiSecret !== undefined) dbUpdates.api_secret = updates.apiSecret;
+      if (updates.baseUrl !== undefined) dbUpdates.base_url = updates.baseUrl;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+
       const { data, error } = await supabase
         .from('external_suppliers')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
-        .select()
+        .select('id,name,type,status,last_sync,created_at')
         .single();
-      
+
       if (error) throw error;
-      return data;
+
+      return {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        lastSync: data.last_sync ?? undefined,
+        created_at: data.created_at,
+      };
     } catch (error) {
       console.error(`Error updating supplier with ID ${id}:`, error);
       throw error;
@@ -178,30 +155,6 @@ export const supplierService = {
       if (error) throw error;
     } catch (error) {
       console.error(`Error deleting supplier with ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  async testConnection(supplier: Omit<ExternalSupplier, 'id' | 'created_at' | 'status'>): Promise<boolean> {
-    try {
-      // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
-      
-      const response = await axios.post(apiUrl, {
-        type: supplier.type,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data.success;
-    } catch (error) {
-      console.error('Error testing supplier connection:', error);
       throw error;
     }
   },
