@@ -23,7 +23,6 @@ export const getCjCredentials = async (
   supplierId: string
 ): Promise<CjCredentialRecord> => {
   const { data, error } = await admin
-    .schema("private")
     .from("supplier_credentials")
     .select(
       "supplier_id,provider,access_token,refresh_token,open_id,access_token_expires_at,refresh_token_expires_at"
@@ -86,7 +85,6 @@ export const getValidCjAccessToken = async (
   }
 
   const { error } = await admin
-    .schema("private")
     .from("supplier_credentials")
     .update({
       access_token: String(accessToken),
