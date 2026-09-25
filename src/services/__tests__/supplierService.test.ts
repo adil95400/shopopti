@@ -68,7 +68,7 @@ describe('supplierService server-side supplier contracts', () => {
     })
 
     const [url, payload, config] = vi.mocked(axios.post).mock.calls[0]
-    expect(url).toContain('/functions/v1/providers/cj_connect')
+    expect(url).toContain('/functions/v1/supplier-cj-connect')
     expect(payload).toEqual({
       name: 'CJ account',
       apiKey: 'cj-api-key',
