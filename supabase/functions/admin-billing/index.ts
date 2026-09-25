@@ -46,6 +46,17 @@ serve(async (req) => {
   if (roleError) return json({ error: "authorization_check_failed" }, 500);
   if (!adminRole) return json({ error: "forbidden" }, 403);
 
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = await req.json();
+  } catch {
+    payload = {};
+  }
+
+  if (String(payload.mode ?? "overview") !== "overview") {
+    return json({ error: "unsupported_mode" }, 400);
+  }
+
   try {
     const [
       plansResult,
