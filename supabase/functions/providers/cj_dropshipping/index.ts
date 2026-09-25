@@ -390,6 +390,135 @@ serve(async (req) => {
       });
     }
 
+    if (action === "import") {
+      const productIds = body?.productIds;
+      if (!Array.isArray(productIds) || productIds.length === 0) {
+        return json({ success: false, error: "productIds are required" }, 400);
+      }
+
+      const imported: Array<{ externalId: string; snapshotId: string }> = [];
+      const failed: Array<{ externalId: string; error: string }> = [];
+
+      for (const rawId of productIds) {
+        const productId = String(rawId ?? "").trim();
+        if (!productId) continue;
+
+        try {
+          const detailResponse = await fetch(`${baseUrl}/product/productDetail/query`, {
+            method: "POST",
+            headers: { ...cjHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({ id: productId }),
+          });
+
+          const detailPayload = await detailResponse.json().catch(() => null);
+          if (!detailResponse.ok || detailPayload?.result !== true || !detailPayload?.data) {
+            throw new Error(detailPayload?.message || "CJ product detail failed");
+          }
+
+          const raw = detailPayload.data;
+          const images = Array.isArray(raw.img)
+            ? raw.img
+            : Array.isArray(raw.productImageSet)
+              ? raw.productImageSet
+              : [raw.bigImg ?? raw.bigimg].filter(Boolean);
+
+          const variants = Array.isArray(raw.variants)
+            ? raw.variants.map(mapVariant)
+            : [];
+
+          const mapped = mapProductCard(
+            {
+              id: raw.id ?? raw.pid ?? productId,
+              nameEn: raw.nameEn ?? raw.nameen,
+              sku: raw.sku,
+              sellPrice: raw.sellPrice ?? raw.sellprice,
+              bigImage: raw.bigImg ?? raw.bigimg,
+              categoryId: raw.categoryId ?? raw.categoryid,
+              weight: raw.weight,
+            },
+            supplierId
+          );
+
+          let stock: number | null = null;
+          const firstVariantId = variants[0]?.id;
+          if (firstVariantId) {
+            const stockResponse = await fetch(
+              `${baseUrl}/product/stock/queryByVid?vid=${encodeURIComponent(firstVariantId)}`,
+              { method: "GET", headers: cjHeaders }
+            );
+            const stockPayload = await stockResponse.json().catch(() => null);
+            if (stockResponse.ok && stockPayload?.result === true) {
+              const warehouses = Array.isArray(stockPayload?.data) ? stockPayload.data : [];
+              stock = warehouses.reduce(
+                (sum: number, row: any) =>
+                  sum + (Number(row?.totalInventoryNum ?? row?.storageNum ?? 0) || 0),
+                0
+              );
+            }
+          }
+
+          const { data: snapshot, error: snapshotError } = await supabase
+            .from("supplier_product_snapshots")
+            .upsert(
+              {
+                user_id: user.id,
+                supplier_id: supplierId,
+                provider: "cj_dropshipping",
+                external_id: productId,
+                title: mapped.name,
+                description: raw.description ?? raw.descriptionEn ?? "",
+                price: mapped.price || null,
+                currency: "USD",
+                stock,
+                images,
+                variants,
+                source_payload: {
+                  requestId: detailPayload?.requestId ?? null,
+                  sku: mapped.sku ?? null,
+                  category: mapped.category,
+                  fetchedFrom: "product/productDetail/query",
+                },
+                fetched_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,supplier_id,provider,external_id" }
+            )
+            .select("id")
+            .single();
+
+          if (snapshotError || !snapshot) {
+            throw new Error(snapshotError?.message || "Unable to persist CJ snapshot");
+          }
+
+          imported.push({ externalId: productId, snapshotId: snapshot.id });
+        } catch (error) {
+          failed.push({
+            externalId: productId,
+            error: error instanceof Error ? error.message : "CJ import failed",
+          });
+        }
+      }
+
+      await supabase
+        .from("external_suppliers")
+        .update({ last_sync: new Date().toISOString() })
+        .eq("id", supplierId);
+
+      return json({
+        success: failed.length === 0,
+        importedCount: imported.length,
+        failedCount: failed.length,
+        imported,
+        failed,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint: "product/productDetail/query",
+          persistedAs: "supplier_product_snapshots",
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
     if (action === "stock") {
       const variantId = body?.variantId;
       if (!variantId || typeof variantId !== "string") {
