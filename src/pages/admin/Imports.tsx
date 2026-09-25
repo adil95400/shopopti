@@ -148,9 +148,6 @@ const Imports: React.FC = () => {
           case 'cdiscount':
             newSupplier.baseUrl = 'https://api.cdiscount.com';
             break;
-          case 'autods':
-            newSupplier.baseUrl = 'https://api.autods.com';
-            break;
           case 'spocket':
             newSupplier.baseUrl = 'https://api.spocket.co';
             break;
