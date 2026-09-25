@@ -434,6 +434,127 @@ serve(async (req) => {
     }
 
 
+    if (action === "snapshot_import") {
+      const productIds = Array.isArray(body?.productIds)
+        ? body.productIds.filter((value: unknown) => typeof value === "string" && value.length > 0)
+        : [];
+
+      if (productIds.length === 0) {
+        return json({ success: false, error: "productIds are required" }, 400);
+      }
+
+      if (productIds.length > 50) {
+        return json({ success: false, error: "A maximum of 50 products can be imported per request" }, 400);
+      }
+
+      const imported: Array<{ externalId: string; snapshotId: string }> = [];
+      const failed: Array<{ externalId: string; error: string }> = [];
+
+      for (const externalId of productIds) {
+        try {
+          const response = await fetch(`${baseUrl}/product/productDetail/query`, {
+            method: "POST",
+            headers: { ...cjHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({ id: externalId }),
+          });
+
+          const payload = await response.json().catch(() => null);
+          if (!response.ok || payload?.result !== true || !payload?.data) {
+            failed.push({
+              externalId,
+              error: String(payload?.message || "CJ product detail failed"),
+            });
+            continue;
+          }
+
+          const raw = payload.data;
+          const images = Array.isArray(raw.img)
+            ? raw.img
+            : Array.isArray(raw.productImageSet)
+              ? raw.productImageSet
+              : [raw.bigImg ?? raw.bigimg].filter(Boolean);
+
+          const normalized = {
+            ...mapProductCard(
+              {
+                id: raw.id ?? raw.pid ?? externalId,
+                nameEn: raw.nameEn ?? raw.nameen,
+                sku: raw.sku,
+                sellPrice: raw.sellPrice ?? raw.sellprice,
+                bigImage: raw.bigImg ?? raw.bigimg,
+                categoryId: raw.categoryId ?? raw.categoryid,
+                weight: raw.weight,
+              },
+              supplierId
+            ),
+            description: raw.description ?? raw.descriptionEn ?? "",
+            images,
+            variants: Array.isArray(raw.variants) ? raw.variants.map(mapVariant) : [],
+            metadata: {
+              source: "cj_dropshipping",
+              sourceRequestId: payload?.requestId,
+              priceCurrency: "USD",
+              stockVerified: false,
+              fetchedAt: new Date().toISOString(),
+            },
+          };
+
+          const { data: snapshot, error: snapshotError } = await supabase
+            .from("supplier_product_snapshots")
+            .upsert(
+              {
+                user_id: user.id,
+                supplier_id: supplierId,
+                provider: "cj_dropshipping",
+                external_id: externalId,
+                normalized,
+                raw,
+                fetched_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,supplier_id,external_id" }
+            )
+            .select("id")
+            .single();
+
+          if (snapshotError || !snapshot) {
+            failed.push({
+              externalId,
+              error: snapshotError?.message || "Snapshot persistence failed",
+            });
+            continue;
+          }
+
+          imported.push({ externalId, snapshotId: snapshot.id });
+        } catch (error) {
+          failed.push({
+            externalId,
+            error: error instanceof Error ? error.message : "Unexpected snapshot import error",
+          });
+        }
+      }
+
+      if (imported.length > 0) {
+        await supabase
+          .from("external_suppliers")
+          .update({ last_sync: new Date().toISOString() })
+          .eq("id", supplierId);
+      }
+
+      return json({
+        success: failed.length === 0,
+        importedCount: imported.length,
+        failedCount: failed.length,
+        imported,
+        failed,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint: "product/productDetail/query",
+          fetchedAt: new Date().toISOString(),
+        },
+      }, failed.length === productIds.length ? 502 : 200);
+    }
+
     if (action === "freight") {
       const payloadInput = body?.payload;
       if (!payloadInput || typeof payloadInput !== "object") {
