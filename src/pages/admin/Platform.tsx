@@ -39,6 +39,13 @@ const AdminPlatform: React.FC = () => {
   }, [data]);
 
   const toggleFlag = async (flagId: string, enabled: boolean) => {
+    const flag = data?.flags.find((item) => item.id === flagId);
+    const label = flag?.name || flag?.key || flagId;
+    const confirmed = window.confirm(
+      (enabled ? 'Activer ' : 'Désactiver ') + label + ' ?'
+    );
+    if (!confirmed) return;
+
     try {
       setActionId(flagId);
       await adminPlatformService.setFlagEnabled(flagId, enabled);
