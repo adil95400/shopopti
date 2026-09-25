@@ -92,26 +92,11 @@ CREATE POLICY "Users can view own supplier snapshots"
   USING ((select auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Users can insert own supplier snapshots" ON public.supplier_product_snapshots;
-CREATE POLICY "Users can insert own supplier snapshots"
-  ON public.supplier_product_snapshots
-  FOR INSERT
-  TO authenticated
-  WITH CHECK ((select auth.uid()) = user_id);
-
 DROP POLICY IF EXISTS "Users can update own supplier snapshots" ON public.supplier_product_snapshots;
-CREATE POLICY "Users can update own supplier snapshots"
-  ON public.supplier_product_snapshots
-  FOR UPDATE
-  TO authenticated
-  USING ((select auth.uid()) = user_id)
-  WITH CHECK ((select auth.uid()) = user_id);
-
 DROP POLICY IF EXISTS "Users can delete own supplier snapshots" ON public.supplier_product_snapshots;
-CREATE POLICY "Users can delete own supplier snapshots"
-  ON public.supplier_product_snapshots
-  FOR DELETE
-  TO authenticated
-  USING ((select auth.uid()) = user_id);
+
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.supplier_product_snapshots FROM authenticated;
+GRANT SELECT ON TABLE public.supplier_product_snapshots TO authenticated;
 
 
 -- CJ webhook event ledger. message_id is stable across CJ retries and prevents duplicate processing.
