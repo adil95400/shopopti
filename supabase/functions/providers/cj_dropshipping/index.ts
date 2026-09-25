@@ -607,7 +607,7 @@ serve(async (req) => {
             },
           };
 
-          const { data: snapshot, error: snapshotError } = await supabase
+          const { data: snapshot, error: snapshotError } = await admin
             .from("supplier_product_snapshots")
             .upsert(
               {
