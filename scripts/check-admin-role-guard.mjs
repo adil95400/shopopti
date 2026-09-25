@@ -1,7 +1,10 @@
 // Frontend Admin authorization regression contract.
 import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const baseDir = dirname(fileURLToPath(import.meta.url));
+const read = path => readFileSync(resolve(baseDir, '..', path), 'utf8');
 
 const routes = read('src/routes.tsx');
 const roles = read('src/context/RoleContext.tsx');
