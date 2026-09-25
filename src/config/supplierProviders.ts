@@ -10,7 +10,7 @@ export type SupplierCapability =
   | 'orders'
   | 'tracking';
 
-export type SupplierConnectorStage = 'planned' | 'legacy' | 'custom';
+export type SupplierConnectorStage = 'implemented' | 'planned' | 'legacy' | 'custom';
 
 export interface SupplierProviderDefinition {
   type: SupplierProviderType;
@@ -18,22 +18,22 @@ export interface SupplierProviderDefinition {
   stage: SupplierConnectorStage;
   priority: 1 | 2 | 3;
   region: string;
-  capabilities: Partial<Record<SupplierCapability, 'documented' | 'planned' | 'unknown'>>;
+  capabilities: Partial<Record<SupplierCapability, 'implemented' | 'documented' | 'planned' | 'unknown'>>;
 }
 
 export const supplierProviders: SupplierProviderDefinition[] = [
   {
     type: 'cj_dropshipping',
     name: 'CJdropshipping',
-    stage: 'planned',
+    stage: 'implemented',
     priority: 1,
     region: 'Global',
     capabilities: {
-      catalog: 'documented',
+      catalog: 'implemented',
       import: 'planned',
-      price: 'documented',
-      stock: 'documented',
-      variants: 'documented',
+      price: 'implemented',
+      stock: 'implemented',
+      variants: 'implemented',
       shipping: 'documented',
       orders: 'documented',
       tracking: 'documented',
