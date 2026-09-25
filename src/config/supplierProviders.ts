@@ -30,13 +30,13 @@ export const supplierProviders: SupplierProviderDefinition[] = [
     region: 'Global',
     capabilities: {
       catalog: 'implemented',
-      import: 'documented',
+      import: 'planned',
       price: 'implemented',
       stock: 'implemented',
       variants: 'implemented',
-      shipping: 'documented',
-      orders: 'documented',
-      tracking: 'documented',
+      shipping: 'implemented',
+      orders: 'implemented',
+      tracking: 'implemented',
     },
   },
   {
