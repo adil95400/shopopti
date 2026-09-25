@@ -140,6 +140,9 @@ CREATE TABLE IF NOT EXISTS public.cj_webhook_events (
 CREATE INDEX IF NOT EXISTS idx_cj_webhook_events_supplier
   ON public.cj_webhook_events (supplier_id, received_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_cj_webhook_events_user
+  ON public.cj_webhook_events (user_id);
+
 ALTER TABLE public.cj_webhook_events ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view own CJ webhook events"
@@ -330,6 +333,9 @@ VALUES
   ('custom_xml', 'disabled'),
   ('custom_ftp', 'disabled')
 ON CONFLICT (provider) DO NOTHING;
+
+CREATE INDEX IF NOT EXISTS idx_supplier_connector_settings_updated_by
+  ON public.supplier_connector_settings (updated_by);
 
 ALTER TABLE public.supplier_connector_settings ENABLE ROW LEVEL SECURITY;
 
