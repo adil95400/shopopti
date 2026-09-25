@@ -15,6 +15,7 @@ interface PaidPlan {
   currency: string | null;
   features: Record<string, unknown> | null;
   limits: Record<string, unknown> | null;
+  trial_days: number | null;
 }
 
 const featureLabels: Record<string, string> = {
@@ -62,7 +63,7 @@ const Pricing: React.FC = () => {
         const { data, error } = await supabase
           .from('subscription_plans')
           .select(
-            'id,name,display_name,description,price_monthly,price_yearly,currency,features,limits'
+            'id,name,display_name,description,price_monthly,price_yearly,currency,features,limits,trial_days'
           )
           .eq('is_active', true)
           .order('price_monthly', { ascending: true });
@@ -129,6 +130,36 @@ const Pricing: React.FC = () => {
         .filter(([, enabled]) => enabled === true)
         .map(([key]) => featureLabels[key] ?? key.replaceAll('_', ' '));
 
+      const limits = plan.limits ?? {};
+      const limitLabels: string[] = [];
+
+      const suppliers = Number(limits.suppliers);
+      if (Number.isFinite(suppliers)) {
+        limitLabels.push(
+          suppliers < 0 ? 'Fournisseurs illimités' : `${suppliers} fournisseur${suppliers > 1 ? 's' : ''}`
+        );
+      }
+
+      const productsPerDay = Number(limits.products_per_day);
+      if (Number.isFinite(productsPerDay)) {
+        limitLabels.push(
+          productsPerDay < 0
+            ? 'Produits/jour illimités'
+            : `${new Intl.NumberFormat('fr-FR').format(productsPerDay)} produits/jour`
+        );
+      }
+
+      const apiCalls = Number(limits.api_calls_per_hour);
+      if (Number.isFinite(apiCalls)) {
+        limitLabels.push(
+          apiCalls < 0
+            ? 'Appels API illimités'
+            : `${new Intl.NumberFormat('fr-FR').format(apiCalls)} appels API/heure`
+        );
+      }
+
+      features.push(...limitLabels);
+
       const monthly = Number(plan.price_monthly);
       const yearly = Number(plan.price_yearly);
       const savings =
@@ -150,6 +181,12 @@ const Pricing: React.FC = () => {
             style: 'currency',
             currency: plan.currency ?? 'EUR'
           }).format(savings)}`
+        );
+      }
+
+      if ((plan.trial_days ?? 0) > 0) {
+        descriptionParts.push(
+          `Essai de ${plan.trial_days} jour${plan.trial_days === 1 ? '' : 's'} avant facturation.`
         );
       }
 
