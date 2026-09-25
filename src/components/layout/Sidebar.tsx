@@ -134,10 +134,6 @@ export default function Sidebar() {
   const visibleSections = sections.filter(
     section => !('adminOnly' in section) || !section.adminOnly || (!roleLoading && isAdmin)
   );
-  const { isAdmin } = useRole();
-  const visibleSections = sections.filter(
-    section => section.title !== 'Administration' || isAdmin
-  );
 
   return (
     <>
