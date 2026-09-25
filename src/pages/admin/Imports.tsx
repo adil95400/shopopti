@@ -1,378 +1,293 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Plus,
-  Search,
-  RefreshCw,
-  Loader2,
-  CheckCircle,
   AlertTriangle,
-  Download,
-  Upload,
-  Settings,
-  Trash2,
-  ShoppingBag,
-  ArrowRight,
-  X,
-  Check
+  Boxes,
+  Cable,
+  RefreshCw,
+  ServerCog,
+  Workflow
 } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { supabase } from '@/lib/supabase';
-import { supplierService } from '@/services/supplierService';
-import {
-  ExternalSupplier,
-  SupplierProduct,
-  ImportFilter,
-  SupplierCategory
-} from '@/types/supplier';
 import { Button } from '@/components/ui/button';
+import { useRole } from '@/context/RoleContext';
+import {
+  adminImportsService,
+  type AdminImportsData
+} from '@/services/adminImportsService';
 
+type Tab = 'suppliers' | 'connections' | 'jobs' | 'pipeline';
 
-const Imports: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<ExternalSupplier[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<ExternalSupplier | null>(null);
-  const [products, setProducts] = useState<SupplierProduct[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [categories, setCategories] = useState<SupplierCategory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [productLoading, setProductLoading] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
-  const [showAddSupplier, setShowAddSupplier] = useState(false);
-  const [newSupplier, setNewSupplier] = useState<Omit<ExternalSupplier, 'id' | 'created_at'>>({
-    name: '',
-    type: 'bigbuy',
-    apiKey: '',
-    apiSecret: '',
-    baseUrl: '',
-    status: 'inactive',
-    user_id: ''
-  });
-  const [filters, setFilters] = useState<ImportFilter>({
-    search: '',
-    minPrice: undefined,
-    maxPrice: undefined,
-    minStock: undefined,
-    category: undefined,
-    page: 1,
-    limit: 20
-  });
+const statusClass = (status: string | null) => {
+  const value = String(status ?? '').toLowerCase();
+  if (['active', 'connected', 'completed', 'success', 'succeeded', 'published'].includes(value)) {
+    return 'text-green-700';
+  }
+  if (['failed', 'error', 'dead_lettered', 'dead-lettered'].includes(value)) {
+    return 'text-red-700';
+  }
+  if (['processing', 'running', 'in_progress', 'pending', 'queued'].includes(value)) {
+    return 'text-amber-700';
+  }
+  return 'text-gray-600';
+};
 
-  useEffect(() => {
-    fetchSuppliers();
-    
-    // Get the current user ID
-    const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setNewSupplier(prev => ({ ...prev, user_id: data.user!.id }));
-      }
-    };
-    
-    getCurrentUser();
-  }, []);
+const AdminImports: React.FC = () => {
+  const { isAdmin, loading: roleLoading } = useRole();
+  const [data, setData] = useState<AdminImportsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>('suppliers');
 
-  const fetchSuppliers = async () => {
+  const load = async () => {
     try {
       setLoading(true);
-      const fetchedSuppliers = await supplierService.getSuppliers();
-      setSuppliers(fetchedSuppliers);
-      
-      // If there are suppliers, select the first one
-      if (fetchedSuppliers.length > 0) {
-        setSelectedSupplier(fetchedSuppliers[0]);
-      }
+      setData(await adminImportsService.getOverview());
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
-      toast.error('Failed to load suppliers');
+      console.error('Error loading Admin Imports:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de charger Admin Imports'
+      );
+      setData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProducts = async () => {
-    if (!selectedSupplier) return;
-    
-    try {
-      setProductLoading(true);
-      const fetchedProducts = await supplierService.getProducts(selectedSupplier.id, filters);
-      setProducts(fetchedProducts);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setProductLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    if (!selectedSupplier) return;
-    try {
-      const fetchedCategories = await supplierService.getCategories(selectedSupplier.id);
-      setCategories(fetchedCategories);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
   useEffect(() => {
-    if (selectedSupplier) {
-      fetchCategories();
-      fetchProducts();
-    }
-  }, [selectedSupplier]);
+    if (isAdmin) void load();
+  }, [isAdmin]);
 
-  useEffect(() => {
-    if (selectedSupplier) {
-      fetchProducts();
-    }
-  }, [filters]);
-
-  const handleAddSupplier = async () => {
-    try {
-      setLoading(true);
-      
-      if (!newSupplier.name || !newSupplier.apiKey || !newSupplier.type) {
-        toast.error('Please fill in all required fields');
-        return;
+  const tabs = useMemo(
+    () => [
+      {
+        id: 'suppliers' as const,
+        label: 'Fournisseurs',
+        count: data?.totals.suppliers ?? 0,
+        icon: Boxes
+      },
+      {
+        id: 'connections' as const,
+        label: 'Connexions',
+        count: data?.totals.connections ?? 0,
+        icon: Cable
+      },
+      {
+        id: 'jobs' as const,
+        label: 'Jobs import',
+        count:
+          (data?.totals.importJobs ?? 0) +
+          (data?.totals.productImportJobs ?? 0),
+        icon: ServerCog
+      },
+      {
+        id: 'pipeline' as const,
+        label: 'Pipeline',
+        count: data?.totals.pipelineStates ?? 0,
+        icon: Workflow
       }
-      
-      // Set default base URL based on supplier type if not provided
-      if (!newSupplier.baseUrl) {
-        switch (newSupplier.type) {
-          case 'bigbuy':
-            newSupplier.baseUrl = 'https://api.bigbuy.eu';
-            break;
-          case 'eprolo':
-            newSupplier.baseUrl = 'https://api.eprolo.com';
-            break;
-          case 'cdiscount':
-            newSupplier.baseUrl = 'https://api.cdiscount.com';
-            break;
-          case 'autods':
-            newSupplier.baseUrl = 'https://api.autods.com';
-            break;
-          case 'spocket':
-            newSupplier.baseUrl = 'https://api.spocket.co';
-            break;
-        }
-      }
-      
-      const createdSupplier = await supplierService.createSupplier(newSupplier);
-      setSuppliers([...suppliers, createdSupplier]);
-      setSelectedSupplier(createdSupplier);
-      setShowAddSupplier(false);
-      setNewSupplier({
-        name: '',
-        type: 'bigbuy',
-        apiKey: '',
-        apiSecret: '',
-        baseUrl: '',
-        status: 'inactive',
-        user_id: newSupplier.user_id
-      });
-      
-      toast.success('Supplier added successfully');
-    } catch (error) {
-      console.error('Error adding supplier:', error);
-      toast.error('Failed to add supplier');
-    } finally {
-      setLoading(false);
-    }
-  };
+    ],
+    [data]
+  );
 
-  const handleDeleteSupplier = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      await supplierService.deleteSupplier(id);
-      setSuppliers(suppliers.filter(s => s.id !== id));
-      
-      if (selectedSupplier?.id === id) {
-        setSelectedSupplier(suppliers.length > 1 ? suppliers.find(s => s.id !== id)! : null);
-      }
-      
-      toast.success('Supplier deleted successfully');
-    } catch (error) {
-      console.error('Error deleting supplier:', error);
-      toast.error('Failed to delete supplier');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (roleLoading) {
+    return <div className="flex justify-center p-8">Chargement...</div>;
+  }
 
-  const handleProductSelect = (productId: string) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter(id => id !== productId));
-    } else {
-      setSelectedProducts([...selectedProducts, productId]);
-    }
-  };
-
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      setSelectedProducts(products.map(p => p.id));
-    } else {
-      setSelectedProducts([]);
-    }
-  };
-
-  const handleImportToShopify = async () => {
-    if (selectedProducts.length === 0) {
-      toast.error('Please select at least one product to import');
-      return;
-    }
-    
-    try {
-      setImportLoading(true);
-      
-      // Get the selected products
-      const productsToImport = products.filter(p => selectedProducts.includes(p.id));
-      
-      // Import to Shopify
-      const result = await supplierService.importToShopify(productsToImport);
-      
-      if (result.success) {
-        toast.success(`Successfully imported ${result.importedCount} products to Shopify`);
-        setSelectedProducts([]);
-      } else {
-        toast.error(`Failed to import products: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('Error importing products to Shopify:', error);
-      toast.error('Failed to import products to Shopify');
-    } finally {
-      setImportLoading(false);
-    }
-  };
-
-  const handleImportFromSupplier = async () => {
-    if (selectedProducts.length === 0) {
-      toast.error('Please select at least one product to import');
-      return;
-    }
-    
-    if (!selectedSupplier) {
-      toast.error('No supplier selected');
-      return;
-    }
-    
-    try {
-      setImportLoading(true);
-      
-      // Get the external IDs of the selected products
-      const productIds = products
-        .filter(p => selectedProducts.includes(p.id))
-        .map(p => p.externalId);
-      
-      // Import from supplier
-      const result = await supplierService.importProducts(selectedSupplier.id, productIds);
-      
-      if (result.success) {
-        toast.success(`Successfully imported ${result.importedCount} products from ${selectedSupplier.name}`);
-        setSelectedProducts([]);
-      } else {
-        toast.error(`Failed to import products: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('Error importing products from supplier:', error);
-      toast.error('Failed to import products from supplier');
-    } finally {
-      setImportLoading(false);
-    }
-  };
-
-  const handleFilterChange = (key: keyof ImportFilter, value: any) => {
-    setFilters({ ...filters, [key]: value });
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchProducts();
-  };
+  if (!isAdmin) {
+    return <Navigate to="/app/dashboard" replace />;
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Supplier Imports</h1>
-          <p className="text-gray-600">Import products from external suppliers</p>
+          <h1 className="text-2xl font-bold">Admin Imports</h1>
+          <p className="text-gray-500">
+            Supervision fournisseurs, connexions et pipeline d'import réels
+          </p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => fetchProducts()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={() => setShowAddSupplier(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Supplier
-          </Button>
+        <Button variant="outline" onClick={() => void load()}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Actualiser
+        </Button>
+      </div>
+
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex gap-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            Cette console n'expose jamais les clés API ni les credentials chiffrés.
+            Les mutations fournisseur restent désactivées tant qu'elles ne passent pas
+            par un flux serveur/vault validé.
+          </div>
         </div>
       </div>
-      
-      {loading && suppliers.length === 0 ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tabs.map(({ id, label, count, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={`rounded-lg border p-4 text-left ${
+              tab === id ? 'bg-muted' : 'bg-white'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">{label}</span>
+              <Icon className="h-4 w-4 text-gray-500" />
+            </div>
+            <div className="mt-2 text-2xl font-bold">{count}</div>
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="rounded-lg border bg-white p-10 text-center">
+          Chargement des imports réels...
+        </div>
+      ) : !data ? (
+        <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
+          Données indisponibles. Aucun fournisseur ou job simulé n'est affiché.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Supplier sidebar */}
-          <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
-              <div>
-                <h2 className="text-lg font-medium mb-4">Suppliers</h2>
+        <>
+          {tab === 'suppliers' && (
+            data.suppliers.length === 0 ? (
+              <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
+                Aucun fournisseur enregistré.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border bg-white">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="p-3 text-left">Fournisseur</th>
+                      <th className="p-3 text-left">Type</th>
+                      <th className="p-3 text-left">Connexion</th>
+                      <th className="p-3 text-left">Produits</th>
+                      <th className="p-3 text-left">Dernière sync</th>
+                      <th className="p-3 text-left">Erreurs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.suppliers.map((supplier) => (
+                      <tr key={supplier.id} className="border-t">
+                        <td className="p-3">
+                          <div className="font-medium">
+                            {supplier.display_name || supplier.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {supplier.country || 'Pays non renseigné'}
+                            {supplier.is_verified ? ' · Vérifié' : ''}
+                            {supplier.is_premium ? ' · Premium' : ''}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {supplier.connector_type || supplier.supplier_type || '—'}
+                        </td>
+                        <td className={`p-3 ${statusClass(
+                          supplier.connection_status || supplier.status
+                        )}`}>
+                          {supplier.connection_status || supplier.status || 'inconnu'}
+                        </td>
+                        <td className="p-3">
+                          {supplier.total_products ?? supplier.product_count ?? '—'}
+                        </td>
+                        <td className="p-3">
+                          {supplier.last_sync_at
+                            ? new Date(supplier.last_sync_at).toLocaleString('fr-FR')
+                            : 'Jamais'}
+                        </td>
+                        <td className="p-3">
+                          {supplier.error_count ?? 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
 
-                {suppliers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">No suppliers yet</h3>
-                    <p className="text-gray-500 mb-4">
-                      Add your first supplier to start importing products
-                    </p>
-                    <Button onClick={() => setShowAddSupplier(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Supplier
-                    </Button>
+          {tab === 'connections' && (
+            data.connections.length === 0 ? (
+              <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
+                Aucune connexion fournisseur enregistrée.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {data.connections.map((connection) => (
+                  <div key={connection.id} className="rounded-lg border bg-white p-4">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <div className="font-medium">
+                          {connection.connector_name || connection.connector_id}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Utilisateur {connection.user_id}
+                        </div>
+                      </div>
+                      <div className={`text-sm ${statusClass(connection.status)}`}>
+                        {connection.status || 'inconnu'}
+                      </div>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-500">
+                      Dernière synchronisation :{' '}
+                      {connection.last_sync_at
+                        ? new Date(connection.last_sync_at).toLocaleString('fr-FR')
+                        : 'jamais'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {tab === 'jobs' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="mb-3 text-lg font-semibold">Jobs canoniques</h2>
+                {data.importJobs.length === 0 ? (
+                  <div className="rounded-lg border bg-white p-8 text-center text-gray-500">
+                    Aucun import_jobs enregistré sur staging.
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {suppliers.map((supplier) => (
-                      <div
-                        key={supplier.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedSupplier?.id === supplier.id
-                            ? 'border-primary bg-primary-50'
-                            : 'border-gray-200 hover:border-primary-200'
-                        }`}
-                        onClick={() => setSelectedSupplier(supplier)}
-                      >
-                        <div className="flex justify-between items-center">
+                    {data.importJobs.map((job) => (
+                      <div key={job.id} className="rounded-lg border bg-white p-4">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                           <div>
-                            <h3 className="font-medium">{supplier.name}</h3>
-                            <div className="flex items-center mt-1">
-                              <span className="text-xs text-gray-500 capitalize">{supplier.type}</span>
-                              <span className="mx-2 text-gray-300">•</span>
-                              <span className={`text-xs ${
-                                supplier.status === 'active' ? 'text-green-600' :
-                                supplier.status === 'error' ? 'text-red-600' :
-                                'text-gray-500'
-                              }`}>
-                                {supplier.status}
-                              </span>
+                            <div className="font-medium">
+                              {job.source_platform || job.job_type || 'Import'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {job.source_url || job.id}
                             </div>
                           </div>
-                          <div className="flex">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteSupplier(supplier.id);
-                              }}
-                              className="text-gray-400 hover:text-red-600 p-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                          <div className={`text-sm ${statusClass(job.status)}`}>
+                            {job.status || 'inconnu'}
+                          </div>
+                        </div>
+                        <div className="mt-3 grid gap-3 text-sm sm:grid-cols-4">
+                          <div>
+                            <span className="text-gray-500">Total :</span>{' '}
+                            {job.total_products ?? 0}
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Traités :</span>{' '}
+                            {job.processed_products ?? 0}
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Succès :</span>{' '}
+                            {job.successful_imports ?? 0}
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Échecs :</span>{' '}
+                            {job.failed_imports ?? 0}
                           </div>
                         </div>
                       </div>
@@ -381,398 +296,99 @@ const Imports: React.FC = () => {
                 )}
               </div>
 
-              {selectedSupplier && (
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Categories</h3>
-                  {categories.length === 0 ? (
-                    <p className="text-sm text-gray-500">No categories available</p>
-                  ) : (
-                    <ul className="space-y-2 max-h-72 overflow-y-auto">
-                      <li
-                        className={`cursor-pointer text-sm ${!filters.category ? 'text-primary font-medium' : 'text-gray-700'}`}
-                        onClick={() => handleFilterChange('category', undefined)}
-                      >
-                        All Products
-                      </li>
-                      {categories.map((cat) => (
-                        <li
-                          key={cat.id}
-                          className={`cursor-pointer text-sm ${filters.category === cat.externalId ? 'text-primary font-medium' : 'text-gray-700'}`}
-                          onClick={() => handleFilterChange('category', cat.externalId)}
-                        >
-                          {cat.name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Main content */}
-          <div className="md:col-span-3">
-            {selectedSupplier ? (
-              <div className="space-y-4">
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h2 className="text-lg font-medium">{selectedSupplier.name}</h2>
-                      <p className="text-sm text-gray-500 capitalize">{selectedSupplier.type} Integration</p>
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 ${
-                        selectedSupplier.status === 'active' ? 'bg-green-100 text-green-800' :
-                        selectedSupplier.status === 'error' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {selectedSupplier.status === 'active' && <CheckCircle className="h-3 w-3 mr-1" />}
-                        {selectedSupplier.status === 'error' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                        {selectedSupplier.status.charAt(0).toUpperCase() + selectedSupplier.status.slice(1)}
-                      </span>
-                      <Button variant="outline" size="sm">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                      </Button>
-                    </div>
+              <div>
+                <h2 className="mb-3 text-lg font-semibold">Jobs produit</h2>
+                {data.productImportJobs.length === 0 ? (
+                  <div className="rounded-lg border bg-white p-8 text-center text-gray-500">
+                    Aucun product_import_jobs enregistré sur staging.
                   </div>
-                  
-                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
-                    <form onSubmit={handleSearch} className="flex flex-1 gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Search products..."
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md"
-                          value={filters.search || ''}
-                          onChange={(e) => handleFilterChange('search', e.target.value)}
-                        />
-                      </div>
-                      <Button type="submit">
-                        <Search className="h-4 w-4 mr-2" />
-                        Search
-                      </Button>
-                    </form>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleFilterChange('page', Math.max(1, (filters.page || 1) - 1))}
-                        disabled={(filters.page || 1) <= 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleFilterChange('page', (filters.page || 1) + 1)}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="select-all"
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                        onChange={handleSelectAll}
-                        checked={selectedProducts.length > 0 && selectedProducts.length === products.length}
-                      />
-                      <label htmlFor="select-all" className="ml-2 text-sm text-gray-700">
-                        Select All
-                      </label>
-                    </div>
-                    
-                    {selectedProducts.length > 0 && (
-                      <div className="flex space-x-2">
-                        <Button variant="outline" onClick={handleImportFromSupplier} disabled={importLoading}>
-                          {importLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <Download className="h-4 w-4 mr-2" />
-                          )}
-                          Import to Database
-                        </Button>
-                        <Button onClick={handleImportToShopify} disabled={importLoading}>
-                          {importLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <Upload className="h-4 w-4 mr-2" />
-                          )}
-                          Import to Shopify
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {productLoading ? (
-                    <div className="flex justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : products.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg">
-                      <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">No products found</h3>
-                      <p className="text-gray-500 mb-4">
-                        Try adjusting your search or filters
-                      </p>
-                      <Button onClick={() => setFilters({
-                        search: '',
-                        minPrice: undefined,
-                        maxPrice: undefined,
-                        minStock: undefined,
-                        category: undefined,
-                        page: 1,
-                        limit: 20
-                      })}>
-                        Clear Filters
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {products.map((product) => (
-                        <div
-                          key={product.id}
-                          className={`border rounded-lg overflow-hidden ${
-                            selectedProducts.includes(product.id)
-                              ? 'border-primary ring-1 ring-primary'
-                              : 'border-gray-200'
-                          }`}
-                        >
-                          <div className="relative h-48 bg-gray-100">
-                            {product.images && product.images.length > 0 ? (
-                              <img
-                                src={product.images[0]}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ShoppingBag className="h-12 w-12 text-gray-300" />
-                              </div>
-                            )}
-                            <div className="absolute top-2 right-2">
-                              <Button
-                                size="icon"
-                                variant="secondary"
-                                onClick={() => handleProductSelect(product.id)}
-                              >
-                                {selectedProducts.includes(product.id) ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <Plus className="h-4 w-4" />
-                                )}
-                              </Button>
+                ) : (
+                  <div className="space-y-3">
+                    {data.productImportJobs.map((job) => (
+                      <div key={job.id} className="rounded-lg border bg-white p-4">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <div className="font-medium">
+                              {job.platform || 'Import produit'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {job.source_url || job.id}
                             </div>
                           </div>
-                          
-                          <div className="p-4">
-                            <h3 className="font-medium text-gray-900 line-clamp-2">{product.name}</h3>
-                            
-                            <div className="mt-2 flex justify-between">
-                              <div>
-                                <p className="text-lg font-bold text-primary">${product.price.toFixed(2)}</p>
-                                {product.msrp && product.msrp > product.price && (
-                                  <p className="text-sm text-gray-500 line-through">${product.msrp.toFixed(2)}</p>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm text-gray-600">Stock: {product.stock}</p>
-                                {product.sku && (
-                                  <p className="text-xs text-gray-500">SKU: {product.sku}</p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <Button
-                                variant={selectedProducts.includes(product.id) ? "default" : "outline"}
-                                className="w-full"
-                                onClick={() => handleProductSelect(product.id)}
-                              >
-                                {selectedProducts.includes(product.id) ? (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Selected
-                                  </>
-                                ) : (
-                                  <>
-                                    Select
-                                    <ArrowRight className="h-4 w-4 ml-2" />
-                                  </>
-                                )}
-                              </Button>
-                            </div>
+                          <div className={`text-sm ${statusClass(job.status)}`}>
+                            {job.status || 'inconnu'} · {job.progress_percent ?? 0}%
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {products.length > 0 && (
-                    <div className="mt-6 flex justify-between items-center">
-                      <div className="text-sm text-gray-500">
-                        Showing {products.length} products
+                        {(job.error_code || job.error_message) && (
+                          <div className="mt-2 text-sm text-red-700">
+                            {job.error_code ? `${job.error_code} · ` : ''}
+                            {job.error_message || 'Erreur non détaillée'}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFilterChange('page', Math.max(1, (filters.page || 1) - 1))}
-                          disabled={(filters.page || 1) <= 1}
-                        >
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFilterChange('page', (filters.page || 1) + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white p-12 rounded-lg shadow-sm text-center">
-                <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-700 mb-2">No supplier selected</h3>
-                <p className="text-gray-500 mb-4">
-                  {suppliers.length === 0
-                    ? 'Add your first supplier to start importing products'
-                    : 'Select a supplier from the list to view and import products'}
-                </p>
-                <Button onClick={() => setShowAddSupplier(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Supplier
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Add Supplier Modal */}
-      {showAddSupplier && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Add Supplier</h3>
-                <button
-                  onClick={() => setShowAddSupplier(false)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Supplier Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.name}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                    placeholder="e.g., BigBuy Account"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Supplier Type
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.type}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, type: e.target.value as any })}
-                  >
-                    <option value="bigbuy">BigBuy</option>
-                    <option value="eprolo">EPROLO</option>
-                    <option value="cdiscount">Cdiscount</option>
-                    <option value="autods">AutoDS</option>
-                    <option value="spocket">Spocket</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Key
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.apiKey}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, apiKey: e.target.value })}
-                    placeholder="Enter your API key"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Secret (if required)
-                  </label>
-                  <input
-                    type="password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.apiSecret || ''}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, apiSecret: e.target.value })}
-                    placeholder="Enter your API secret"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Base URL (optional)
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.baseUrl}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, baseUrl: e.target.value })}
-                    placeholder={`e.g., https://api.${newSupplier.type}.com`}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Leave empty to use the default URL for the selected supplier
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddSupplier(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddSupplier}
-                  disabled={loading || !newSupplier.name || !newSupplier.apiKey}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Add Supplier
-                </Button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+          )}
+
+          {tab === 'pipeline' && (
+            data.pipelineStates.length === 0 ? (
+              <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
+                Aucun état de pipeline enregistré sur staging.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {data.pipelineStates.map((state) => (
+                  <div key={state.job_id} className="rounded-lg border bg-white p-4">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <div className="font-medium">{state.stage || 'stage inconnu'}</div>
+                        <div className="text-xs text-gray-500">
+                          Job {state.job_id}
+                          {state.source_product_id
+                            ? ` · Produit ${state.source_product_id}`
+                            : ''}
+                        </div>
+                      </div>
+                      <div className="text-sm">
+                        Tentative {state.attempt ?? 0}/{state.max_attempts ?? '—'}
+                      </div>
+                    </div>
+                    <div className="mt-2 grid gap-2 text-sm md:grid-cols-3">
+                      <div>
+                        <span className="text-gray-500">Lease :</span>{' '}
+                        {state.lease_owner || 'aucun'}
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Heartbeat :</span>{' '}
+                        {state.heartbeat_at
+                          ? new Date(state.heartbeat_at).toLocaleString('fr-FR')
+                          : '—'}
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Dead letter :</span>{' '}
+                        {state.dead_lettered_at
+                          ? new Date(state.dead_lettered_at).toLocaleString('fr-FR')
+                          : 'non'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          <div className="text-xs text-gray-500">
+            Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Sources :{' '}
+            {Object.values(data.provenance).join(', ')}. Credentials inclus : non.
+            Mutations Admin Imports : désactivées dans ce lot.
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 };
 
-export default Imports;
+export default AdminImports;
