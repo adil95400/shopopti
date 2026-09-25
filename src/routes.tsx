@@ -71,6 +71,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import UsersAdmin from './pages/admin/Users';
 import AdminAnalytics from './pages/admin/Analytics';
 import Imports from './pages/admin/Imports';
+import AdminSupplierConnectors from './pages/admin/SupplierConnectors';
 
 // Missing modules pages
 import RepricingPage from './pages/repricing';
@@ -174,6 +175,7 @@ const AppRoutes = () => {
                     <Route path="users" element={<UsersAdmin />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="imports" element={<Imports />} />
+                    <Route path="supplier-connectors" element={<AdminSupplierConnectors />} />
                   </Route>
                 </Route>
                 
