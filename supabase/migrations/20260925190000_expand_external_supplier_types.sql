@@ -26,6 +26,9 @@ ALTER TABLE public.external_suppliers
     )
   ) NOT VALID;
 
+ALTER TABLE public.external_suppliers
+  ADD COLUMN IF NOT EXISTS webhook_status text NOT NULL DEFAULT 'not_configured',
+  ADD COLUMN IF NOT EXISTS webhook_last_event_at timestamptz;
 
 -- Harden supplier ownership policies for authenticated callers.
 DROP POLICY IF EXISTS "Users can view their own external suppliers" ON public.external_suppliers;
@@ -203,6 +206,8 @@ GRANT SELECT (
   base_url,
   status,
   last_sync,
+  webhook_status,
+  webhook_last_event_at,
   created_at,
   user_id
 ) ON TABLE public.external_suppliers TO authenticated;
