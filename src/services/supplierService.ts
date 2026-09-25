@@ -1,9 +1,58 @@
 import axios from 'axios';
 
 import { supabase } from '@/lib/supabase';
-import { ExternalSupplier, SupplierProduct, ImportFilter, ImportResult, OrderRequest, OrderResult } from '@/types/supplier';
+import { ExternalSupplier, SupplierSummary, SupplierProduct, ImportFilter, ImportResult, OrderRequest, OrderResult } from '@/types/supplier';
 
 export const supplierService = {
+  async getSupplierSummaries(): Promise<SupplierSummary[]> {
+    try {
+      const { data, error } = await supabase
+        .from('external_suppliers')
+        .select('id,name,type,status,last_sync,created_at')
+        .order('name');
+
+      if (error) throw error;
+
+      return (data || []).map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name,
+        type: supplier.type,
+        status: supplier.status,
+        lastSync: supplier.last_sync ?? undefined,
+        created_at: supplier.created_at,
+      }));
+    } catch (error) {
+      console.error('Error fetching supplier summaries:', error);
+      throw error;
+    }
+  },
+
+  async testConnectionById(supplierId: string): Promise<boolean> {
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
+      const session = (await supabase.auth.getSession()).data.session;
+
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await axios.post(
+        apiUrl,
+        { supplierId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      return response.data?.success === true;
+    } catch (error) {
+      console.error('Error testing supplier connection by id:', error);
+      return false;
+    }
+  },
   async getSuppliers(): Promise<ExternalSupplier[]> {
     try {
       const { data, error } = await supabase
