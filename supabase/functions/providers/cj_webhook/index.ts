@@ -128,7 +128,66 @@ serve(async (req) => {
     return json({ success: false, error: "Webhook event persistence failed" }, 500);
   }
 
-  // The durable event ledger is authoritative. Downstream snapshot/order reconciliation
-  // can process this event asynchronously without forcing CJ to wait beyond 3 seconds.
+  const params =
+    typeof event.params === "object" && event.params !== null
+      ? (event.params as Record<string, unknown>)
+      : {};
+
+  if (eventType === "STOCK") {
+    const stockRows: Array<Record<string, unknown>> = [];
+
+    for (const [variantId, warehousesValue] of Object.entries(params)) {
+      if (!Array.isArray(warehousesValue)) continue;
+      const stock = warehousesValue.reduce((sum, row) => {
+        if (typeof row !== "object" || row === null) return sum;
+        const value = Number((row as Record<string, unknown>).storageNum ?? 0);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0);
+
+      stockRows.push({
+        user_id: supplier.user_id,
+        supplier_id: supplier.id,
+        variant_id: variantId,
+        stock,
+        warehouses: warehousesValue,
+        source: "cj_webhook",
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    if (stockRows.length > 0) {
+      await admin
+        .from("supplier_variant_stock")
+        .upsert(stockRows, { onConflict: "user_id,supplier_id,variant_id" });
+    }
+  }
+
+  if (eventType === "ORDER" || eventType === "PRIVATE_ORDER") {
+    const clientOrderId =
+      typeof params.orderNumber === "string" ? params.orderNumber : null;
+    const remoteOrderId =
+      typeof params.orderId === "string" ? params.orderId : null;
+    const status =
+      typeof params.status === "string" ? params.status : null;
+
+    if (clientOrderId) {
+      await admin
+        .from("supplier_order_dispatches")
+        .update({
+          remote_order_id: remoteOrderId,
+          status: status || "updated",
+          response_payload: event,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("supplier_id", supplier.id)
+        .eq("client_order_id", clientOrderId);
+    }
+  }
+
+  await admin
+    .from("cj_webhook_events")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("message_id", messageId);
+
   return json({ success: true, duplicate: false, messageId });
 });
