@@ -218,6 +218,20 @@ const SubscriptionStatus: React.FC = () => {
                   </div>
                 )}
 
+                {subscription.status === 'paused' && (
+                  <div className="flex items-start rounded-md bg-blue-50 p-4">
+                    <AlertTriangle className="mr-2 mt-0.5 h-5 w-5 text-blue-500" />
+                    <div>
+                      <h4 className="text-sm font-medium text-blue-800">
+                        Abonnement en pause
+                      </h4>
+                      <p className="mt-1 text-sm text-blue-700">
+                        La facturation est en pause. Ouvrez le portail Stripe pour consulter ou reprendre l’abonnement lorsque cette option est disponible.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {subscription.status === 'canceled' && (
                   <div className="flex items-start rounded-md bg-gray-50 p-4">
                     <AlertTriangle className="mr-2 mt-0.5 h-5 w-5 text-gray-500" />
