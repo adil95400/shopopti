@@ -1,32 +1,17 @@
-from fastapi import APIRouter, Request
-import stripe
-import os
-import logging
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 @router.post("/api/stripe/checkout-session")
-async def create_checkout_session(request: Request):
-    body = await request.json()
-    price_id = body.get("price_id")
-    user_id = body.get("user_id")
+async def create_checkout_session():
+    """Deprecated legacy endpoint.
 
-    try:
-        session = stripe.checkout.Session.create(
-            success_url=os.getenv("STRIPE_SUCCESS_URL"),
-            cancel_url=os.getenv("STRIPE_CANCEL_URL"),
-            payment_method_types=["card"],
-            mode="subscription",
-            line_items=[{
-                "price": price_id,
-                "quantity": 1,
-            }],
-            metadata={"user_id": user_id}
-        )
-        return { "url": session.url }
-    except Exception as e:
-        logger.exception("Failed to create Stripe checkout session")
-        return { "error": str(e) }
+    Stripe Checkout is served only by the authenticated Supabase
+    `stripe-checkout` Edge Function, which derives the user from the JWT and
+    resolves Stripe Price IDs from server-side subscription plan data.
+    """
+    raise HTTPException(
+        status_code=410,
+        detail="Legacy Stripe checkout disabled; use the stripe-checkout Edge Function.",
+    )
