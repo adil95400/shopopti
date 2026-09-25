@@ -129,14 +129,28 @@ describe('supplierService server-side supplier contracts', () => {
           state: 'IDF',
           zip: '75001',
           country: 'FR',
+          country_name: 'France',
         },
-        items: [],
+        logisticName: 'CJPacket',
+        items: [{ product_id: 'variant-1', quantity: 1, price: 10 }],
       })
     ).resolves.toMatchObject({
       success: true,
       externalOrderId: 'cj-order-1',
       status: 'CREATED',
     })
+
+    expect(cjSupplierService.createOrder).toHaveBeenCalledWith(
+      'supplier-1',
+      expect.objectContaining({
+        orderNumber: 'order-1',
+        shippingCountryCode: 'FR',
+        shippingCountry: 'France',
+        logisticName: 'CJPacket',
+        payType: 3,
+        products: [{ vid: 'variant-1', quantity: 1 }],
+      })
+    )
   })
 
   it('returns CJ order status without inventing tracking data', async () => {
