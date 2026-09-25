@@ -101,7 +101,7 @@ serve(async (req) => {
   }
 
   const { data: credentials, error: credentialError } = await admin
-    .from("supplier_credentials")
+    .from("supplier_connection_secrets")
     .select("open_id")
     .eq("supplier_id", supplierId)
     .eq("provider", "cj_dropshipping")
