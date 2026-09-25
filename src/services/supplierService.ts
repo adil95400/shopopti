@@ -341,6 +341,7 @@ export const supplierService = {
 
     return {
       success: true,
+      message: 'CJdropshipping order created',
       externalOrderId: String(externalOrderId),
       status: String(data?.orderStatus ?? data?.status ?? 'created'),
     };
