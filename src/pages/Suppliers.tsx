@@ -215,8 +215,19 @@ const Suppliers = () => {
   const plannedConnectorCount = supplierProviders.filter(
     (provider) => provider.stage === 'planned'
   ).length;
+  const cjAvailability =
+    availabilityByProvider.get('cj_dropshipping') ?? 'disabled';
 
   const handleConnectCJ = async () => {
+    if (cjAvailability !== 'enabled') {
+      toast.error(
+        cjAvailability === 'maintenance'
+          ? 'CJdropshipping est temporairement en maintenance'
+          : 'CJdropshipping est actuellement désactivé'
+      );
+      return;
+    }
+
     const name = cjName.trim();
     const apiKey = cjApiKey.trim();
 
@@ -369,9 +380,17 @@ const Suppliers = () => {
               </p>
             </div>
 
-            <Button onClick={() => setShowConnectCJ(true)} className="gap-2">
+            <Button
+              onClick={() => setShowConnectCJ(true)}
+              className="gap-2"
+              disabled={cjAvailability !== 'enabled'}
+            >
               <PlugZap className="h-4 w-4" />
-              Connecter CJdropshipping
+              {cjAvailability === 'maintenance'
+                ? 'CJdropshipping en maintenance'
+                : cjAvailability === 'disabled'
+                  ? 'CJdropshipping désactivé'
+                  : 'Connecter CJdropshipping'}
             </Button>
           </div>
 
