@@ -21,6 +21,8 @@ export interface SupplierSummary {
   type: SupplierProviderType;
   status: 'active' | 'inactive' | 'error';
   lastSync?: string;
+  webhookStatus?: 'not_configured' | 'enabled' | 'error';
+  webhookLastEventAt?: string;
   created_at: string;
 }
 
