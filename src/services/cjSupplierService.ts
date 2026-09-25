@@ -12,7 +12,9 @@ type CjAction =
   | 'order_detail'
   | 'balance'
   | 'order_pay'
-  | 'tracking';
+  | 'tracking'
+  | 'webhook_set'
+  | 'webhook_subscribe_products';
 
 interface CjRequest {
   supplierId: string;
@@ -111,5 +113,13 @@ export const cjSupplierService = {
 
   getTracking(supplierId: string, params: Record<string, string>) {
     return invoke({ supplierId, action: 'tracking', params });
+  },
+
+  configureWebhooks(supplierId: string) {
+    return invoke({ supplierId, action: 'webhook_set' });
+  },
+
+  subscribeWebhookProducts(supplierId: string, productIds: string[]) {
+    return invoke({ supplierId, action: 'webhook_subscribe_products', payload: { productIds } });
   },
 };
