@@ -101,7 +101,6 @@ serve(async (req) => {
   }
 
   const { data: credentials, error: credentialError } = await admin
-    .schema("private")
     .from("supplier_credentials")
     .select("open_id")
     .eq("supplier_id", supplierId)
