@@ -75,5 +75,7 @@ GRANT EXECUTE ON FUNCTION public.process_automation_trigger(uuid, jsonb) TO serv
 REVOKE EXECUTE ON FUNCTION public.secure_newsletter_signup(text, text, inet) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.secure_newsletter_signup(text, text, inet) TO service_role;
 
--- Intentionally public endpoint retained:
--- public.public_newsletter_signup(text)
+-- Legacy public newsletter wrapper is currently non-functional on staging because
+-- no newsletter relation exists. Fail closed until a real persistence path is implemented.
+REVOKE EXECUTE ON FUNCTION public.public_newsletter_signup(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.public_newsletter_signup(text) TO service_role;
