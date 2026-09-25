@@ -44,6 +44,6 @@ jobs:
       - name: 📘 Générer docs API
         run: npm run docs:api
 
-      - name: ✅ Placeholder tests (à compléter)
-        run: echo "✔️ Tests ici (unitaires, e2e, etc.)"
+      - name: 🔐 Admin role guard contract
+        run: node scripts/check-admin-role-guard.mjs
 

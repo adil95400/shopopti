@@ -116,6 +116,7 @@ const sections = [
   },
   {
     title: 'Administration',
+    adminOnly: true,
     links: [
       { path: '/app/admin/dashboard', label: 'Dashboard Admin', icon: <LayoutDashboard size={18} /> },
       { path: '/app/admin/users', label: 'Utilisateurs', icon: <Building size={18} /> },
@@ -129,9 +130,9 @@ const sections = [
 ];
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
-  const { isAdmin } = useRole();
+  const { isAdmin, loading: roleLoading } = useRole();
   const visibleSections = sections.filter(
-    section => section.title !== 'Administration' || isAdmin
+    section => !('adminOnly' in section) || !section.adminOnly || (!roleLoading && isAdmin)
   );
 
   return (
