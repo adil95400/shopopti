@@ -16,6 +16,46 @@ const json = (body: Record<string, unknown>, status = 200) =>
 const normalizeBaseUrl = (value: string | null | undefined) =>
   (value || "https://developers.cjdropshipping.com/api2.0/v1").replace(/\/$/, "");
 
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchWithRetry = async (
+  input: string,
+  init: RequestInit,
+  options: { maxAttempts?: number; retryable?: boolean } = {}
+) => {
+  const maxAttempts = options.maxAttempts ?? 3;
+  const retryable = options.retryable ?? false;
+  let lastResponse: Response | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(input, init);
+      lastResponse = response;
+
+      const shouldRetry =
+        retryable &&
+        attempt < maxAttempts &&
+        (response.status === 429 || response.status >= 500);
+
+      if (!shouldRetry) return response;
+
+      const retryAfter = Number(response.headers.get("retry-after"));
+      const delayMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 300 * 2 ** (attempt - 1);
+
+      await sleep(Math.min(delayMs, 5000));
+    } catch (error) {
+      if (!retryable || attempt >= maxAttempts) throw error;
+      await sleep(Math.min(300 * 2 ** (attempt - 1), 5000));
+    }
+  }
+
+  if (lastResponse) return lastResponse;
+  throw new Error("CJ request failed before receiving a response");
+};
+
 const parsePrice = (value: unknown): number => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value !== "string") return 0;
@@ -162,10 +202,10 @@ serve(async (req) => {
     };
 
     if (action === "categories") {
-      const response = await fetch(`${baseUrl}/product/getCategory`, {
+      const response = await fetchWithRetry(`${baseUrl}/product/getCategory`, {
         method: "GET",
         headers: cjHeaders,
-      });
+      }, { retryable: true });
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true) {
@@ -252,10 +292,10 @@ serve(async (req) => {
       if (filters.minPrice != null) params.set("startSellPrice", String(filters.minPrice));
       if (filters.maxPrice != null) params.set("endSellPrice", String(filters.maxPrice));
 
-      const response = await fetch(`${baseUrl}/product/listV2?${params.toString()}`, {
+      const response = await fetchWithRetry(`${baseUrl}/product/listV2?${params.toString()}`, {
         method: "GET",
         headers: cjHeaders,
-      });
+      }, { retryable: true });
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true) {
@@ -294,11 +334,11 @@ serve(async (req) => {
         return json({ success: false, error: "productId is required" }, 400);
       }
 
-      const response = await fetch(`${baseUrl}/product/productDetail/query`, {
+      const response = await fetchWithRetry(`${baseUrl}/product/productDetail/query`, {
         method: "POST",
         headers: { ...cjHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({ id: productId }),
-      });
+      }, { retryable: true });
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true || !payload?.data) {
@@ -371,9 +411,10 @@ serve(async (req) => {
       if (productSku) params.set("productSku", String(productSku));
       if (body?.countryCode) params.set("countryCode", String(body.countryCode));
 
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `${baseUrl}/product/variant/query?${params.toString()}`,
-        { method: "GET", headers: cjHeaders }
+        { method: "GET", headers: cjHeaders },
+        { retryable: true }
       );
 
       const payload = await response.json().catch(() => null);
@@ -406,9 +447,10 @@ serve(async (req) => {
         return json({ success: false, error: "variantId is required" }, 400);
       }
 
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `${baseUrl}/product/stock/queryByVid?vid=${encodeURIComponent(variantId)}`,
-        { method: "GET", headers: cjHeaders }
+        { method: "GET", headers: cjHeaders },
+        { retryable: true }
       );
 
       const payload = await response.json().catch(() => null);
@@ -560,11 +602,11 @@ serve(async (req) => {
 
       for (const externalId of productIds) {
         try {
-          const response = await fetch(`${baseUrl}/product/productDetail/query`, {
+          const response = await fetchWithRetry(`${baseUrl}/product/productDetail/query`, {
             method: "POST",
             headers: { ...cjHeaders, "Content-Type": "application/json" },
             body: JSON.stringify({ id: externalId }),
-          });
+          }, { retryable: true });
 
           const payload = await response.json().catch(() => null);
           if (!response.ok || payload?.result !== true || !payload?.data) {
@@ -669,11 +711,11 @@ serve(async (req) => {
         return json({ success: false, error: "payload is required" }, 400);
       }
 
-      const response = await fetch(`${baseUrl}/logistic/freightCalculate`, {
+      const response = await fetchWithRetry(`${baseUrl}/logistic/freightCalculate`, {
         method: "POST",
         headers: { ...cjHeaders, "Content-Type": "application/json" },
         body: JSON.stringify(payloadInput),
-      });
+      }, { retryable: true });
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true) {
@@ -917,10 +959,10 @@ serve(async (req) => {
             : "shopping/pay/getBalance";
 
       const suffix = params.toString() ? `?${params.toString()}` : "";
-      const response = await fetch(`${baseUrl}/${endpoint}${suffix}`, {
+      const response = await fetchWithRetry(`${baseUrl}/${endpoint}${suffix}`, {
         method: "GET",
         headers: cjHeaders,
-      });
+      }, { retryable: true });
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.result !== true) {
