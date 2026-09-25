@@ -171,11 +171,23 @@ serve(async (req) => {
 
   if (eventType === "ORDER" || eventType === "PRIVATE_ORDER") {
     const clientOrderId =
-      typeof params.orderNumber === "string" ? params.orderNumber : null;
+      typeof params.orderNumber === "string"
+        ? params.orderNumber
+        : typeof params.orderNum === "string"
+          ? params.orderNum
+          : null;
     const remoteOrderId =
-      typeof params.orderId === "string" ? params.orderId : null;
+      typeof params.cjOrderId === "string"
+        ? params.cjOrderId
+        : typeof params.orderId === "string"
+          ? params.orderId
+          : null;
     const status =
-      typeof params.status === "string" ? params.status : null;
+      typeof params.orderStatus === "string"
+        ? params.orderStatus
+        : typeof params.status === "string"
+          ? params.status
+          : null;
 
     if (clientOrderId) {
       await admin
@@ -183,6 +195,29 @@ serve(async (req) => {
         .update({
           remote_order_id: remoteOrderId,
           status: status || "updated",
+          response_payload: event,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("supplier_id", supplier.id)
+        .eq("client_order_id", clientOrderId);
+    }
+  }
+
+  if (eventType === "LOGISTIC") {
+    const storeOrderNumbers = Array.isArray(params.storeOrderNumbers)
+      ? params.storeOrderNumbers.filter((value): value is string => typeof value === "string")
+      : [];
+    const remoteOrderId =
+      typeof params.orderId === "string" ? params.orderId : null;
+    const trackingNumber =
+      typeof params.trackingNumber === "string" ? params.trackingNumber : null;
+
+    for (const clientOrderId of storeOrderNumbers) {
+      await admin
+        .from("supplier_order_dispatches")
+        .update({
+          remote_order_id: remoteOrderId,
+          status: trackingNumber ? "shipped" : "logistics_updated",
           response_payload: event,
           updated_at: new Date().toISOString(),
         })
