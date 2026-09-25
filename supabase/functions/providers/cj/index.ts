@@ -14,22 +14,32 @@ const json = (body: Record<string, unknown>, status = 200) =>
   });
 
 const allowedActions = new Set([
+  "categories",
   "products",
+  "product_detail",
   "variants",
   "stock",
   "freight",
   "order_create",
+  "order_confirm",
   "order_detail",
+  "balance",
+  "order_pay",
   "tracking",
 ]);
 
 const routes: Record<string, { method: "GET" | "POST"; path: string }> = {
+  categories: { method: "GET", path: "/product/getCategory" },
   products: { method: "GET", path: "/product/listV2" },
+  product_detail: { method: "GET", path: "/product/query" },
   variants: { method: "GET", path: "/product/variant/query" },
   stock: { method: "GET", path: "/product/stock/queryByVid" },
   freight: { method: "POST", path: "/logistic/freightCalculate" },
   order_create: { method: "POST", path: "/shopping/order/createOrderV3" },
+  order_confirm: { method: "POST", path: "/shopping/order/confirmOrder" },
   order_detail: { method: "GET", path: "/shopping/order/getOrderDetail" },
+  balance: { method: "GET", path: "/shopping/pay/getBalance" },
+  order_pay: { method: "POST", path: "/shopping/pay/payBalanceV2" },
   tracking: { method: "GET", path: "/logistic/trackInfo" },
 };
 
