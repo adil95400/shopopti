@@ -474,8 +474,9 @@ serve(async (req) => {
     }
 
     if (action === "webhook_subscribe_products") {
-      const productIds = Array.isArray(body?.productIds)
-        ? body.productIds.filter((value: unknown) => typeof value === "string" && value.length > 0)
+      const requestedProductIds = body?.payload?.productIds ?? body?.productIds;
+      const productIds = Array.isArray(requestedProductIds)
+        ? requestedProductIds.filter((value: unknown) => typeof value === "string" && value.length > 0)
         : [];
 
       if (productIds.length === 0 || productIds.length > 100) {
