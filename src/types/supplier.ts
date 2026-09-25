@@ -114,5 +114,8 @@ export interface OrderResult {
   success: boolean;
   message: string;
   externalOrderId?: string;
+  status?: string;
+  trackingNumber?: string;
+  estimatedDelivery?: string;
   errors?: string[];
 }
