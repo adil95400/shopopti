@@ -88,20 +88,20 @@ export const supplierService = {
 
   async createSupplier(supplier: Omit<ExternalSupplier, 'id' | 'created_at'>): Promise<ExternalSupplier> {
     try {
-      // Validate the supplier connection before saving
-      await this.testConnection(supplier);
-      
       const { data, error } = await supabase
         .from('external_suppliers')
         .insert([{
           ...supplier,
-          status: 'active',
+          status: 'inactive',
           created_at: new Date().toISOString()
         }])
         .select()
         .single();
-      
+
       if (error) throw error;
+
+      // A stored credential is configuration, not proof of a working remote connection.
+      // New suppliers remain inactive until a provider-specific server probe verifies them.
       return data;
     } catch (error) {
       console.error('Error creating supplier:', error);
