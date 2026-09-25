@@ -434,6 +434,86 @@ serve(async (req) => {
     }
 
 
+    if (action === "webhook_set") {
+      const callbackUrl = `${supabaseUrl}/functions/v1/providers/cj_webhook`;
+      const setting = {
+        product: { type: "ENABLE", callbackUrls: [callbackUrl] },
+        stock: { type: "ENABLE", callbackUrls: [callbackUrl] },
+        order: { type: "ENABLE", callbackUrls: [callbackUrl] },
+        logistics: { type: "ENABLE", callbackUrls: [callbackUrl] },
+      };
+
+      const response = await fetch(`${baseUrl}/webhook/set`, {
+        method: "POST",
+        headers: { ...cjHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(setting),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        return json(
+          {
+            success: false,
+            error: payload?.message || "CJ webhook configuration failed",
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      return json({
+        success: true,
+        callbackUrl,
+        data: payload?.data ?? true,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint: "webhook/set",
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    if (action === "webhook_subscribe_products") {
+      const productIds = Array.isArray(body?.productIds)
+        ? body.productIds.filter((value: unknown) => typeof value === "string" && value.length > 0)
+        : [];
+
+      if (productIds.length === 0 || productIds.length > 100) {
+        return json(
+          { success: false, error: "productIds must contain between 1 and 100 products" },
+          400
+        );
+      }
+
+      const response = await fetch(`${baseUrl}/webhook/product/subscribe`, {
+        method: "POST",
+        headers: { ...cjHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds, subscribeAll: false }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        return json(
+          {
+            success: false,
+            error: payload?.message || "CJ product webhook subscription failed",
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      return json({
+        success: true,
+        data: payload?.data,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint: "webhook/product/subscribe",
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
     if (action === "snapshot_import") {
       const productIds = Array.isArray(body?.productIds)
         ? body.productIds.filter((value: unknown) => typeof value === "string" && value.length > 0)
