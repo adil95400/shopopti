@@ -671,18 +671,147 @@ serve(async (req) => {
       });
     }
 
-    if (action === "order_create" || action === "order_confirm" || action === "order_pay") {
+    if (action === "order_create") {
+      const payloadInput = body?.payload;
+      if (!payloadInput || typeof payloadInput !== "object") {
+        return json({ success: false, error: "payload is required" }, 400);
+      }
+
+      const clientOrderId =
+        typeof payloadInput.orderNumber === "string" ? payloadInput.orderNumber.trim() : "";
+      if (!clientOrderId) {
+        return json({ success: false, error: "orderNumber is required" }, 400);
+      }
+
+      const { data: existing } = await supabase
+        .from("supplier_order_dispatches")
+        .select("id,remote_order_id,status,response_payload")
+        .eq("supplier_id", supplierId)
+        .eq("client_order_id", clientOrderId)
+        .maybeSingle();
+
+      if (existing?.remote_order_id) {
+        return json({
+          success: true,
+          replayed: true,
+          data: existing.response_payload,
+          source: {
+            provider: "cj_dropshipping",
+            endpoint: "supplier_order_dispatches",
+            fetchedAt: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (existing?.status === "pending") {
+        return json(
+          { success: false, error: "This CJ order is already being dispatched" },
+          409
+        );
+      }
+
+      if (!existing) {
+        const { error: reserveError } = await supabase
+          .from("supplier_order_dispatches")
+          .insert({
+            user_id: user.id,
+            supplier_id: supplierId,
+            provider: "cj_dropshipping",
+            client_order_id: clientOrderId,
+            status: "pending",
+            request_payload: payloadInput,
+          });
+
+        if (reserveError) {
+          if (reserveError.code === "23505") {
+            return json(
+              { success: false, error: "This CJ order is already being dispatched" },
+              409
+            );
+          }
+          return json({ success: false, error: "Order reservation failed" }, 500);
+        }
+      } else {
+        await supabase
+          .from("supplier_order_dispatches")
+          .update({
+            status: "pending",
+            request_payload: payloadInput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+      }
+
+      const endpoint = "shopping/order/createOrderV3";
+      const response = await fetch(`${baseUrl}/${endpoint}`, {
+        method: "POST",
+        headers: { ...cjHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(payloadInput),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        await supabase
+          .from("supplier_order_dispatches")
+          .update({
+            status: "failed",
+            response_payload: payload,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("supplier_id", supplierId)
+          .eq("client_order_id", clientOrderId);
+
+        return json(
+          {
+            success: false,
+            error: payload?.message || "CJ order_create failed",
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      const remoteData = payload?.data ?? {};
+      const remoteOrderId =
+        remoteData?.orderId ??
+        remoteData?.cjOrderId ??
+        remoteData?.orderNum ??
+        remoteData?.cjOrderCode ??
+        null;
+
+      await supabase
+        .from("supplier_order_dispatches")
+        .update({
+          remote_order_id: remoteOrderId ? String(remoteOrderId) : null,
+          status: String(remoteData?.orderStatus ?? "created"),
+          response_payload: payload,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("supplier_id", supplierId)
+        .eq("client_order_id", clientOrderId);
+
+      return json({
+        success: true,
+        replayed: false,
+        data: payload,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    if (action === "order_confirm" || action === "order_pay") {
       const payloadInput = body?.payload;
       if (!payloadInput || typeof payloadInput !== "object") {
         return json({ success: false, error: "payload is required" }, 400);
       }
 
       const endpoint =
-        action === "order_create"
-          ? "shopping/order/createOrderV3"
-          : action === "order_confirm"
-            ? "shopping/order/confirmOrder"
-            : "shopping/pay/payBalanceV2";
+        action === "order_confirm"
+          ? "shopping/order/confirmOrder"
+          : "shopping/pay/payBalanceV2";
 
       const response = await fetch(`${baseUrl}/${endpoint}`, {
         method: "POST",
