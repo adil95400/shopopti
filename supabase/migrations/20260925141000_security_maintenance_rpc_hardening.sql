@@ -1,5 +1,6 @@
 -- P0 security maintenance RPC hardening.
 -- These functions operate on global security/maintenance state and are not user APIs.
+-- Current repository search found no browser callers for this targeted set.
 -- Keep browser roles out; preserve trusted service-side execution.
 
 REVOKE EXECUTE ON FUNCTION public.check_security_configuration() FROM PUBLIC, anon, authenticated;
