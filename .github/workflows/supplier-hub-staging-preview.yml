@@ -1,0 +1,66 @@
+name: Supplier Hub Staging Preview
+
+on:
+  push:
+    branches:
+      - agent/supplier-hub-p0
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supplier-hub-staging-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build staging preview
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_E4vqxmv9hxjqW4lKpUmQdSIo
+      VERCEL_PROJECT_ID: prj_vongMEYioZ4JYkdksxyp8JC9wpDP
+      VITE_SUPABASE_URL: https://oskgbfpztggzunazongx.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable__t1vqYVhdlZsLl3GAnfQVQ_UeEVSruo
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout #201 branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Link Vercel project
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+          npx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build with staging Supabase
+        run: npx vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy preview
+        id: deploy
+        run: |
+          preview_url="$(npx vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Supplier Hub staging preview"
+            echo
+            echo "$preview_url"
+            echo
+            echo "Supabase: shopopti-staging (oskgbfpztggzunazongx)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail closed without preview URL
+        if: ${{ steps.deploy.outputs.preview_url == '' }}
+        run: |
+          echo "Preview URL was not returned by Vercel."
+          exit 1
