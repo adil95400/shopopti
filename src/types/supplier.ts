@@ -100,9 +100,15 @@ export interface OrderRequest {
     state: string;
     zip: string;
     country: string;
+    country_name?: string;
     phone?: string;
     email?: string;
   };
+  logisticName?: string;
+  fromCountryCode?: string;
+  payType?: 2 | 3;
+  orderFlow?: 1 | 2;
+  platform?: string;
   items: {
     product_id: string;
     quantity: number;
