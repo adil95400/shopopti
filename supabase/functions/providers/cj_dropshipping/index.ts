@@ -717,7 +717,10 @@ serve(async (req) => {
         .eq("client_order_id", clientOrderId)
         .maybeSingle();
 
-      if (existing?.remote_order_id) {
+      if (
+        existing?.remote_order_id ||
+        (existing?.response_payload && existing?.status !== "failed" && existing?.status !== "unknown")
+      ) {
         return json({
           success: true,
           replayed: true,
@@ -730,9 +733,15 @@ serve(async (req) => {
         });
       }
 
-      if (existing?.status === "pending") {
+      if (existing?.status === "pending" || existing?.status === "unknown") {
         return json(
-          { success: false, error: "This CJ order is already being dispatched" },
+          {
+            success: false,
+            error:
+              existing.status === "unknown"
+                ? "Previous CJ dispatch outcome is unknown; reconcile the order before retrying"
+                : "This CJ order is already being dispatched",
+          },
           409
         );
       }
@@ -770,18 +779,39 @@ serve(async (req) => {
       }
 
       const endpoint = "shopping/order/createOrderV3";
-      const response = await fetch(`${baseUrl}/${endpoint}`, {
-        method: "POST",
-        headers: { ...cjHeaders, "Content-Type": "application/json" },
-        body: JSON.stringify(payloadInput),
-      });
-
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || payload?.result !== true) {
+      let response: Response;
+      try {
+        response = await fetch(`${baseUrl}/${endpoint}`, {
+          method: "POST",
+          headers: { ...cjHeaders, "Content-Type": "application/json" },
+          body: JSON.stringify(payloadInput),
+        });
+      } catch {
         await admin
           .from("supplier_order_dispatches")
           .update({
-            status: "failed",
+            status: "unknown",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("supplier_id", supplierId)
+          .eq("client_order_id", clientOrderId);
+
+        return json(
+          {
+            success: false,
+            error: "CJ order dispatch outcome is unknown; automatic retry is blocked",
+          },
+          502
+        );
+      }
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        const ambiguous = response.status >= 500 || payload === null;
+        await admin
+          .from("supplier_order_dispatches")
+          .update({
+            status: ambiguous ? "unknown" : "failed",
             response_payload: payload,
             updated_at: new Date().toISOString(),
           })
@@ -791,7 +821,9 @@ serve(async (req) => {
         return json(
           {
             success: false,
-            error: payload?.message || "CJ order_create failed",
+            error: ambiguous
+              ? "CJ order dispatch outcome is unknown; automatic retry is blocked"
+              : payload?.message || "CJ order_create failed",
             requestId: payload?.requestId,
           },
           response.status >= 400 ? response.status : 502
