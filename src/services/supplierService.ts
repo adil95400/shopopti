@@ -9,7 +9,7 @@ export const supplierService = {
     try {
       const { data, error } = await supabase
         .from('external_suppliers')
-        .select('id,name,type,status,last_sync,created_at')
+        .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
         .neq('type', 'autods')
         .order('name');
 
@@ -21,6 +21,8 @@ export const supplierService = {
         type: supplier.type,
         status: supplier.status,
         lastSync: supplier.last_sync ?? undefined,
+        webhookStatus: supplier.webhook_status ?? 'not_configured',
+        webhookLastEventAt: supplier.webhook_last_event_at ?? undefined,
         created_at: supplier.created_at,
       }));
     } catch (error) {
@@ -32,7 +34,7 @@ export const supplierService = {
   async getSupplierSummaryById(id: string): Promise<SupplierSummary> {
     const { data, error } = await supabase
       .from('external_suppliers')
-      .select('id,name,type,status,last_sync,created_at')
+      .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
       .eq('id', id)
       .neq('type', 'autods')
       .single();
@@ -45,6 +47,8 @@ export const supplierService = {
       type: data.type,
       status: data.status,
       lastSync: data.last_sync ?? undefined,
+      webhookStatus: data.webhook_status ?? 'not_configured',
+      webhookLastEventAt: data.webhook_last_event_at ?? undefined,
       created_at: data.created_at,
     };
   },
@@ -91,7 +95,7 @@ export const supplierService = {
           user_id: supplier.user_id,
           created_at: new Date().toISOString(),
         }])
-        .select('id,name,type,status,last_sync,created_at')
+        .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
         .single();
 
       if (error) throw error;
@@ -126,7 +130,7 @@ export const supplierService = {
         .from('external_suppliers')
         .update(dbUpdates)
         .eq('id', id)
-        .select('id,name,type,status,last_sync,created_at')
+        .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
         .single();
 
       if (error) throw error;
