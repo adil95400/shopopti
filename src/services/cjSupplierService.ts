@@ -21,6 +21,11 @@ interface CjRequest {
   action: CjAction;
   params?: Record<string, string | number | boolean | undefined>;
   payload?: Record<string, unknown>;
+  filters?: Record<string, string | number | boolean | undefined>;
+  productId?: string;
+  productSku?: string;
+  countryCode?: string;
+  variantId?: string;
 }
 
 interface CjResponse<T = unknown> {
@@ -72,19 +77,28 @@ export const cjSupplierService = {
       maxPrice?: number;
     } = {}
   ) {
-    return invoke({ supplierId, action: 'search', params: filters });
+    return invoke({ supplierId, action: 'search', filters });
   },
 
-  getProductDetail(supplierId: string, params: { pid?: string; productSku?: string; variantSku?: string }) {
-    return invoke({ supplierId, action: 'detail', params });
+  getProductDetail(supplierId: string, productId: string) {
+    return invoke({ supplierId, action: 'detail', productId });
   },
 
-  getVariants(supplierId: string, params: { pid?: string; productSku?: string; variantSku?: string; countryCode?: string }) {
-    return invoke({ supplierId, action: 'variants', params });
+  getVariants(
+    supplierId: string,
+    params: { productId?: string; productSku?: string; countryCode?: string }
+  ) {
+    return invoke({
+      supplierId,
+      action: 'variants',
+      productId: params.productId,
+      productSku: params.productSku,
+      countryCode: params.countryCode,
+    });
   },
 
-  getStock(supplierId: string, vid: string) {
-    return invoke({ supplierId, action: 'stock', params: { vid } });
+  getStock(supplierId: string, variantId: string) {
+    return invoke({ supplierId, action: 'stock', variantId });
   },
 
   calculateFreight(supplierId: string, payload: Record<string, unknown>) {
