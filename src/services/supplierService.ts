@@ -9,6 +9,7 @@ export const supplierService = {
       const { data, error } = await supabase
         .from('external_suppliers')
         .select('id,name,type,status,last_sync,created_at')
+        .neq('type', 'autods')
         .order('name');
 
       if (error) throw error;
@@ -58,6 +59,7 @@ export const supplierService = {
       const { data, error } = await supabase
         .from('external_suppliers')
         .select('*')
+        .neq('type', 'autods')
         .order('name');
       
       if (error) throw error;
