@@ -121,7 +121,8 @@ const sections = [
       { path: '/app/admin/users', label: 'Utilisateurs', icon: <Building size={18} /> },
       { path: '/app/admin/analytics', label: 'Analytics Admin', icon: <BarChart3 size={18} /> },
       { path: '/app/admin/imports', label: 'Imports', icon: <Import size={18} /> },
-      { path: '/app/admin/operations', label: 'Admin Ops', icon: <Activity size={18} /> }
+      { path: '/app/admin/operations', label: 'Admin Ops', icon: <Activity size={18} /> },
+      { path: '/app/admin/billing', label: 'Billing', icon: <CreditCard size={18} /> }
     ]
   }
 ];
