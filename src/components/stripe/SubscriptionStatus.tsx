@@ -203,6 +203,34 @@ const SubscriptionStatus: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {subscription.status === 'unpaid' && (
+                  <div className="flex items-start rounded-md bg-red-50 p-4">
+                    <AlertTriangle className="mr-2 mt-0.5 h-5 w-5 text-red-500" />
+                    <div>
+                      <h4 className="text-sm font-medium text-red-800">
+                        Paiement non réglé
+                      </h4>
+                      <p className="mt-1 text-sm text-red-700">
+                        La facturation nécessite une action. Ouvrez le portail Stripe pour vérifier vos factures et votre moyen de paiement.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {subscription.status === 'canceled' && (
+                  <div className="flex items-start rounded-md bg-gray-50 p-4">
+                    <AlertTriangle className="mr-2 mt-0.5 h-5 w-5 text-gray-500" />
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-800">
+                        Abonnement résilié
+                      </h4>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Cet abonnement n’est plus actif. Vous pouvez comparer les plans disponibles pour vous réabonner.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
