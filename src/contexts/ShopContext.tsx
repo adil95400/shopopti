@@ -169,7 +169,7 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Utilisateur non authentifié');
       }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supplier-test`;
 
       const response = await axios.post(apiUrl, {
         type: 'etsy',
@@ -227,7 +227,7 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Utilisateur non authentifié');
       }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supplier-test`;
 
       const response = await axios.post(apiUrl, {
         type: 'amazon',
@@ -289,7 +289,7 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Utilisateur non authentifié');
       }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supplier-test`;
 
       const response = await axios.post(apiUrl, {
         type: 'tiktok',
@@ -374,7 +374,7 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Utilisateur non authentifié');
       }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supplier-test`;
 
       await axios.post(apiUrl, {
         type: connection.platform,
