@@ -495,13 +495,18 @@ const Imports: React.FC = () => {
                     
                     {selectedProducts.length > 0 && (
                       <div className="flex space-x-2">
-                        <Button variant="outline" onClick={handleImportFromSupplier} disabled={importLoading}>
+                        <Button
+                          variant="outline"
+                          onClick={handleImportFromSupplier}
+                          disabled
+                          title="Import désactivé tant que le pipeline canonique n'accepte pas les snapshots fournisseurs vérifiés"
+                        >
                           {importLoading ? (
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           ) : (
                             <Download className="h-4 w-4 mr-2" />
                           )}
-                          Import to Database
+                          Import pipeline à connecter
                         </Button>
                         <Button onClick={handleImportToShopify} disabled={importLoading}>
                           {importLoading ? (
@@ -581,13 +586,19 @@ const Imports: React.FC = () => {
                             
                             <div className="mt-2 flex justify-between">
                               <div>
-                                <p className="text-lg font-bold text-primary">${product.price.toFixed(2)}</p>
+                                <p className="text-lg font-bold text-primary">
+                                  {product.metadata?.priceVerified === false
+                                    ? 'Prix non vérifié'
+                                    : `${product.price.toFixed(2)}`}
+                                </p>
                                 {product.msrp && product.msrp > product.price && (
                                   <p className="text-sm text-gray-500 line-through">${product.msrp.toFixed(2)}</p>
                                 )}
                               </div>
                               <div className="text-right">
-                                <p className="text-sm text-gray-600">Stock: {product.stock}</p>
+                                <p className="text-sm text-gray-600">
+                                  Stock: {product.metadata?.stockVerified === false ? 'Non vérifié' : product.stock}
+                                </p>
                                 {product.sku && (
                                   <p className="text-xs text-gray-500">SKU: {product.sku}</p>
                                 )}
