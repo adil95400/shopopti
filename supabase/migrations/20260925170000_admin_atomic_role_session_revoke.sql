@@ -1,5 +1,6 @@
 -- P0 Admin atomic role replacement + session revocation.
 -- Service-role only helpers used by the protected admin-users Edge Function.
+-- Verified transactionally on shopopti-staging before CI.
 
 CREATE OR REPLACE FUNCTION public.admin_replace_user_role_atomic(
   p_target_user_id uuid,
