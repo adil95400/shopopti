@@ -47,7 +47,7 @@ export const supplierProviders: SupplierProviderDefinition[] = [
     region: 'Europe',
     capabilities: {
       catalog: 'documented',
-      import: 'planned',
+      import: 'implemented',
       price: 'documented',
       stock: 'documented',
       variants: 'documented',
