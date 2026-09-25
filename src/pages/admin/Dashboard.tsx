@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart3, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/context/RoleContext';
@@ -64,6 +64,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline">Exporter les données</Button>
+          <Button variant="outline" asChild><Link to="/app/admin/supplier-connectors">Connecteurs fournisseurs</Link></Button>
           <Button>Paramètres</Button>
         </div>
       </div>
