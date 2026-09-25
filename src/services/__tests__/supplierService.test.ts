@@ -44,6 +44,40 @@ describe('supplierService server-side supplier contracts', () => {
     vi.mocked(cjSupplierService.getOrderDetail).mockReset()
   })
 
+  it('creates CJ supplier through the server-only credential endpoint', async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({
+      data: {
+        success: true,
+        supplier: {
+          id: 'supplier-1',
+          name: 'CJ account',
+          type: 'cj_dropshipping',
+          status: 'active',
+          created_at: '2026-09-25T00:00:00.000Z',
+        },
+      },
+    })
+
+    await supplierService.createSupplier({
+      name: 'CJ account',
+      type: 'cj_dropshipping',
+      apiKey: 'cj-api-key',
+      apiSecret: 'cj-open-id',
+      baseUrl: '',
+      status: 'inactive',
+      user_id: 'user-1',
+    })
+
+    const [url, payload, config] = vi.mocked(axios.post).mock.calls[0]
+    expect(url).toContain('/functions/v1/providers/cj_connect')
+    expect(payload).toEqual({
+      name: 'CJ account',
+      apiKey: 'cj-api-key',
+      openId: 'cj-open-id',
+    })
+    expect(config?.headers?.Authorization).toBe('Bearer session-token')
+  })
+
   it('loads CJ products without sending supplier credentials from the browser', async () => {
     vi.mocked(axios.post).mockResolvedValueOnce({
       data: { products: [] },
