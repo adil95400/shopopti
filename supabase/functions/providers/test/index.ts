@@ -1,5 +1,6 @@
 import { serve } from "npm:@supabase/functions-js";
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
+import { getValidCjAccessToken } from "../../_shared/cjCredentials.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,31 +86,28 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Supplier not found" }, 404);
     }
 
-    const { data: credentials, error: credentialError } = await admin
-      .from("external_suppliers")
-      .select("api_key")
-      .eq("id", supplierId)
-      .single();
-
-    if (credentialError || !credentials?.api_key) {
-      return jsonResponse(
-        {
-          success: false,
-          supplierId,
-          provider: supplier.type,
-          status: "not_configured",
-          error: "Supplier credential is missing",
-        },
-        422
-      );
-    }
-
     if (supplier.type === "cj_dropshipping") {
+      let accessToken: string;
+      try {
+        accessToken = await getValidCjAccessToken(admin, supplierId);
+      } catch (error) {
+        return jsonResponse(
+          {
+            success: false,
+            supplierId,
+            provider: supplier.type,
+            status: "not_configured",
+            error: error instanceof Error ? error.message : "Supplier credential is missing",
+          },
+          422
+        );
+      }
+
       const baseUrl = normalizeBaseUrl(supplier.base_url);
       const response = await fetch(`${baseUrl}/setting/get`, {
         method: "GET",
         headers: {
-          "CJ-Access-Token": credentials.api_key,
+          "CJ-Access-Token": accessToken,
           Accept: "application/json",
         },
       });
