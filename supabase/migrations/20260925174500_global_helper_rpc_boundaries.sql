@@ -1,6 +1,7 @@
 -- P0 global helper RPC boundary hardening.
 -- These SECURITY DEFINER helpers read shared/global tables and have no current repo callers.
 -- Keep them available only to trusted server-side execution.
+-- Verified on shopopti-staging before CI.
 
 REVOKE EXECUTE ON FUNCTION public.generate_bulk_order_number()
   FROM PUBLIC, anon, authenticated;
