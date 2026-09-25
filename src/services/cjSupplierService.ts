@@ -42,7 +42,7 @@ const invoke = async <T = unknown>(request: CjRequest): Promise<CjResponse<T>> =
   if (!session?.access_token) throw new Error('Authentication required');
 
   const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`,
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`,
     {
       method: 'POST',
       headers: {
