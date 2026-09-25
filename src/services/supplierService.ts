@@ -293,10 +293,54 @@ export const supplierService = {
     return Number(response.data.stock || 0);
   },
 
-  async importProducts(_supplierId: string, _productIds: string[]): Promise<ImportResult> {
-    throw new Error(
-      'Supplier import is disabled until the canonical import pipeline accepts verified server-side product snapshots'
+  async importProducts(supplierId: string, productIds: string[]): Promise<ImportResult> {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier import is not implemented for this supplier yet');
+    }
+
+    if (productIds.length === 0) {
+      return {
+        success: false,
+        message: 'No supplier products selected',
+        importedCount: 0,
+        failedCount: 0,
+      };
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'snapshot_import', productIds },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
     );
+
+    const importedCount = Number(response.data?.importedCount ?? 0);
+    const failedCount = Number(response.data?.failedCount ?? 0);
+    const errors = Array.isArray(response.data?.failed)
+      ? response.data.failed.map((failure: { externalId?: string; error?: string }) =>
+          `${failure.externalId || 'unknown'}: ${failure.error || 'import failed'}`
+        )
+      : undefined;
+
+    return {
+      success: response.data?.success === true,
+      message:
+        failedCount === 0
+          ? `Imported ${importedCount} verified CJdropshipping product snapshots`
+          : `Imported ${importedCount} products; ${failedCount} failed`,
+      importedCount,
+      failedCount,
+      errors,
+    };
   },
 
   async importToShopify(products: SupplierProduct[]): Promise<ImportResult> {
