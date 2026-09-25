@@ -639,7 +639,7 @@ const Suppliers = () => {
                                 }
                                 onClick={() =>
                                   navigate(
-                                    `/app/import-products?supplier=${encodeURIComponent(connection.id)}`
+                                    `/app/suppliers/${encodeURIComponent(connection.id)}`
                                   )
                                 }
                               >
