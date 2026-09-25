@@ -1,12 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
 
 type CjAction =
+  | 'categories'
   | 'products'
+  | 'product_detail'
   | 'variants'
   | 'stock'
   | 'freight'
   | 'order_create'
+  | 'order_confirm'
   | 'order_detail'
+  | 'balance'
+  | 'order_pay'
   | 'tracking';
 
 interface CjRequest {
@@ -49,6 +54,10 @@ const invoke = async <T = unknown>(request: CjRequest): Promise<CjResponse<T>> =
 };
 
 export const cjSupplierService = {
+  getCategories(supplierId: string) {
+    return invoke({ supplierId, action: 'categories' });
+  },
+
   searchProducts(
     supplierId: string,
     filters: {
@@ -64,7 +73,11 @@ export const cjSupplierService = {
     return invoke({ supplierId, action: 'products', params: filters });
   },
 
-  getVariants(supplierId: string, params: { pid?: string; sku?: string }) {
+  getProductDetail(supplierId: string, params: { pid?: string; productSku?: string; variantSku?: string }) {
+    return invoke({ supplierId, action: 'product_detail', params });
+  },
+
+  getVariants(supplierId: string, params: { pid?: string; productSku?: string; variantSku?: string; countryCode?: string }) {
     return invoke({ supplierId, action: 'variants', params });
   },
 
@@ -80,8 +93,20 @@ export const cjSupplierService = {
     return invoke({ supplierId, action: 'order_create', payload });
   },
 
+  confirmOrder(supplierId: string, payload: Record<string, unknown>) {
+    return invoke({ supplierId, action: 'order_confirm', payload });
+  },
+
   getOrderDetail(supplierId: string, params: Record<string, string>) {
     return invoke({ supplierId, action: 'order_detail', params });
+  },
+
+  getBalance(supplierId: string) {
+    return invoke({ supplierId, action: 'balance' });
+  },
+
+  payOrder(supplierId: string, payload: Record<string, unknown>) {
+    return invoke({ supplierId, action: 'order_pay', payload });
   },
 
   getTracking(supplierId: string, params: Record<string, string>) {
