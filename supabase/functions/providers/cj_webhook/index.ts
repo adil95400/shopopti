@@ -89,27 +89,37 @@ serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // For CJ connections, api_secret stores the CJ openId used as the webhook HMAC secret.
-  // Some CJ event types do not include openId in the body, so the callback is bound
-  // to the supplier connection and the stored openId is used for verification.
   const { data: supplier, error: supplierError } = await admin
     .from("external_suppliers")
-    .select("id,user_id,type,api_secret")
+    .select("id,user_id,type")
     .eq("id", supplierId)
     .eq("type", "cj_dropshipping")
     .maybeSingle();
 
-  if (supplierError || !supplier?.api_secret) {
+  if (supplierError || !supplier) {
     return json({ success: false, error: "Unknown CJ webhook account" }, 404);
   }
 
-  if (eventOpenId && eventOpenId !== String(supplier.api_secret)) {
+  const { data: credentials, error: credentialError } = await admin
+    .schema("private")
+    .from("supplier_credentials")
+    .select("open_id")
+    .eq("supplier_id", supplierId)
+    .eq("provider", "cj_dropshipping")
+    .maybeSingle();
+
+  const openId = credentials?.open_id ? String(credentials.open_id) : "";
+  if (credentialError || !openId) {
+    return json({ success: false, error: "CJ webhook signature secret is unavailable" }, 422);
+  }
+
+  if (eventOpenId && eventOpenId !== openId) {
     return json({ success: false, error: "CJ webhook account mismatch" }, 401);
   }
 
   const signatureValid = await verifySignature(
     rawBody,
-    supplier.api_secret,
+    openId,
     providedSignature
   );
 
