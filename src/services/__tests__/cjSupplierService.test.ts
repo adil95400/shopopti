@@ -25,4 +25,10 @@ describe('CJdropshipping connector contract', () => {
       tracking: 'implemented',
     });
   });
+
+  it('does not overstate BigBuy while its production connector is not wired', () => {
+    const bigBuy = supplierProviders.find((provider) => provider.type === 'bigbuy');
+    expect(bigBuy?.stage).toBe('planned');
+    expect(bigBuy?.capabilities.import).toBe('planned');
+  });
 });
