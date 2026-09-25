@@ -1,5 +1,14 @@
 import { ProductVariant } from './product';
 
+export interface SupplierSummary {
+  id: string;
+  name: string;
+  type: 'bigbuy' | 'eprolo' | 'cdiscount' | 'autods' | 'spocket';
+  status: 'active' | 'inactive' | 'error';
+  lastSync?: string;
+  created_at: string;
+}
+
 export interface ExternalSupplier {
   id: string;
   name: string;
