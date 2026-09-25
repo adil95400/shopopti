@@ -222,6 +222,36 @@ CREATE TABLE IF NOT EXISTS public.supplier_connection_secrets (
 );
 
 ALTER TABLE public.supplier_connection_secrets ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Browser roles cannot read supplier connection secrets"
+  ON public.supplier_connection_secrets;
+CREATE POLICY "Browser roles cannot read supplier connection secrets"
+  ON public.supplier_connection_secrets
+  FOR SELECT TO anon, authenticated
+  USING (false);
+
+DROP POLICY IF EXISTS "Browser roles cannot insert supplier connection secrets"
+  ON public.supplier_connection_secrets;
+CREATE POLICY "Browser roles cannot insert supplier connection secrets"
+  ON public.supplier_connection_secrets
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (false);
+
+DROP POLICY IF EXISTS "Browser roles cannot update supplier connection secrets"
+  ON public.supplier_connection_secrets;
+CREATE POLICY "Browser roles cannot update supplier connection secrets"
+  ON public.supplier_connection_secrets
+  FOR UPDATE TO anon, authenticated
+  USING (false)
+  WITH CHECK (false);
+
+DROP POLICY IF EXISTS "Browser roles cannot delete supplier connection secrets"
+  ON public.supplier_connection_secrets;
+CREATE POLICY "Browser roles cannot delete supplier connection secrets"
+  ON public.supplier_connection_secrets
+  FOR DELETE TO anon, authenticated
+  USING (false);
+
 REVOKE ALL ON TABLE public.supplier_connection_secrets
   FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE
