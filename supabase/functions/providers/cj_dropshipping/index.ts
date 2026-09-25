@@ -61,6 +61,7 @@ const mapProductCard = (product: any, supplierId: string) => {
     metadata: {
       source: "cj_dropshipping",
       stockVerified: false,
+      priceVerified: price > 0,
       priceCurrency: "USD",
     },
   };
