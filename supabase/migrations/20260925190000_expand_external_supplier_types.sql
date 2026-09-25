@@ -135,3 +135,32 @@ CREATE POLICY "Users can view own CJ webhook events"
   FOR SELECT
   TO authenticated
   USING ((select auth.uid()) = user_id);
+
+
+-- Idempotent supplier order dispatch ledger.
+CREATE TABLE IF NOT EXISTS public.supplier_order_dispatches (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  supplier_id uuid NOT NULL REFERENCES public.external_suppliers(id) ON DELETE CASCADE,
+  provider text NOT NULL,
+  client_order_id text NOT NULL,
+  remote_order_id text,
+  status text NOT NULL DEFAULT 'pending',
+  request_payload jsonb NOT NULL,
+  response_payload jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, supplier_id, client_order_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_supplier_order_dispatches_supplier
+  ON public.supplier_order_dispatches (supplier_id, created_at DESC);
+
+ALTER TABLE public.supplier_order_dispatches ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own supplier order dispatches" ON public.supplier_order_dispatches;
+CREATE POLICY "Users can view own supplier order dispatches"
+  ON public.supplier_order_dispatches
+  FOR SELECT
+  TO authenticated
+  USING ((select auth.uid()) = user_id);
