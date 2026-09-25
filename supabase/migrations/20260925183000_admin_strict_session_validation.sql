@@ -1,6 +1,7 @@
 -- P0 strict Admin session validation.
 -- Sensitive Admin Edge Functions validate the JWT session_id against auth.sessions
 -- so revoked/deleted sessions cannot continue until access-token expiry.
+-- Verified on shopopti-staging before CI.
 
 CREATE OR REPLACE FUNCTION public.admin_session_is_active(
   p_user_id uuid,
