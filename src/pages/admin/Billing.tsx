@@ -73,7 +73,9 @@ const AdminBilling: React.FC = () => {
             </div>
             <div className="rounded-lg border bg-white p-4">
               <div className="flex items-center justify-between text-sm text-gray-500"><span>MRR</span><CreditCard className="h-4 w-4" /></div>
-              <div className="mt-2 text-2xl font-bold">Non vérifié</div>
+              <div className="mt-2 text-2xl font-bold">
+                {money(data.derivedMetrics.mrr, data.plans[0]?.currency ?? 'EUR')}
+              </div>
             </div>
           </div>
 
@@ -120,15 +122,64 @@ const AdminBilling: React.FC = () => {
           </div>
 
           <div className="rounded-lg border bg-white p-6">
+            <h2 className="text-lg font-semibold">Préparation Stripe</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {[
+                ['Secret Stripe', data.billingReadiness.stripeSecretConfigured],
+                ['Secret webhook', data.billingReadiness.stripeWebhookSecretConfigured],
+                ['APP_URL', data.billingReadiness.appUrlConfigured],
+                [
+                  `Mapping plans (${data.billingReadiness.fullyMappedPlans}/${data.billingReadiness.activePlans})`,
+                  data.billingReadiness.planMappingsComplete
+                ],
+                ['Webhook traité observé', data.billingReadiness.processedWebhookObserved],
+                ['Abonnement canonique observé', data.billingReadiness.canonicalSubscriptionObserved]
+              ].map(([label, ok]) => (
+                <div key={String(label)} className="flex items-center justify-between rounded border p-3 text-sm">
+                  <span>{String(label)}</span>
+                  <span className={ok ? 'text-green-700' : 'text-amber-700'}>
+                    {ok ? 'OK' : 'À configurer'}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              Golden path observé : {data.billingReadiness.goldenPathObserved ? 'oui' : 'non'}.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-white p-6">
             <h2 className="text-lg font-semibold">Métriques dérivées</h2>
             <div className="mt-3 grid gap-4 md:grid-cols-4">
-              <div><div className="text-sm text-gray-500">MRR</div><div className="font-semibold">Non vérifié</div></div>
-              <div><div className="text-sm text-gray-500">ARR</div><div className="font-semibold">Non vérifié</div></div>
-              <div><div className="text-sm text-gray-500">Churn</div><div className="font-semibold">Non vérifié</div></div>
-              <div><div className="text-sm text-gray-500">Abonnés payants actifs</div><div className="font-semibold">Non vérifié</div></div>
+              <div>
+                <div className="text-sm text-gray-500">MRR</div>
+                <div className="font-semibold">
+                  {money(data.derivedMetrics.mrr, data.plans[0]?.currency ?? 'EUR')}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">ARR</div>
+                <div className="font-semibold">
+                  {money(data.derivedMetrics.arr, data.plans[0]?.currency ?? 'EUR')}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Churn</div>
+                <div className="font-semibold">
+                  {data.derivedMetrics.churnRate === null
+                    ? 'Non vérifié'
+                    : `${data.derivedMetrics.churnRate.toFixed(1)} %`}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Abonnés payants actifs</div>
+                <div className="font-semibold">
+                  {data.derivedMetrics.activePaidSubscribers ?? 'Non vérifié'}
+                </div>
+              </div>
             </div>
             <p className="mt-4 text-sm text-amber-700">
-              Ces métriques ne sont pas calculées tant que la source d'abonnement et les événements Stripe réels ne sont pas suffisamment peuplés.
+              MRR/ARR restent « Non vérifié » tant qu'un webhook Stripe signé n'a pas été observé avec au moins un abonnement canonique. Le churn reste non calculé faute d'historique fiable de résiliation.
             </p>
           </div>
 
