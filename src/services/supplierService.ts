@@ -92,75 +92,72 @@ export const supplierService = {
   async createSupplier(
     supplier: Omit<ExternalSupplier, 'id' | 'created_at'>
   ): Promise<SupplierSummary> {
-    try {
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .insert([{
+    if (supplier.type === 'cj_dropshipping') {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Authentication required');
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_connect`;
+      const response = await axios.post(
+        apiUrl,
+        {
           name: supplier.name,
-          type: supplier.type,
-          api_key: supplier.apiKey,
-          api_secret: supplier.apiSecret,
-          base_url: supplier.baseUrl,
-          status: 'inactive',
-          user_id: supplier.user_id,
-          created_at: new Date().toISOString(),
-        }])
-        .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
-        .single();
+          apiKey: supplier.apiKey,
+          openId: supplier.apiSecret || undefined,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
-      if (error) throw error;
-
-      return {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        status: data.status,
-        lastSync: data.last_sync ?? undefined,
-        webhookStatus: data.webhook_status ?? 'not_configured',
-        webhookLastEventAt: data.webhook_last_event_at ?? undefined,
-        created_at: data.created_at,
-      };
-    } catch (error) {
-      console.error('Error creating supplier:', error);
-      throw error;
+      if (response.data?.success !== true || !response.data?.supplier) {
+        throw new Error(response.data?.error || 'CJ connection failed');
+      }
+      return response.data.supplier as SupplierSummary;
     }
+
+    throw new Error('Secure supplier creation is not implemented for this provider yet');
   },
 
   async updateSupplier(
     id: string,
     updates: Partial<ExternalSupplier>
   ): Promise<SupplierSummary> {
-    try {
-      const dbUpdates: Record<string, unknown> = {};
-      if (updates.name !== undefined) dbUpdates.name = updates.name;
-      if (updates.type !== undefined) dbUpdates.type = updates.type;
-      if (updates.apiKey !== undefined) dbUpdates.api_key = updates.apiKey;
-      if (updates.apiSecret !== undefined) dbUpdates.api_secret = updates.apiSecret;
-      if (updates.baseUrl !== undefined) dbUpdates.base_url = updates.baseUrl;
+    const current = await this.getSupplierSummaryById(id);
+    if (current.type === 'cj_dropshipping') {
+      if (!updates.apiKey) {
+        throw new Error('CJ API key is required to update this connection securely');
+      }
 
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .update(dbUpdates)
-        .eq('id', id)
-        .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
-        .single();
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Authentication required');
 
-      if (error) throw error;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/cj_connect`;
+      const response = await axios.post(
+        apiUrl,
+        {
+          supplierId: id,
+          name: updates.name ?? current.name,
+          apiKey: updates.apiKey,
+          openId: updates.apiSecret || undefined,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
-      return {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        status: data.status,
-        lastSync: data.last_sync ?? undefined,
-        webhookStatus: data.webhook_status ?? 'not_configured',
-        webhookLastEventAt: data.webhook_last_event_at ?? undefined,
-        created_at: data.created_at,
-      };
-    } catch (error) {
-      console.error(`Error updating supplier with ID ${id}:`, error);
-      throw error;
+      if (response.data?.success !== true || !response.data?.supplier) {
+        throw new Error(response.data?.error || 'CJ connection update failed');
+      }
+      return response.data.supplier as SupplierSummary;
     }
+
+    throw new Error('Secure supplier update is not implemented for this provider yet');
   },
 
   async deleteSupplier(id: string): Promise<void> {
