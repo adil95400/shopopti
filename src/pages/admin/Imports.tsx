@@ -730,11 +730,12 @@ const Imports: React.FC = () => {
                     API Key
                   </label>
                   <input
-                    type="text"
+                    type="password"
+                    autoComplete="new-password"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     value={newSupplier.apiKey}
                     onChange={(e) => setNewSupplier({ ...newSupplier, apiKey: e.target.value })}
-                    placeholder="Enter your API key"
+                    placeholder={newSupplier.type === 'cj_dropshipping' ? 'Collez votre clé API CJ' : 'Enter your API key'}
                   />
                 </div>
                 
