@@ -8,9 +8,9 @@ describe('CJdropshipping connector contract', () => {
     expect(cj?.stage).toBe('implemented');
   });
 
-  it('keeps import persistence fail-closed until the canonical import pipeline is wired', () => {
+  it('marks durable CJ snapshot import as implemented', () => {
     const cj = supplierProviders.find((provider) => provider.type === 'cj_dropshipping');
-    expect(cj?.capabilities.import).toBe('planned');
+    expect(cj?.capabilities.import).toBe('implemented');
   });
 
   it('exposes only server-gateway capabilities as implemented', () => {
