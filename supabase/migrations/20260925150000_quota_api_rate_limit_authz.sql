@@ -15,7 +15,8 @@ DECLARE
   caller_id uuid := auth.uid();
   caller_role text := COALESCE(auth.jwt()->>'role', '');
 BEGIN
-  IF caller_role <> 'service_role'
+  IF current_user <> 'service_role'
+     AND caller_role <> 'service_role'
      AND (caller_id IS NULL OR caller_id IS DISTINCT FROM user_id_param) THEN
     RAISE EXCEPTION 'Forbidden'
       USING ERRCODE = '42501';
