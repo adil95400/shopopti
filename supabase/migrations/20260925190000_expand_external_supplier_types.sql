@@ -164,3 +164,29 @@ CREATE POLICY "Users can view own supplier order dispatches"
   FOR SELECT
   TO authenticated
   USING ((select auth.uid()) = user_id);
+
+
+-- Webhook-driven CJ variant stock cache.
+CREATE TABLE IF NOT EXISTS public.supplier_variant_stock (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  supplier_id uuid NOT NULL REFERENCES public.external_suppliers(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  stock integer NOT NULL DEFAULT 0,
+  warehouses jsonb NOT NULL DEFAULT '[]'::jsonb,
+  source text NOT NULL DEFAULT 'webhook',
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, supplier_id, variant_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_supplier_variant_stock_supplier
+  ON public.supplier_variant_stock (supplier_id, updated_at DESC);
+
+ALTER TABLE public.supplier_variant_stock ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own supplier variant stock" ON public.supplier_variant_stock;
+CREATE POLICY "Users can view own supplier variant stock"
+  ON public.supplier_variant_stock
+  FOR SELECT
+  TO authenticated
+  USING ((select auth.uid()) = user_id);
