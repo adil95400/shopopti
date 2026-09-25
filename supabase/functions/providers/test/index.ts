@@ -34,8 +34,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseClientKey =
       Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!supabaseUrl || !supabaseClientKey) {
+    if (!supabaseUrl || !supabaseClientKey || !serviceRoleKey) {
       return jsonResponse(
         { success: false, error: "Supplier probe is not configured on the server" },
         503
@@ -58,6 +59,12 @@ serve(async (req) => {
         autoRefreshToken: false,
       },
     });
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
 
     const {
       data: { user },
@@ -70,7 +77,7 @@ serve(async (req) => {
 
     const { data: supplier, error: supplierError } = await supabase
       .from("external_suppliers")
-      .select("id,name,type,status,api_key,base_url,user_id")
+      .select("id,name,type,status,base_url,user_id")
       .eq("id", supplierId)
       .single();
 
@@ -78,7 +85,13 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Supplier not found" }, 404);
     }
 
-    if (!supplier.api_key) {
+    const { data: credentials, error: credentialError } = await admin
+      .from("external_suppliers")
+      .select("api_key")
+      .eq("id", supplierId)
+      .single();
+
+    if (credentialError || !credentials?.api_key) {
       return jsonResponse(
         {
           success: false,
@@ -96,7 +109,7 @@ serve(async (req) => {
       const response = await fetch(`${baseUrl}/setting/get`, {
         method: "GET",
         headers: {
-          "CJ-Access-Token": supplier.api_key,
+          "CJ-Access-Token": credentials.api_key,
           Accept: "application/json",
         },
       });
@@ -111,7 +124,7 @@ serve(async (req) => {
       const verified = response.ok && payload?.result === true;
 
       if (!verified) {
-        await supabase
+        await admin
           .from("external_suppliers")
           .update({ status: "error" })
           .eq("id", supplierId);
@@ -128,7 +141,7 @@ serve(async (req) => {
         );
       }
 
-      await supabase
+      await admin
         .from("external_suppliers")
         .update({ status: "active" })
         .eq("id", supplierId);
