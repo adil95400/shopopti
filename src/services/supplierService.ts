@@ -121,7 +121,6 @@ export const supplierService = {
       if (updates.apiKey !== undefined) dbUpdates.api_key = updates.apiKey;
       if (updates.apiSecret !== undefined) dbUpdates.api_secret = updates.apiSecret;
       if (updates.baseUrl !== undefined) dbUpdates.base_url = updates.baseUrl;
-      if (updates.status !== undefined) dbUpdates.status = updates.status;
 
       const { data, error } = await supabase
         .from('external_suppliers')
