@@ -39,8 +39,8 @@ BEGIN
   DELETE FROM public.user_roles
   WHERE user_id = p_target_user_id;
 
-  INSERT INTO public.user_roles (user_id, role, assigned_by)
-  VALUES (p_target_user_id, p_new_role, p_actor_id);
+  INSERT INTO public.user_roles (user_id, role, created_at, updated_at)
+  VALUES (p_target_user_id, p_new_role, now(), now());
 
   RETURN jsonb_build_object(
     'success', true,
