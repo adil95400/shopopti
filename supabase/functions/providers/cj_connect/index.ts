@@ -144,7 +144,7 @@ serve(async (req) => {
       if (error) throw error;
 
       const { error: credentialError } = await admin
-        .from("supplier_credentials")
+        .from("supplier_connection_secrets")
         .upsert(
           {
             supplier_id: supplierId,
@@ -179,7 +179,7 @@ serve(async (req) => {
       if (error) throw error;
 
       const { error: credentialError } = await admin
-        .from("supplier_credentials")
+        .from("supplier_connection_secrets")
         .insert({
           supplier_id: data.id,
           provider: "cj_dropshipping",
