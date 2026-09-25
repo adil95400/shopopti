@@ -144,7 +144,6 @@ serve(async (req) => {
       if (error) throw error;
 
       const { error: credentialError } = await admin
-        .schema("private")
         .from("supplier_credentials")
         .upsert(
           {
@@ -180,7 +179,6 @@ serve(async (req) => {
       if (error) throw error;
 
       const { error: credentialError } = await admin
-        .schema("private")
         .from("supplier_credentials")
         .insert({
           supplier_id: data.id,
