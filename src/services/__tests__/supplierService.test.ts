@@ -62,7 +62,6 @@ describe('supplierService server-side supplier contracts', () => {
       name: 'CJ account',
       type: 'cj_dropshipping',
       apiKey: 'cj-api-key',
-      apiSecret: 'cj-open-id',
       baseUrl: '',
       status: 'inactive',
       user_id: 'user-1',
@@ -73,7 +72,6 @@ describe('supplierService server-side supplier contracts', () => {
     expect(payload).toEqual({
       name: 'CJ account',
       apiKey: 'cj-api-key',
-      openId: 'cj-open-id',
     })
     expect(config?.headers?.Authorization).toBe('Bearer session-token')
   })
