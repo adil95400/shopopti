@@ -1,5 +1,6 @@
 -- P0 Admin Platform atomic mutation + audit hardening.
 -- Preserve the existing RPC signatures while requiring trusted service-role calls.
+-- Verified transactionally on shopopti-staging before CI.
 
 CREATE OR REPLACE FUNCTION public.admin_set_feature_flag_enabled_atomic(
   p_actor_id uuid,
