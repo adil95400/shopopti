@@ -139,15 +139,23 @@ const Suppliers = () => {
     setLoadError(null);
 
     try {
-      const [data, settings] = await Promise.all([
-        supplierService.getSupplierSummaries(),
-        supplierConnectorSettingsService.list(),
-      ]);
+      const data = await supplierService.getSupplierSummaries();
       setSuppliers(data);
-      setConnectorSettings(settings);
+
+      try {
+        const settings = await supplierConnectorSettingsService.list();
+        setConnectorSettings(settings);
+      } catch (settingsError) {
+        console.error('Unable to load connector availability:', settingsError);
+        setConnectorSettings([]);
+        setLoadError(
+          'Le statut plateforme des connecteurs est indisponible. Les connexions existantes restent visibles, mais les nouvelles actions sont désactivées par sécurité.'
+        );
+      }
     } catch (error) {
       console.error('Unable to load supplier hub:', error);
       setSuppliers([]);
+      setConnectorSettings([]);
       setLoadError(
         'Impossible de charger les fournisseurs. Aucune donnée fournisseur n’est affichée tant que la source n’est pas disponible.'
       );
