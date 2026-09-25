@@ -53,3 +53,6 @@ jobs:
       - name: 🔁 Admin Operations action contract
         run: node scripts/check-admin-ops-actions-contract.mjs
 
+      - name: 💳 Stripe golden path contract
+        run: node scripts/check-stripe-golden-path-contract.mjs
+
