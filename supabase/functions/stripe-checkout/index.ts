@@ -54,14 +54,17 @@ serve(async (req) => {
   }
 
   const planName = typeof payload.plan === "string" ? payload.plan.trim() : "";
-  const billingCycle = payload.billing_cycle === "yearly" ? "yearly" : "monthly";
+  const billingCycle = payload.billing_cycle;
 
   if (!planName) return json({ error: "missing_plan" }, 400);
+  if (billingCycle !== "monthly" && billingCycle !== "yearly") {
+    return json({ error: "invalid_billing_cycle" }, 400);
+  }
 
   const { data: plan, error: planError } = await service
     .from("subscription_plans")
     .select(
-      "id,name,display_name,is_active,stripe_price_id_monthly,stripe_price_id_yearly",
+      "id,name,display_name,is_active,trial_days,stripe_price_id_monthly,stripe_price_id_yearly",
     )
     .eq("name", planName)
     .eq("is_active", true)
@@ -94,22 +97,51 @@ serve(async (req) => {
     await Promise.all([
       service
         .from("user_subscriptions")
-        .select("stripe_customer_id")
+        .select("stripe_customer_id,stripe_subscription_id,status")
         .eq("user_id", user.id)
         .maybeSingle(),
       service
         .from("subscriptions")
-        .select("stripe_customer_id")
+        .select("stripe_customer_id,stripe_subscription_id,status,created_at")
         .eq("user_id", user.id)
-        .not("stripe_customer_id", "is", null)
         .order("created_at", { ascending: false })
-        .limit(1),
+        .limit(20),
     ]);
+
+  const existingSubscriptionId =
+    canonicalSubscription?.stripe_subscription_id ??
+    legacySubscriptions?.find((row) =>
+      row.stripe_subscription_id &&
+      row.status !== "cancelled" &&
+      row.status !== "canceled" &&
+      row.status !== "inactive"
+    )?.stripe_subscription_id ??
+    null;
+
+  if (existingSubscriptionId) {
+    return json(
+      {
+        error: "subscription_already_exists",
+        action: "open_customer_portal",
+      },
+      409,
+    );
+  }
 
   const customerId =
     canonicalSubscription?.stripe_customer_id ??
-    legacySubscriptions?.[0]?.stripe_customer_id ??
+    legacySubscriptions?.find((row) => row.stripe_customer_id)?.stripe_customer_id ??
     null;
+
+  const hasSubscriptionHistory =
+    Boolean(canonicalSubscription?.stripe_subscription_id) ||
+    legacySubscriptions?.some((row) => Boolean(row.stripe_subscription_id)) === true;
+
+  const configuredTrialDays =
+    typeof plan.trial_days === "number" && Number.isFinite(plan.trial_days)
+      ? Math.max(0, Math.floor(plan.trial_days))
+      : 0;
+  const eligibleTrialDays = hasSubscriptionHistory ? 0 : configuredTrialDays;
 
   const stripe = new Stripe(stripeSecretKey);
 
@@ -130,6 +162,7 @@ serve(async (req) => {
         billing_cycle: billingCycle,
       },
       subscription_data: {
+        trial_period_days: eligibleTrialDays > 0 ? eligibleTrialDays : undefined,
         metadata: {
           user_id: user.id,
           plan_id: plan.id,
