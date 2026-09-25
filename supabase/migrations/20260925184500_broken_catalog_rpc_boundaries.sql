@@ -1,6 +1,7 @@
 -- P0 fail-closed boundary for legacy catalog RPCs.
 -- shopopti-staging has no public.catalog_products relation.
 -- These RPCs are therefore currently non-functional and should not be exposed
+-- Verified on shopopti-staging before CI.
 -- to signed-in browser clients until a canonical catalog source is implemented.
 
 REVOKE EXECUTE ON FUNCTION public.get_catalog_products_secure(text,text,integer)
