@@ -386,6 +386,9 @@ const Suppliers = () => {
             const implemented = Object.values(provider.capabilities).filter(
               (value) => value === 'implemented'
             ).length;
+            const implemented = Object.values(provider.capabilities).filter(
+              (value) => value === 'implemented'
+            ).length;
             const documented = Object.values(provider.capabilities).filter(
               (value) => value === 'documented'
             ).length;
