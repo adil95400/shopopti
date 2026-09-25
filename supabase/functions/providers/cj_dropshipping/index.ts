@@ -433,6 +433,128 @@ serve(async (req) => {
       });
     }
 
+
+    if (action === "freight") {
+      const payloadInput = body?.payload;
+      if (!payloadInput || typeof payloadInput !== "object") {
+        return json({ success: false, error: "payload is required" }, 400);
+      }
+
+      const response = await fetch(`${baseUrl}/logistic/freightCalculate`, {
+        method: "POST",
+        headers: { ...cjHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(payloadInput),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        return json(
+          {
+            success: false,
+            error: payload?.message || "CJ freight calculation failed",
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      return json({
+        success: true,
+        data: payload,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint: "logistic/freightCalculate",
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    if (action === "order_create" || action === "order_confirm" || action === "order_pay") {
+      const payloadInput = body?.payload;
+      if (!payloadInput || typeof payloadInput !== "object") {
+        return json({ success: false, error: "payload is required" }, 400);
+      }
+
+      const endpoint =
+        action === "order_create"
+          ? "shopping/order/createOrderV3"
+          : action === "order_confirm"
+            ? "shopping/order/confirmOrder"
+            : "shopping/pay/payBalanceV2";
+
+      const response = await fetch(`${baseUrl}/${endpoint}`, {
+        method: "POST",
+        headers: { ...cjHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify(payloadInput),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        return json(
+          {
+            success: false,
+            error: payload?.message || `CJ ${action} failed`,
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      return json({
+        success: true,
+        data: payload,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    if (action === "order_detail" || action === "tracking" || action === "balance") {
+      const params = new URLSearchParams();
+      const inputParams = body?.params ?? {};
+      for (const [key, value] of Object.entries(inputParams)) {
+        if (value === undefined || value === null || value === "") continue;
+        params.set(key, String(value));
+      }
+
+      const endpoint =
+        action === "order_detail"
+          ? "shopping/order/getOrderDetail"
+          : action === "tracking"
+            ? "logistic/trackInfo"
+            : "shopping/pay/getBalance";
+
+      const suffix = params.toString() ? `?${params.toString()}` : "";
+      const response = await fetch(`${baseUrl}/${endpoint}${suffix}`, {
+        method: "GET",
+        headers: cjHeaders,
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.result !== true) {
+        return json(
+          {
+            success: false,
+            error: payload?.message || `CJ ${action} failed`,
+            requestId: payload?.requestId,
+          },
+          response.status >= 400 ? response.status : 502
+        );
+      }
+
+      return json({
+        success: true,
+        data: payload,
+        source: {
+          provider: "cj_dropshipping",
+          endpoint,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    }
+
     return json({ success: false, error: "Unsupported CJ action" }, 400);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected CJ connector error";
