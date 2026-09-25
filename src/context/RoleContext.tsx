@@ -81,19 +81,14 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         const { data, error } = await supabase
-          .from('users')
+          .from('user_roles')
           .select('role')
-          .eq('id', userId)
-          .maybeSingle();
+          .eq('user_id', userId);
 
         if (error) throw error;
 
-        const candidate = data?.role;
-        if (candidate === 'admin' || candidate === 'superadmin' || candidate === 'user') {
-          setRole(candidate);
-        } else {
-          setRole('user');
-        }
+        const roles = (data ?? []).map((row) => String(row.role));
+        setRole(roles.includes('admin') ? 'admin' : 'user');
       } catch (error) {
         console.error('Error fetching user role:', error);
         setRole('user');
