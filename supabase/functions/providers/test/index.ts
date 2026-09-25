@@ -68,6 +68,19 @@ serve(async (req) => {
       },
     });
 
+    try {
+      await requireConnectorEnabled(admin, "cj_dropshipping");
+    } catch (error) {
+      return jsonResponse(
+        {
+          success: false,
+          status: "connector_unavailable",
+          error: error instanceof Error ? error.message : "CJ connector unavailable",
+        },
+        503
+      );
+    }
+
     const {
       data: { user },
       error: userError,
