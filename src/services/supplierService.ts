@@ -250,35 +250,8 @@ export const supplierService = {
     }
   },
 
-  async getCategories(supplierId: string): Promise<any[]> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      if (supplier.type !== 'autods') {
-        throw new Error('Categories not supported for this supplier');
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/categories`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data.categories;
-    } catch (error) {
-      console.error('Error fetching categories from supplier:', error);
-      throw error;
-    }
+  async getCategories(_supplierId: string): Promise<any[]> {
+    throw new Error('Supplier categories are not available until a verified provider connector implements them');
   },
 
   async importProducts(supplierId: string, productIds: string[]): Promise<ImportResult> {
@@ -330,65 +303,15 @@ export const supplierService = {
     }
   },
 
-  async createOrder(supplierId: string, orderData: OrderRequest): Promise<OrderResult> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      if (supplier.type !== 'autods') {
-        throw new Error('Order creation not supported for this supplier');
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/orders`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl,
-        order: orderData
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error creating order with supplier:', error);
-      throw error;
-    }
+  async createOrder(_supplierId: string, _orderData: OrderRequest): Promise<OrderResult> {
+    throw new Error('Supplier order automation is not available until a verified provider connector implements it');
   },
 
-  async getOrderStatus(supplierId: string, externalOrderId: string): Promise<{
+  async getOrderStatus(_supplierId: string, _externalOrderId: string): Promise<{
     status: string;
     trackingNumber?: string;
     estimatedDelivery?: string;
   }> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      if (supplier.type !== 'autods') {
-        throw new Error('Order status not supported for this supplier');
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/orders/${externalOrderId}`;
-      
-      const response = await axios.get(apiUrl, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error getting order status from supplier:', error);
-      throw error;
-    }
+    throw new Error('Supplier tracking is not available until a verified provider connector implements it');
   }
 };
