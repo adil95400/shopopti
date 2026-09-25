@@ -47,3 +47,6 @@ jobs:
       - name: 🔐 Admin role guard contract
         run: node scripts/check-admin-role-guard.mjs
 
+      - name: 📦 Admin Imports security contract
+        run: node scripts/check-admin-imports-contract.mjs
+
