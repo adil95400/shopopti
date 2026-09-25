@@ -23,7 +23,7 @@ export const getCjCredentials = async (
   supplierId: string
 ): Promise<CjCredentialRecord> => {
   const { data, error } = await admin
-    .from("supplier_credentials")
+    .from("supplier_connection_secrets")
     .select(
       "supplier_id,provider,access_token,refresh_token,open_id,access_token_expires_at,refresh_token_expires_at"
     )
@@ -85,7 +85,7 @@ export const getValidCjAccessToken = async (
   }
 
   const { error } = await admin
-    .from("supplier_credentials")
+    .from("supplier_connection_secrets")
     .update({
       access_token: String(accessToken),
       refresh_token: refreshToken ? String(refreshToken) : null,
