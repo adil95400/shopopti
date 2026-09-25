@@ -1,5 +1,6 @@
 import { serve } from "npm:@supabase/functions-js";
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
+import { getValidCjAccessToken } from "../../_shared/cjCredentials.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -185,19 +186,27 @@ serve(async (req) => {
       return json({ success: false, error: "CJ supplier not found" }, 404);
     }
 
-    const { data: credentials, error: credentialError } = await admin
-      .from("external_suppliers")
-      .select("api_key,api_secret")
-      .eq("id", supplierId)
-      .single();
+    let accessToken: string;
+    try {
+      accessToken = await getValidCjAccessToken(admin, supplierId);
+    } catch (error) {
+      await admin
+        .from("external_suppliers")
+        .update({ status: "error" })
+        .eq("id", supplierId);
 
-    if (credentialError || !credentials?.api_key) {
-      return json({ success: false, error: "CJ credential is missing" }, 422);
+      return json(
+        {
+          success: false,
+          error: error instanceof Error ? error.message : "CJ credential is unavailable",
+        },
+        422
+      );
     }
 
     const baseUrl = normalizeBaseUrl(supplier.base_url);
     const cjHeaders = {
-      "CJ-Access-Token": credentials.api_key,
+      "CJ-Access-Token": accessToken,
       Accept: "application/json",
     };
 
