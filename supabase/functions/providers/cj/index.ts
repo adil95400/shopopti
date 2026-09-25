@@ -124,7 +124,12 @@ serve(async (req) => {
       return json({ success: false, error: "CJdropshipping returned a non-JSON response" }, 502);
     }
 
-    if (!response.ok) {
+    const remoteResult =
+      typeof remote === "object" && remote !== null && "result" in remote
+        ? (remote as { result?: unknown }).result
+        : undefined;
+
+    if (!response.ok || remoteResult === false) {
       return json(
         { success: false, provider: "cj_dropshipping", action, status: "remote_error", remote },
         response.status >= 400 && response.status < 500 ? response.status : 502
