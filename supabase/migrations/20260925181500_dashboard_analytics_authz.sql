@@ -1,5 +1,6 @@
 -- P0 dashboard analytics authorization hardening.
 -- Preserve existing metrics behavior while enforcing ownership/admin boundaries.
+-- Verified on shopopti-staging before CI.
 
 CREATE OR REPLACE FUNCTION public.get_dashboard_analytics(
   user_id_param uuid DEFAULT auth.uid()
