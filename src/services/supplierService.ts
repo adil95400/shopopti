@@ -102,7 +102,6 @@ export const supplierService = {
         {
           name: supplier.name,
           apiKey: supplier.apiKey,
-          openId: supplier.apiSecret || undefined,
         },
         {
           headers: {
@@ -141,7 +140,6 @@ export const supplierService = {
           supplierId: id,
           name: updates.name ?? current.name,
           apiKey: updates.apiKey,
-          openId: updates.apiSecret || undefined,
         },
         {
           headers: {
