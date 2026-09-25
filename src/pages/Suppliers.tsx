@@ -13,6 +13,7 @@ import {
   Unplug,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { supplierProviders } from '@/config/supplierProviders';
@@ -67,6 +68,7 @@ const Suppliers = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ConnectionState | 'all'>('all');
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error'>>({});
 
   const loadSuppliers = useCallback(async () => {
@@ -113,6 +115,24 @@ const Suppliers = () => {
     (supplier) => getConnectionState(supplier) === 'error'
   ).length;
   const verifiedSyncCount = suppliers.filter((supplier) => Boolean(supplier.lastSync)).length;
+
+  const handleConfigureRealtimeSync = async (supplier: SupplierSummary) => {
+    setSyncingId(supplier.id);
+    try {
+      await supplierService.configureRealtimeSync(supplier.id);
+      toast.success('Synchronisation temps réel CJ activée');
+      await loadSuppliers();
+    } catch (error) {
+      console.error(`CJ realtime sync setup failed for ${supplier.id}:`, error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Impossible d’activer la synchronisation temps réel CJ'
+      );
+    } finally {
+      setSyncingId(null);
+    }
+  };
 
   const handleTestConnection = async (supplier: SupplierSummary) => {
     setTestingId(supplier.id);
@@ -283,7 +303,7 @@ const Suppliers = () => {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="rounded-xl border p-3">
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       <ShieldCheck className="h-4 w-4" />
@@ -306,6 +326,26 @@ const Suppliers = () => {
                       Prix / stock
                     </div>
                     <p className="mt-2 text-sm font-semibold">Non vérifié</p>
+                  </div>
+                  <div className="rounded-xl border p-3">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <RefreshCw className="h-4 w-4" />
+                      Temps réel
+                    </div>
+                    <p className="mt-2 text-sm font-semibold">
+                      {supplier.type !== 'cj_dropshipping'
+                        ? 'Non disponible'
+                        : supplier.webhookStatus === 'enabled'
+                          ? 'Webhook actif'
+                          : supplier.webhookStatus === 'error'
+                            ? 'Erreur webhook'
+                            : 'Non configuré'}
+                    </p>
+                    {supplier.webhookLastEventAt && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Dernier événement : {formatDate(supplier.webhookLastEventAt)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -355,6 +395,23 @@ const Suppliers = () => {
                     <PackageSearch className="h-4 w-4" />
                     Voir les produits
                   </Button>
+
+                  {supplier.type === 'cj_dropshipping' && state === 'active' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={syncingId === supplier.id}
+                      onClick={() => void handleConfigureRealtimeSync(supplier)}
+                      className="gap-2"
+                    >
+                      <RefreshCw
+                        className={`h-4 w-4 ${syncingId === supplier.id ? 'animate-spin' : ''}`}
+                      />
+                      {supplier.webhookStatus === 'enabled'
+                        ? 'Reconfigurer synchro CJ'
+                        : 'Activer synchro CJ'}
+                    </Button>
+                  )}
 
                   <Button
                     size="sm"
