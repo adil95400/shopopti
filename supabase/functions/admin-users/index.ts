@@ -299,51 +299,23 @@ serve(async (req) => {
         return json({ error: "invalid_role" }, 400);
       }
 
-      const { data: oldRoles, error: oldRolesError } = await service
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", targetUserId);
-
-      if (oldRolesError) throw oldRolesError;
-
-      const auditId = await startAudit(
-        "USER_ROLE_CHANGED",
-        targetUserId,
-        targetUser.email ?? targetUserId,
-        `Changement de rôle vers ${nextRole}`,
-        { roles: (oldRoles ?? []).map((row) => row.role) },
+      const { data, error } = await service.rpc(
+        "admin_replace_user_role_atomic",
+        {
+          p_actor_id: actor.id,
+          p_target_user_id: targetUserId,
+          p_new_role: nextRole,
+          p_actor_email: actor.email ?? null,
+        },
       );
 
-      const { error: upsertError } = await service
-        .from("user_roles")
-        .upsert(
-          { user_id: targetUserId, role: nextRole },
-          { onConflict: "user_id,role" },
-        );
+      if (error) throw error;
 
-      if (upsertError) {
-        await finishAudit(auditId, "failed", null, upsertError.message);
-        throw upsertError;
-      }
-
-      const { error: deleteOtherRolesError } = await service
-        .from("user_roles")
-        .delete()
-        .eq("user_id", targetUserId)
-        .neq("role", nextRole);
-
-      if (deleteOtherRolesError) {
-        await finishAudit(
-          auditId,
-          "failed",
-          { role: nextRole },
-          deleteOtherRolesError.message,
-        );
-        throw deleteOtherRolesError;
-      }
-
-      await finishAudit(auditId, "success", { role: nextRole });
-      return json({ success: true, role: nextRole });
+      return json({
+        success: true,
+        role: nextRole,
+        mutation: data,
+      });
     }
 
     if (action === "suspend" || action === "unsuspend") {
@@ -388,15 +360,36 @@ serve(async (req) => {
         },
       );
 
+      const { data: preparation, error: preparationError } = await service.rpc(
+        "admin_prepare_user_deletion",
+        {
+          p_actor_id: actor.id,
+          p_target_user_id: targetUserId,
+        },
+      );
+
+      if (preparationError) {
+        await finishAudit(
+          auditId,
+          "failed",
+          null,
+          preparationError.message,
+        );
+        throw preparationError;
+      }
+
       const { error } = await service.auth.admin.deleteUser(targetUserId);
       if (error) {
-        await finishAudit(auditId, "failed", null, error.message);
+        await finishAudit(auditId, "failed", { preparation }, error.message);
         throw error;
       }
 
       await finishAudit(auditId, "success", {
         deleted: true,
         user_id: targetUserId,
+        preparation,
+        access_token_note:
+          "Existing access JWTs can remain valid until their configured expiry.",
       });
 
       return json({ success: true });
