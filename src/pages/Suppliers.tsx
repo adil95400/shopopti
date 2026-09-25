@@ -383,15 +383,20 @@ const Suppliers = () => {
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {supplierProviders.map((provider) => {
+            const implemented = Object.values(provider.capabilities).filter(
+              (value) => value === 'implemented'
+            ).length;
             const documented = Object.values(provider.capabilities).filter(
               (value) => value === 'documented'
             ).length;
             const stageLabel =
-              provider.stage === 'planned'
-                ? 'À intégrer'
-                : provider.stage === 'legacy'
-                  ? 'Compatibilité héritée'
-                  : 'Connecteur personnalisé';
+              provider.stage === 'implemented'
+                ? 'Implémenté'
+                : provider.stage === 'planned'
+                  ? 'À intégrer'
+                  : provider.stage === 'legacy'
+                    ? 'Compatibilité héritée'
+                    : 'Connecteur personnalisé';
 
             return (
               <div key={provider.type} className="rounded-xl border bg-background p-4">
@@ -409,7 +414,11 @@ const Suppliers = () => {
                   <span className="font-medium">P{provider.priority}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Capacités documentées</span>
+                  <span className="text-muted-foreground">Implémentées ShopOpti</span>
+                  <span className="font-medium">{implemented}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Documentées fournisseur</span>
                   <span className="font-medium">{documented}</span>
                 </div>
               </div>
