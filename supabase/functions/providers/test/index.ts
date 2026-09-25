@@ -1,5 +1,6 @@
 import { serve } from "npm:@supabase/functions-js";
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
+import { requireConnectorEnabled } from "../../_shared/connectorAvailability.ts";
 import { getValidCjAccessToken } from "../../_shared/cjCredentials.ts";
 
 const corsHeaders = {
