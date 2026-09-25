@@ -28,7 +28,7 @@ jobs:
       - name: Checkout #201 branch
         uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -37,19 +37,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Vercel CLI
+        run: npm install --global vercel@59.6.0
+
       - name: Link Vercel project
         run: |
           mkdir -p .vercel
           printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
-          npx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
       - name: Build with staging Supabase
-        run: npx vercel build --token="$VERCEL_TOKEN"
+        run: vercel build --token="$VERCEL_TOKEN"
 
       - name: Deploy preview
         id: deploy
         run: |
-          preview_url="$(npx vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
+          preview_url="$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
           {
             echo "### Supplier Hub staging preview"
