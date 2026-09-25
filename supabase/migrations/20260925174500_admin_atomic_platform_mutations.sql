@@ -56,12 +56,13 @@ BEGIN
   ) VALUES (
     current_flag.id,
     current_flag.key,
-    CASE WHEN p_enabled THEN 'enabled' ELSE 'disabled' END,
+    'updated',
     p_actor_id,
     pg_catalog.jsonb_build_object('is_enabled', current_flag.is_enabled),
     pg_catalog.jsonb_build_object('is_enabled', p_enabled),
     pg_catalog.jsonb_build_object(
       'source', 'admin-platform-controls',
+      'operation', CASE WHEN p_enabled THEN 'enabled' ELSE 'disabled' END,
       'atomic', true
     )
   );
