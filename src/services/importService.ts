@@ -1,5 +1,4 @@
 import Papa from 'papaparse';
-import { parseString } from 'xml2js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
@@ -551,7 +550,7 @@ export const importService = {
   async importFromSupplier(supplierId: string, productIds: string[]): Promise<ProductData[]> {
     try {
       // Récupérer les informations du fournisseur
-      const supplier = await supplierService.getSupplierById(supplierId);
+      const supplier = await supplierService.getSupplierSummaryById(supplierId);
       
       // Récupérer les produits du fournisseur
       const products = await supplierService.getProductsByIds(supplierId, productIds);

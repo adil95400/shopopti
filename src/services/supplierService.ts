@@ -1,78 +1,193 @@
 import axios from 'axios';
 
 import { supabase } from '@/lib/supabase';
-import { ExternalSupplier, SupplierProduct, ImportFilter, ImportResult, OrderRequest, OrderResult } from '@/types/supplier';
+import { ExternalSupplier, SupplierSummary, SupplierProduct, ImportFilter, ImportResult, OrderRequest, OrderResult } from '@/types/supplier';
+import { cjSupplierService } from '@/services/cjSupplierService';
 
 export const supplierService = {
-  async getSuppliers(): Promise<ExternalSupplier[]> {
+  async getSupplierSummaries(): Promise<SupplierSummary[]> {
     try {
       const { data, error } = await supabase
         .from('external_suppliers')
-        .select('*')
+        .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
+        .neq('type', 'autods')
         .order('name');
-      
+
       if (error) throw error;
-      return data || [];
+
+      return (data || []).map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name,
+        type: supplier.type,
+        status: supplier.status,
+        lastSync: supplier.last_sync ?? undefined,
+        webhookStatus: supplier.webhook_status ?? 'not_configured',
+        webhookLastEventAt: supplier.webhook_last_event_at ?? undefined,
+        created_at: supplier.created_at,
+      }));
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      console.error('Error fetching supplier summaries:', error);
       throw error;
     }
   },
 
-  async getSupplierById(id: string): Promise<ExternalSupplier> {
-    try {
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error(`Error fetching supplier with ID ${id}:`, error);
-      throw error;
-    }
+  async getSupplierSummaryById(id: string): Promise<SupplierSummary> {
+    const { data, error } = await supabase
+      .from('external_suppliers')
+      .select('id,name,type,status,last_sync,webhook_status,webhook_last_event_at,created_at')
+      .eq('id', id)
+      .neq('type', 'autods')
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      name: data.name,
+      type: data.type,
+      status: data.status,
+      lastSync: data.last_sync ?? undefined,
+      webhookStatus: data.webhook_status ?? 'not_configured',
+      webhookLastEventAt: data.webhook_last_event_at ?? undefined,
+      created_at: data.created_at,
+    };
   },
 
-  async createSupplier(supplier: Omit<ExternalSupplier, 'id' | 'created_at'>): Promise<ExternalSupplier> {
-    try {
-      // Validate the supplier connection before saving
-      await this.testConnection(supplier);
-      
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .insert([{
-          ...supplier,
-          status: 'active',
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error creating supplier:', error);
-      throw error;
+  async configureRealtimeSync(supplierId: string): Promise<boolean> {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Realtime supplier sync is not implemented for this supplier yet');
     }
+
+    await cjSupplierService.configureWebhooks(supplierId);
+    return true;
   },
 
-  async updateSupplier(id: string, updates: Partial<ExternalSupplier>): Promise<ExternalSupplier> {
+  async testConnectionById(supplierId: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supplier-provider-test`;
+      const session = (await supabase.auth.getSession()).data.session;
+
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await axios.post(
+        apiUrl,
+        { supplierId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      return response.data?.success === true;
     } catch (error) {
-      console.error(`Error updating supplier with ID ${id}:`, error);
-      throw error;
+      console.error('Error testing supplier connection by id:', error);
+      return false;
     }
+  },
+  async createSupplier(
+    supplier: Omit<ExternalSupplier, 'id' | 'created_at'>
+  ): Promise<SupplierSummary> {
+    if (supplier.type === 'cj_dropshipping') {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Authentication required');
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-connect`;
+      const response = await axios.post(
+        apiUrl,
+        {
+          name: supplier.name,
+          apiKey: supplier.apiKey,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (response.data?.success !== true || !response.data?.supplier) {
+        throw new Error(response.data?.error || 'CJ connection failed');
+      }
+      return response.data.supplier as SupplierSummary;
+    }
+
+    throw new Error('Secure supplier creation is not implemented for this provider yet');
+  },
+
+  async updateSupplier(
+    id: string,
+    updates: Partial<ExternalSupplier>
+  ): Promise<SupplierSummary> {
+    const current = await this.getSupplierSummaryById(id);
+    if (current.type === 'cj_dropshipping') {
+      if (!updates.apiKey) {
+        throw new Error('CJ API key is required to update this connection securely');
+      }
+
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Authentication required');
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-connect`;
+      const response = await axios.post(
+        apiUrl,
+        {
+          supplierId: id,
+          name: updates.name ?? current.name,
+          apiKey: updates.apiKey,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (response.data?.success !== true || !response.data?.supplier) {
+        throw new Error(response.data?.error || 'CJ connection update failed');
+      }
+      return response.data.supplier as SupplierSummary;
+    }
+
+    throw new Error('Secure supplier update is not implemented for this provider yet');
+  },
+
+  async disconnectSupplier(id: string): Promise<{ remoteLogoutConfirmed: boolean }> {
+    const supplier = await this.getSupplierSummaryById(id);
+
+    if (supplier.type !== 'cj_dropshipping') {
+      await this.deleteSupplier(id);
+      return { remoteLogoutConfirmed: false };
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-disconnect`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId: id },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (response.data?.success !== true) {
+      throw new Error(response.data?.error || 'Supplier disconnect failed');
+    }
+
+    return {
+      remoteLogoutConfirmed: response.data?.remoteLogoutConfirmed === true,
+    };
   },
 
   async deleteSupplier(id: string): Promise<void> {
@@ -89,175 +204,200 @@ export const supplierService = {
     }
   },
 
-  async testConnection(supplier: Omit<ExternalSupplier, 'id' | 'created_at' | 'status'>): Promise<boolean> {
-    try {
-      // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/test`;
-      
-      const response = await axios.post(apiUrl, {
-        type: supplier.type,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data.success;
-    } catch (error) {
-      console.error('Error testing supplier connection:', error);
-      throw error;
-    }
-  },
-
   async getProducts(supplierId: string, filters: ImportFilter = {}): Promise<SupplierProduct[]> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/${supplier.type}`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl,
-        filters
-      }, {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Product catalog is not implemented for this supplier yet');
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'search', filters },
+      {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data.products;
-    } catch (error) {
-      console.error('Error fetching products from supplier:', error);
-      throw error;
-    }
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    return response.data.products || [];
   },
 
   async getProductById(supplierId: string, productId: string): Promise<SupplierProduct> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/${supplier.type}`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl,
-        productId
-      }, {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Product detail is not implemented for this supplier yet');
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'detail', productId },
+      {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      if (!response.data.product) {
-        throw new Error(`Product ${productId} not found`);
+          Authorization: `Bearer ${session.access_token}`,
+        },
       }
-      
-      return response.data.product;
-    } catch (error) {
-      console.error(`Error fetching product ${productId} from supplier ${supplierId}:`, error);
-      throw error;
-    }
+    );
+
+    if (!response.data.product) throw new Error(`Product ${productId} not found`);
+    return response.data.product;
   },
 
   async getProductsByIds(supplierId: string, productIds: string[]): Promise<SupplierProduct[]> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/${supplier.type}`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl,
-        productIds
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data.products;
-    } catch (error) {
-      console.error(`Error fetching products from supplier ${supplierId}:`, error);
-      throw error;
+    const products: SupplierProduct[] = [];
+    for (const productId of productIds) {
+      products.push(await this.getProductById(supplierId, productId));
     }
+    return products;
   },
 
   async getCategories(supplierId: string): Promise<any[]> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      if (supplier.type !== 'autods') {
-        throw new Error('Categories not supported for this supplier');
-      }
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier categories are not implemented for this supplier yet');
+    }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/categories`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl
-      }, {
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'categories' },
+      {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data.categories;
-    } catch (error) {
-      console.error('Error fetching categories from supplier:', error);
-      throw error;
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    return response.data.categories || [];
+  },
+
+  async getVariants(
+    supplierId: string,
+    productId: string,
+    countryCode?: string
+  ): Promise<SupplierProduct['variants']> {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier variants are not implemented for this supplier yet');
     }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'variants', productId, countryCode },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    return response.data.variants || [];
+  },
+
+  async getVariantStock(supplierId: string, variantId: string): Promise<number> {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier stock is not implemented for this supplier yet');
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'stock', variantId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    return Number(response.data.stock || 0);
   },
 
   async importProducts(supplierId: string, productIds: string[]): Promise<ImportResult> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/import`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl,
-        productIds
-      }, {
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier import is not implemented for this supplier yet');
+    }
+
+    if (productIds.length === 0) {
+      return {
+        success: false,
+        message: 'No supplier products selected',
+        importedCount: 0,
+        failedCount: 0,
+      };
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-dropshipping`;
+    const response = await axios.post(
+      apiUrl,
+      { supplierId, action: 'snapshot_import', productIds },
+      {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    const importedCount = Number(response.data?.importedCount ?? 0);
+    const failedCount = Number(response.data?.failedCount ?? 0);
+    const errors = Array.isArray(response.data?.failed)
+      ? response.data.failed.map((failure: { externalId?: string; error?: string }) =>
+          `${failure.externalId || 'unknown'}: ${failure.error || 'import failed'}`
+        )
+      : undefined;
+
+    if (importedCount > 0 && supplier.webhookStatus === 'enabled') {
+      try {
+        for (let index = 0; index < productIds.length; index += 100) {
+          await cjSupplierService.subscribeWebhookProducts(
+            supplierId,
+            productIds.slice(index, index + 100)
+          );
         }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error importing products from supplier:', error);
-      throw error;
+      } catch (error) {
+        console.warn('CJ product webhook subscription was not confirmed:', error);
+      }
     }
+
+    return {
+      success: response.data?.success === true,
+      message:
+        failedCount === 0
+          ? `Imported ${importedCount} verified CJdropshipping product snapshots`
+          : `Imported ${importedCount} products; ${failedCount} failed`,
+      importedCount,
+      failedCount,
+      errors,
+    };
   },
 
   async importToShopify(products: SupplierProduct[]): Promise<ImportResult> {
@@ -282,35 +422,55 @@ export const supplierService = {
   },
 
   async createOrder(supplierId: string, orderData: OrderRequest): Promise<OrderResult> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      if (supplier.type !== 'autods') {
-        throw new Error('Order creation not supported for this supplier');
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/orders`;
-      
-      const response = await axios.post(apiUrl, {
-        supplierId,
-        apiKey: supplier.apiKey,
-        apiSecret: supplier.apiSecret,
-        baseUrl: supplier.baseUrl,
-        order: orderData
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error creating order with supplier:', error);
-      throw error;
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier order automation is not implemented for this supplier yet');
     }
+
+    if (!orderData.logisticName) {
+      throw new Error('CJdropshipping logisticName is required before creating an order');
+    }
+
+    const cjPayload: Record<string, unknown> = {
+      orderNumber: orderData.external_order_id,
+      shippingZip: orderData.shipping_address.zip,
+      shippingCountryCode: orderData.shipping_address.country,
+      shippingCountry:
+        orderData.shipping_address.country_name || orderData.shipping_address.country,
+      shippingProvince: orderData.shipping_address.state,
+      shippingCity: orderData.shipping_address.city,
+      shippingAddress: orderData.shipping_address.address1,
+      shippingAddress2: orderData.shipping_address.address2,
+      shippingCustomerName: orderData.shipping_address.name,
+      shippingPhone: orderData.shipping_address.phone,
+      email: orderData.shipping_address.email,
+      logisticName: orderData.logisticName,
+      fromCountryCode: orderData.fromCountryCode || 'CN',
+      payType: orderData.payType ?? 3,
+      orderFlow: orderData.orderFlow ?? 1,
+      platform: orderData.platform || 'shopopti',
+      products: orderData.items.map((item) => ({
+        vid: item.product_id,
+        quantity: item.quantity,
+      })),
+    };
+
+    const result = await cjSupplierService.createOrder(supplierId, cjPayload);
+    const remote = result.data as any;
+    const data = remote?.data ?? remote;
+    const externalOrderId =
+      data?.orderId ?? data?.orderNum ?? data?.orderNumber ?? data?.orderCode;
+
+    if (!externalOrderId) {
+      throw new Error('CJdropshipping did not return an order identifier');
+    }
+
+    return {
+      success: true,
+      message: 'CJdropshipping order created',
+      externalOrderId: String(externalOrderId),
+      status: String(data?.orderStatus ?? data?.status ?? 'created'),
+    };
   },
 
   async getOrderStatus(supplierId: string, externalOrderId: string): Promise<{
@@ -318,28 +478,22 @@ export const supplierService = {
     trackingNumber?: string;
     estimatedDelivery?: string;
   }> {
-    try {
-      // Get the supplier details first
-      const supplier = await this.getSupplierById(supplierId);
-      
-      // Call the appropriate API endpoint based on supplier type
-      if (supplier.type !== 'autods') {
-        throw new Error('Order status not supported for this supplier');
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/providers/autods/orders/${externalOrderId}`;
-      
-      const response = await axios.get(apiUrl, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error getting order status from supplier:', error);
-      throw error;
+    const supplier = await this.getSupplierSummaryById(supplierId);
+    if (supplier.type !== 'cj_dropshipping') {
+      throw new Error('Supplier tracking is not implemented for this supplier yet');
     }
+
+    const result = await cjSupplierService.getOrderDetail(supplierId, {
+      orderId: externalOrderId,
+    });
+    const remote = result.data as any;
+    const data = remote?.data ?? remote;
+
+    return {
+      status: String(data?.orderStatus ?? data?.status ?? 'unknown'),
+      trackingNumber:
+        data?.trackingNumber ?? data?.trackingNumberList?.[0] ?? data?.trackNumber,
+      estimatedDelivery: data?.estimatedDelivery ?? data?.logisticsTimeliness?.endTime,
+    };
   }
 };
