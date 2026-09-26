@@ -16,7 +16,14 @@
     <div id="root"></div>
     <script>
       window.__SHOPOPTI_HTML_LOADED__ = true;
+      setTimeout(() => {
+        const el = document.getElementById('shopopti-static-diagnostic');
+        if (el && !window.__SHOPOPTI_STATIC_JS_LOADED__) {
+          el.innerHTML = '<strong style="color:#991b1b">JavaScript statique non chargé</strong><div style="margin-top:8px">Le navigateur ne reçoit pas /shopopti-diag.js.</div>';
+        }
+      }, 2500);
     </script>
+    <script src="/shopopti-diag.js"></script>
     <script
       type="module"
       src="/src/main.tsx"
