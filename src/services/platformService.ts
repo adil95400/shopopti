@@ -59,6 +59,12 @@ export const platformService = {
       if (!validationResult.success) {
         throw new Error(validationResult.message);
       }
+
+      if (platformId === 'cdiscount') {
+        throw new Error(
+          'Cdiscount credentials are verified by Octopia, but activation is blocked until secure server-side credential persistence is implemented.'
+        );
+      }
       
       // Save platform connection to database
       const { error } = await supabase
@@ -167,13 +173,41 @@ export const platformService = {
           
           return { success: true, message: 'Squarespace credentials validated successfully' };
 
-        case 'cdiscount':
-          // Fail closed until the Cdiscount/Octopia server-side connector performs
-          // a real remote credential check. Never persist a simulated connection.
+        case 'cdiscount': {
+          const clientId = credentials.clientId;
+          const clientSecret = credentials.clientSecret;
+          const sellerId = credentials.sellerId;
+
+          if (!clientId || !clientSecret || !sellerId) {
+            return {
+              success: false,
+              message: 'Octopia clientId, clientSecret and sellerId are required'
+            };
+          }
+
+          const { data, error } = await supabase.functions.invoke('cdiscount-connect', {
+            body: { clientId, clientSecret, sellerId }
+          });
+
+          if (error) {
+            return {
+              success: false,
+              message: error.message || 'Cdiscount verification failed'
+            };
+          }
+
+          if (!data?.success || !data?.verified) {
+            return {
+              success: false,
+              message: data?.error || 'Cdiscount verification failed'
+            };
+          }
+
           return {
-            success: false,
-            message: 'Cdiscount is not production-ready yet. A verified Octopia API connection is required.'
+            success: true,
+            message: 'Cdiscount credentials verified successfully via Octopia'
           };
+        }
         
         default:
           return { success: false, message: `Unknown platform: ${platformId}` };
