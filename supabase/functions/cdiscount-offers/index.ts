@@ -29,6 +29,7 @@ type OfferWriteRequest = {
   acceptLanguage?: "fr-FR" | "en-US" | "es-ES";
   offerRequests?: Record<string, unknown>[];
   limit?: number;
+  idempotencyKey?: string;
 };
 
 type SecretEnvelope = {
@@ -65,6 +66,97 @@ function getServerKey(): string {
   return readKeySet("SUPABASE_SECRET_KEYS") ||
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
     "";
+}
+
+function getAdminClient() {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const serverKey = getServerKey();
+  if (!supabaseUrl || !serverKey) {
+    throw new Error("Supabase server configuration unavailable");
+  }
+  return createClient(supabaseUrl, serverKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function sha256(value: unknown): Promise<string> {
+  const encoded = new TextEncoder().encode(JSON.stringify(value));
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function reserveMutation(
+  userId: string,
+  action: string,
+  idempotencyKey: string,
+  requestFingerprint: string,
+) {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from("publication_logs")
+    .insert({
+      user_id: userId,
+      channel_type: "marketplace",
+      channel_id: "cdiscount",
+      channel_name: "Cdiscount / Octopia",
+      action,
+      status: "in_progress",
+      idempotency_key: idempotencyKey,
+      metadata: { request_fingerprint: requestFingerprint },
+    })
+    .select("id, status, external_id, error_message, metadata")
+    .single();
+
+  if (!error) return { admin, log: data, replayed: false };
+  if (error.code !== "23505") {
+    throw new Error("Cdiscount idempotency ledger reservation failed");
+  }
+
+  const { data: existing, error: existingError } = await admin
+    .from("publication_logs")
+    .select("id, status, external_id, error_message, metadata")
+    .eq("user_id", userId)
+    .eq("channel_id", "cdiscount")
+    .eq("action", action)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+
+  if (existingError || !existing) {
+    throw new Error("Cdiscount idempotency ledger lookup failed");
+  }
+
+  const existingFingerprint = existing.metadata?.request_fingerprint;
+  if (existingFingerprint && existingFingerprint !== requestFingerprint) {
+    throw new Error("Idempotency key was already used with a different payload");
+  }
+
+  return { admin, log: existing, replayed: true };
+}
+
+async function completeMutation(
+  admin: ReturnType<typeof getAdminClient>,
+  logId: string,
+  externalId: string | null,
+  metadata: Record<string, unknown>,
+) {
+  const { error } = await admin
+    .from("publication_logs")
+    .update({ status: "success", external_id: externalId, metadata })
+    .eq("id", logId);
+  if (error) throw new Error("Cdiscount idempotency ledger completion failed");
+}
+
+async function markAmbiguous(
+  admin: ReturnType<typeof getAdminClient>,
+  logId: string,
+  errorMessage: string,
+) {
+  await admin
+    .from("publication_logs")
+    .update({ status: "ambiguous", error_message: errorMessage })
+    .eq("id", logId);
 }
 
 async function requireAuthenticatedUser(req: Request) {
@@ -291,20 +383,63 @@ serve(async (req) => {
     const channel = input.salesChannelId?.trim() || "CDISFR";
     const language = input.acceptLanguage || "fr-FR";
 
+    if (["create_package", "upload_requests", "submit_package"].includes(action)) {
+      const idempotencyKey = input.idempotencyKey?.trim();
+      if (!idempotencyKey) {
+        return jsonResponse({ success: false, error: "idempotencyKey is required for mutations" }, 400);
+      }
+    }
+
     if (action === "create_package") {
       if (!input.packageType || !["Upsert", "Update", "Delete"].includes(input.packageType)) {
         return jsonResponse({ success: false, error: "Valid packageType is required" }, 400);
       }
 
-      const response = await fetch(`${API_BASE}/offer-packages`, {
+      const requestFingerprint = await sha256({
+        action,
+        packageType: input.packageType,
+        salesChannelId: channel,
+        acceptLanguage: language,
+      });
+      const reservation = await reserveMutation(
+        auth.user.id,
+        action,
+        input.idempotencyKey!.trim(),
+        requestFingerprint,
+      );
+      if (reservation.replayed) {
+        if (reservation.log.status === "success" && reservation.log.external_id) {
+          return jsonResponse({
+            success: true,
+            replayed: true,
+            action,
+            packageId: reservation.log.external_id,
+            data: reservation.log.metadata,
+          });
+        }
+        return jsonResponse({
+          success: false,
+          error: "This Cdiscount operation is already in progress or has an ambiguous outcome",
+          status: reservation.log.status,
+        }, 409);
+      }
+
+      let response: Response;
+      try {
+        response = await fetch(`${API_BASE}/offer-packages`, {
         method: "POST",
         headers: octopiaHeaders(token, sellerId, {
           "Content-Type": "application/json",
           "Accept-Language": language,
           SalesChannelId: channel,
         }),
-        body: JSON.stringify({ packageType: input.packageType }),
-      });
+          body: JSON.stringify({ packageType: input.packageType }),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Remote create failed";
+        await markAmbiguous(reservation.admin, reservation.log.id, message);
+        throw new Error("Cdiscount package creation outcome is ambiguous; manual reconciliation required");
+      }
 
       if (response.status !== 201) {
         await parseResponse(response);
@@ -313,8 +448,26 @@ serve(async (req) => {
       const location = response.headers.get("Content-Location");
       const packageId = location?.split("/").filter(Boolean).pop() || null;
       if (!packageId) {
+        await markAmbiguous(
+          reservation.admin,
+          reservation.log.id,
+          "Octopia returned no package identifier",
+        );
         throw new Error("Octopia created a package but returned no package identifier");
       }
+
+      const resultMetadata = {
+        request_fingerprint: requestFingerprint,
+        package_type: input.packageType,
+        sales_channel_id: channel,
+        remote_state: "WaitingForCompletion",
+      };
+      await completeMutation(
+        reservation.admin,
+        reservation.log.id,
+        packageId,
+        resultMetadata,
+      );
 
       return jsonResponse({
         success: true,
@@ -358,7 +511,38 @@ serve(async (req) => {
         }, 409);
       }
 
-      const response = await fetch(
+      const requestFingerprint = await sha256({
+        action,
+        packageId,
+        packageType: input.packageType,
+        offerRequests: requests,
+      });
+      const reservation = await reserveMutation(
+        auth.user.id,
+        action,
+        input.idempotencyKey!.trim(),
+        requestFingerprint,
+      );
+      if (reservation.replayed) {
+        if (reservation.log.status === "success") {
+          return jsonResponse({
+            success: true,
+            replayed: true,
+            action,
+            packageId: reservation.log.external_id || packageId,
+            data: reservation.log.metadata,
+          });
+        }
+        return jsonResponse({
+          success: false,
+          error: "This Cdiscount upload is already in progress or has an ambiguous outcome",
+          status: reservation.log.status,
+        }, 409);
+      }
+
+      let response: Response;
+      try {
+        response = await fetch(
         `${API_BASE}/offer-packages/${encodeURIComponent(packageId)}/offer-requests`,
         {
           method: "POST",
@@ -366,9 +550,32 @@ serve(async (req) => {
             "Content-Type": "application/json",
           }),
           body: JSON.stringify(requests),
-        },
+          },
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Remote upload failed";
+        await markAmbiguous(reservation.admin, reservation.log.id, message);
+        throw new Error("Cdiscount offer upload outcome is ambiguous; manual reconciliation required");
+      }
+      try {
+        await parseResponse(response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Remote upload failed";
+        await markAmbiguous(reservation.admin, reservation.log.id, message);
+        throw error;
+      }
+
+      const resultMetadata = {
+        request_fingerprint: requestFingerprint,
+        uploaded: requests.length,
+        package_type: input.packageType,
+      };
+      await completeMutation(
+        reservation.admin,
+        reservation.log.id,
+        packageId,
+        resultMetadata,
       );
-      await parseResponse(response);
 
       return jsonResponse({
         success: true,
@@ -388,7 +595,33 @@ serve(async (req) => {
         }, 409);
       }
 
-      const response = await fetch(
+      const requestFingerprint = await sha256({ action, packageId, state: "Ready" });
+      const reservation = await reserveMutation(
+        auth.user.id,
+        action,
+        input.idempotencyKey!.trim(),
+        requestFingerprint,
+      );
+      if (reservation.replayed) {
+        if (reservation.log.status === "success") {
+          return jsonResponse({
+            success: true,
+            replayed: true,
+            action,
+            packageId: reservation.log.external_id || packageId,
+            data: reservation.log.metadata,
+          });
+        }
+        return jsonResponse({
+          success: false,
+          error: "This Cdiscount submission is already in progress or has an ambiguous outcome",
+          status: reservation.log.status,
+        }, 409);
+      }
+
+      let response: Response;
+      try {
+        response = await fetch(
         `${API_BASE}/offer-packages/${encodeURIComponent(packageId)}`,
         {
           method: "PATCH",
@@ -396,9 +629,31 @@ serve(async (req) => {
             "Content-Type": "application/json",
           }),
           body: JSON.stringify({ state: "Ready" }),
-        },
+          },
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Remote submit failed";
+        await markAmbiguous(reservation.admin, reservation.log.id, message);
+        throw new Error("Cdiscount package submission outcome is ambiguous; manual reconciliation required");
+      }
+      try {
+        await parseResponse(response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Remote submit failed";
+        await markAmbiguous(reservation.admin, reservation.log.id, message);
+        throw error;
+      }
+
+      const resultMetadata = {
+        request_fingerprint: requestFingerprint,
+        remote_state: "Ready",
+      };
+      await completeMutation(
+        reservation.admin,
+        reservation.log.id,
+        packageId,
+        resultMetadata,
       );
-      await parseResponse(response);
 
       return jsonResponse({
         success: true,
