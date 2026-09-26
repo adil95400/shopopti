@@ -46,8 +46,24 @@ jobs:
           printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
           vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
+      - name: Force staging Supabase client variables
+        run: |
+          env_file=".vercel/.env.preview.local"
+          touch "$env_file"
+          grep -v -E '^VITE_SUPABASE_(URL|ANON_KEY)=' "$env_file" > "$env_file.tmp" || true
+          mv "$env_file.tmp" "$env_file"
+          printf 'VITE_SUPABASE_URL="%s"\n' "$VITE_SUPABASE_URL" >> "$env_file"
+          printf 'VITE_SUPABASE_ANON_KEY="%s"\n' "$VITE_SUPABASE_ANON_KEY" >> "$env_file"
+
       - name: Build with staging Supabase
         run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Verify staging Supabase is embedded
+        run: |
+          if ! grep -R -q "oskgbfpztggzunazongx" .vercel/output/static; then
+            echo "Staging Supabase project ref is missing from the browser bundle."
+            exit 1
+          fi
 
       - name: Deploy preview
         id: deploy
