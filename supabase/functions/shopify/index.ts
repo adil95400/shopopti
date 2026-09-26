@@ -751,9 +751,23 @@ async function handleShopifyWebhook(
     })
 
   if (deliveryError?.code === '23505') {
-    return new Response(null, { status: 200 })
-  }
-  if (deliveryError) {
+    const { data: priorDelivery, error: priorError } = await admin
+      .from('shopify_webhook_deliveries')
+      .select('status')
+      .eq('connection_id', connection.connection_id)
+      .eq('delivery_id', deliveryId)
+      .maybeSingle()
+    if (priorError) {
+      throw new ShopifyIntegrationError(
+        'SHOPIFY_WEBHOOK_IDEMPOTENCY_FAILED',
+        'Shopify webhook delivery state could not be confirmed.',
+        502,
+      )
+    }
+    if (priorDelivery?.status === 'processed') {
+      return new Response(null, { status: 200 })
+    }
+  } else if (deliveryError) {
     throw new ShopifyIntegrationError(
       'SHOPIFY_WEBHOOK_IDEMPOTENCY_FAILED',
       'Shopify webhook delivery could not be recorded safely.',
@@ -762,6 +776,11 @@ async function handleShopifyWebhook(
   }
 
   if (topic !== 'orders/create' && topic !== 'orders/updated') {
+    await admin
+      .from('shopify_webhook_deliveries')
+      .update({ status: 'processed', processed_at: new Date().toISOString(), last_error: null })
+      .eq('connection_id', connection.connection_id)
+      .eq('delivery_id', deliveryId)
     return new Response(null, { status: 204 })
   }
 
@@ -815,6 +834,19 @@ async function handleShopifyWebhook(
     throw new ShopifyIntegrationError(
       'SHOPIFY_WEBHOOK_ORDER_PERSIST_FAILED',
       'The verified Shopify order webhook could not be persisted.',
+      502,
+    )
+  }
+
+  const { error: finalizeError } = await admin
+    .from('shopify_webhook_deliveries')
+    .update({ status: 'processed', processed_at: new Date().toISOString(), last_error: null })
+    .eq('connection_id', connection.connection_id)
+    .eq('delivery_id', deliveryId)
+  if (finalizeError) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_FINALIZE_FAILED',
+      'The Shopify order was persisted but the webhook delivery could not be finalized.',
       502,
     )
   }
