@@ -488,13 +488,11 @@ const ORDERS_QUERY = \`#graphql
       nodes {
         id
         name
-        email
         createdAt
         updatedAt
         displayFinancialStatus
         displayFulfillmentStatus
         currentTotalPriceSet { shopMoney { amount currencyCode } }
-        customer { displayName }
         lineItems(first: 100) {
           nodes { id name quantity sku variant { id title } }
         }
