@@ -25,12 +25,11 @@ import {
   type ProductAnalyticsSnapshot,
 } from '@/services/analyticsService';
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
+const formatRevenue = (value: number) =>
+  `${new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value);
+  }).format(value)} · devise non vérifiée`;
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
@@ -103,7 +102,7 @@ export default function Dashboard() {
   const metricCards = [
     {
       title: "Chiffre d'affaires vérifié",
-      value: snapshot ? formatCurrency(snapshot.revenue) : '—',
+      value: snapshot ? formatRevenue(snapshot.revenue) : '—',
       helper: 'Source : marketplace_analytics',
       icon: BarChart3,
     },
@@ -244,7 +243,7 @@ export default function Dashboard() {
                           {formatNumber(product.conversions)}
                         </td>
                         <td className="py-3 pl-4 text-right font-medium">
-                          {formatCurrency(product.revenue)}
+                          {formatRevenue(product.revenue)}
                         </td>
                       </tr>
                     ))}
@@ -260,6 +259,7 @@ export default function Dashboard() {
             <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
               <span>Source : {snapshot?.source ?? 'marketplace_analytics'}</span>
               <span>Dernière vérification : {verifiedAtLabel ?? '—'}</span>
+              <span>Devise : non vérifiée</span>
               <span>Profit : non disponible sans coût fournisseur vérifié</span>
             </div>
           </div>
