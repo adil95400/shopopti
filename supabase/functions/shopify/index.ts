@@ -180,7 +180,7 @@ async function validateShop(domain: string, accessToken: string) {
   }
 
   const scopes = new Set(data.currentAppInstallation?.accessScopes?.map(scope => scope.handle) ?? [])
-  const requiredScopes = ['read_products', 'write_products', 'read_inventory', 'write_inventory', 'read_locations']
+  const requiredScopes = ['read_products', 'write_products', 'read_inventory', 'write_inventory', 'read_locations', 'read_orders']
   const missingScopes = requiredScopes.filter(scope => !scopes.has(scope))
   if (missingScopes.length > 0) {
     throw new ShopifyIntegrationError(
@@ -481,6 +481,349 @@ async function publishProduct(options: {
   return { operation, product: snapshot }
 }
 
+
+const ORDERS_QUERY = \`#graphql
+  query ShopOptiOrders($first: Int!) {
+    orders(first: $first, reverse: true, sortKey: UPDATED_AT) {
+      nodes {
+        id
+        name
+        email
+        createdAt
+        updatedAt
+        displayFinancialStatus
+        displayFulfillmentStatus
+        currentTotalPriceSet { shopMoney { amount currencyCode } }
+        customer { displayName }
+        lineItems(first: 100) {
+          nodes { id name quantity sku variant { id title } }
+        }
+      }
+    }
+  }
+\`
+
+const WEBHOOKS_QUERY = \`#graphql
+  query ShopOptiWebhookSubscriptions($first: Int!) {
+    webhookSubscriptions(first: $first) {
+      nodes { id topic uri }
+    }
+  }
+\`
+
+const WEBHOOK_CREATE_MUTATION = \`#graphql
+  mutation ShopOptiWebhookCreate(
+    $topic: WebhookSubscriptionTopic!,
+    $webhookSubscription: WebhookSubscriptionInput!
+  ) {
+    webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+      webhookSubscription { id topic uri }
+      userErrors { field message }
+    }
+  }
+\`
+
+type ShopifyOrderNode = {
+  id: string
+  name: string
+  email?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  displayFinancialStatus?: string | null
+  displayFulfillmentStatus?: string | null
+  currentTotalPriceSet?: { shopMoney?: { amount?: string; currencyCode?: string } | null } | null
+  customer?: { displayName?: string | null } | null
+  lineItems?: { nodes?: Array<Record<string, unknown>> } | null
+}
+
+function normalizedOrderRow(
+  userId: string,
+  connectionId: string,
+  order: ShopifyOrderNode,
+  source: 'pull' | 'webhook',
+) {
+  const money = order.currentTotalPriceSet?.shopMoney
+  return {
+    user_id: userId,
+    connection_id: connectionId,
+    shopify_order_id: order.id,
+    order_name: order.name || order.id,
+    email: order.email ?? null,
+    customer_name: order.customer?.displayName ?? null,
+    financial_status: order.displayFinancialStatus ?? null,
+    fulfillment_status: order.displayFulfillmentStatus ?? null,
+    total_price: Number(money?.amount ?? 0),
+    currency: money?.currencyCode || 'EUR',
+    line_items: order.lineItems?.nodes ?? [],
+    remote_snapshot: order,
+    remote_created_at: order.createdAt ?? null,
+    remote_updated_at: order.updatedAt ?? null,
+    source,
+    updated_at: new Date().toISOString(),
+  }
+}
+
+async function syncOrders(
+  admin: ReturnType<typeof adminClient>,
+  userId: string,
+) {
+  const secret = await connectionSecret(admin, userId)
+  const data = await shopifyGraphQL<{ orders: { nodes: ShopifyOrderNode[] } }>({
+    domain: secret.shop_domain,
+    accessToken: secret.access_token,
+    query: ORDERS_QUERY,
+    variables: { first: 50 },
+  })
+  const rows = (data.orders?.nodes ?? []).map(order =>
+    normalizedOrderRow(userId, secret.connection_id, order, 'pull')
+  )
+  if (rows.length > 0) {
+    const { error } = await admin
+      .from('shopify_orders')
+      .upsert(rows, { onConflict: 'user_id,connection_id,shopify_order_id' })
+    if (error) {
+      throw new ShopifyIntegrationError(
+        'SHOPIFY_ORDER_PERSIST_FAILED',
+        'Shopify orders were received but could not be persisted.',
+        502,
+      )
+    }
+  }
+  return rows.map(row => ({
+    id: row.shopify_order_id,
+    name: row.order_name,
+    email: row.email,
+    customer_name: row.customer_name,
+    created_at: row.remote_created_at,
+    updated_at: row.remote_updated_at,
+    financial_status: row.financial_status,
+    fulfillment_status: row.fulfillment_status,
+    total_price: row.total_price,
+    currency: row.currency,
+    line_items: row.line_items,
+  }))
+}
+
+async function ensureOrderWebhooks(
+  admin: ReturnType<typeof adminClient>,
+  userId: string,
+) {
+  const webhookUrl = (Deno.env.get('SHOPIFY_WEBHOOK_URL') || '').trim()
+  const appSecret = (Deno.env.get('SHOPIFY_APP_CLIENT_SECRET') || '').trim()
+  if (!webhookUrl || !appSecret) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_CONFIG_MISSING',
+      'Shopify webhook URL or app client secret is not configured.',
+      503,
+    )
+  }
+  if (!/^https:\/\//i.test(webhookUrl)) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_URL_INVALID',
+      'Shopify webhook URL must use HTTPS.',
+      503,
+    )
+  }
+
+  const secret = await connectionSecret(admin, userId)
+  const existing = await shopifyGraphQL<{
+    webhookSubscriptions: { nodes: Array<{ id: string; topic: string; uri: string }> }
+  }>({
+    domain: secret.shop_domain,
+    accessToken: secret.access_token,
+    query: WEBHOOKS_QUERY,
+    variables: { first: 100 },
+  })
+  const requiredTopics = ['ORDERS_CREATE', 'ORDERS_UPDATED']
+  const subscriptions = [...(existing.webhookSubscriptions?.nodes ?? [])]
+
+  for (const topic of requiredTopics) {
+    if (subscriptions.some(item => item.topic === topic && item.uri === webhookUrl)) continue
+    const created = await shopifyGraphQL<{
+      webhookSubscriptionCreate: {
+        webhookSubscription: { id: string; topic: string; uri: string } | null
+        userErrors: Array<{ field?: string[]; message: string }>
+      }
+    }>({
+      domain: secret.shop_domain,
+      accessToken: secret.access_token,
+      query: WEBHOOK_CREATE_MUTATION,
+      variables: {
+        topic,
+        webhookSubscription: { uri: webhookUrl },
+      },
+    })
+    assertNoUserErrors(
+      created.webhookSubscriptionCreate.userErrors,
+      'SHOPIFY_WEBHOOK_REGISTRATION_REJECTED',
+    )
+    const subscription = created.webhookSubscriptionCreate.webhookSubscription
+    if (!subscription?.id || subscription.uri !== webhookUrl) {
+      throw new ShopifyIntegrationError(
+        'SHOPIFY_WEBHOOK_CONFIRMATION_MISSING',
+        'Shopify did not confirm the webhook subscription.',
+        502,
+      )
+    }
+    subscriptions.push(subscription)
+  }
+
+  return subscriptions.filter(item =>
+    requiredTopics.includes(item.topic) && item.uri === webhookUrl
+  )
+}
+
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let index = 0; index < a.length; index += 1) {
+    diff |= a.charCodeAt(index) ^ b.charCodeAt(index)
+  }
+  return diff === 0
+}
+
+async function hmacBase64(secret: string, rawBody: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody))
+  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+}
+
+async function sha256Hex(rawBody: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawBody))
+  return Array.from(new Uint8Array(digest))
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+async function handleShopifyWebhook(
+  req: Request,
+  admin: ReturnType<typeof adminClient>,
+): Promise<Response> {
+  const topic = (req.headers.get('x-shopify-topic') || '').trim().toLowerCase()
+  const shopDomain = normalizeShopDomain(req.headers.get('x-shopify-shop-domain'))
+  const deliveryId = (req.headers.get('x-shopify-webhook-id') || '').trim()
+  const receivedHmac = (req.headers.get('x-shopify-hmac-sha256') || '').trim()
+  const appSecret = (Deno.env.get('SHOPIFY_APP_CLIENT_SECRET') || '').trim()
+
+  if (!topic || !deliveryId || !receivedHmac || !appSecret) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_AUTH_MISSING',
+      'Shopify webhook authentication metadata is incomplete.',
+      401,
+    )
+  }
+
+  const rawBody = await req.text()
+  const expectedHmac = await hmacBase64(appSecret, rawBody)
+  if (!safeEqual(receivedHmac, expectedHmac)) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_HMAC_INVALID',
+      'Shopify webhook signature validation failed.',
+      401,
+    )
+  }
+
+  const { data, error } = await admin.rpc('get_shopify_webhook_connection', {
+    p_shop_domain: shopDomain,
+  })
+  const connection = Array.isArray(data) ? data[0] : data
+  if (error || !connection?.connection_id || !connection?.user_id) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_STORE_UNKNOWN',
+      'The Shopify webhook store is not connected to ShopOpti.',
+      404,
+    )
+  }
+
+  const { error: deliveryError } = await admin
+    .from('shopify_webhook_deliveries')
+    .insert({
+      user_id: connection.user_id,
+      connection_id: connection.connection_id,
+      delivery_id: deliveryId,
+      topic,
+      shop_domain: shopDomain,
+      payload_sha256: await sha256Hex(rawBody),
+    })
+
+  if (deliveryError?.code === '23505') {
+    return new Response(null, { status: 200 })
+  }
+  if (deliveryError) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_IDEMPOTENCY_FAILED',
+      'Shopify webhook delivery could not be recorded safely.',
+      502,
+    )
+  }
+
+  if (topic !== 'orders/create' && topic !== 'orders/updated') {
+    return new Response(null, { status: 204 })
+  }
+
+  const payload = JSON.parse(rawBody) as Record<string, unknown>
+  const numericId = payload.id
+  if (numericId === undefined || numericId === null) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_ORDER_INVALID',
+      'Shopify order webhook did not include an order ID.',
+      400,
+    )
+  }
+
+  const customer = payload.customer && typeof payload.customer === 'object'
+    ? payload.customer as Record<string, unknown>
+    : {}
+  const firstName = typeof customer.first_name === 'string' ? customer.first_name : ''
+  const lastName = typeof customer.last_name === 'string' ? customer.last_name : ''
+  const currency = typeof payload.currency === 'string'
+    ? payload.currency
+    : typeof payload.presentment_currency === 'string'
+      ? payload.presentment_currency
+      : 'EUR'
+  const totalRaw = payload.current_total_price ?? payload.total_price ?? 0
+
+  const row = {
+    user_id: connection.user_id,
+    connection_id: connection.connection_id,
+    shopify_order_id: \`gid://shopify/Order/\${String(numericId)}\`,
+    order_name: typeof payload.name === 'string' ? payload.name : \`#\${String(numericId)}\`,
+    email: typeof payload.email === 'string' ? payload.email : null,
+    customer_name: \`\${firstName} \${lastName}\`.trim() || null,
+    financial_status: typeof payload.financial_status === 'string' ? payload.financial_status.toUpperCase() : null,
+    fulfillment_status: typeof payload.fulfillment_status === 'string'
+      ? payload.fulfillment_status.toUpperCase()
+      : 'UNFULFILLED',
+    total_price: Number(totalRaw),
+    currency,
+    line_items: Array.isArray(payload.line_items) ? payload.line_items : [],
+    remote_snapshot: payload,
+    remote_created_at: typeof payload.created_at === 'string' ? payload.created_at : null,
+    remote_updated_at: typeof payload.updated_at === 'string' ? payload.updated_at : null,
+    source: 'webhook',
+    updated_at: new Date().toISOString(),
+  }
+
+  const { error: orderError } = await admin
+    .from('shopify_orders')
+    .upsert(row, { onConflict: 'user_id,connection_id,shopify_order_id' })
+  if (orderError) {
+    throw new ShopifyIntegrationError(
+      'SHOPIFY_WEBHOOK_ORDER_PERSIST_FAILED',
+      'The verified Shopify order webhook could not be persisted.',
+      502,
+    )
+  }
+
+  return new Response(null, { status: 200 })
+}
+
 Deno.serve(async req => {
   try {
     if (req.method === 'OPTIONS') {
@@ -490,8 +833,12 @@ Deno.serve(async req => {
       throw new ShopifyIntegrationError('METHOD_NOT_ALLOWED', 'Only POST is supported.', 405)
     }
 
-    const user = await authenticatedUser(req)
     const admin = adminClient()
+    if (req.headers.has('x-shopify-hmac-sha256')) {
+      return await handleShopifyWebhook(req, admin)
+    }
+
+    const user = await authenticatedUser(req)
     const body = await req.json().catch(() => ({})) as JsonRecord
     const action = typeof body.action === 'string' ? body.action : ''
 
@@ -596,12 +943,16 @@ Deno.serve(async req => {
       return json(req, { success: true, available: false, categories: [] })
     }
 
-    if (action === 'orders' || action === 'webhooks') {
-      throw new ShopifyIntegrationError(
-        'SHOPIFY_CAPABILITY_NOT_IMPLEMENTED',
-        'This Shopify capability is not implemented and no fallback data is available.',
-        501,
-      )
+    if (action === 'orders') {
+      return json(req, { success: true, orders: await syncOrders(admin, user.id) })
+    }
+
+    if (action === 'webhooks') {
+      return json(req, {
+        success: true,
+        configured: true,
+        subscriptions: await ensureOrderWebhooks(admin, user.id),
+      })
     }
 
     throw new ShopifyIntegrationError('SHOPIFY_ACTION_INVALID', 'Unknown Shopify action.', 400)
