@@ -46,7 +46,9 @@ CREATE TABLE IF NOT EXISTS public.shopify_webhook_deliveries (
   topic text NOT NULL,
   shop_domain text NOT NULL,
   payload_sha256 text NOT NULL,
-  processed_at timestamptz NOT NULL DEFAULT now(),
+  status text NOT NULL DEFAULT 'processing' CHECK (status IN ('processing', 'processed', 'failed')),
+  last_error text,
+  processed_at timestamptz,
   UNIQUE (connection_id, delivery_id)
 );
 
