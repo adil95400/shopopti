@@ -7,6 +7,51 @@
     <meta name="theme-color" content="#071f36" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ShopOpti | Smart Ecommerce. Bigger Results.</title>
+    <script>
+      window.__SHOPOPTI_BOOT_ERROR__ = null;
+      const captureShopOptiBootError = (title, detail) => {
+        window.__SHOPOPTI_BOOT_ERROR__ = { title, detail };
+        const render = () => {
+          const el = document.getElementById('shopopti-static-diagnostic');
+          if (!el || !window.__SHOPOPTI_BOOT_ERROR__) return;
+          const error = window.__SHOPOPTI_BOOT_ERROR__;
+          const escapeHtml = (value) => String(value).replace(/[&<>]/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;'
+          }[char] || char));
+          el.innerHTML =
+            '<strong style="color:#991b1b">' + escapeHtml(error.title) + '</strong>' +
+            '<pre style="white-space:pre-wrap;word-break:break-word;margin-top:12px;background:#0f172a;color:#e2e8f0;padding:16px;border-radius:10px;">' +
+            escapeHtml(error.detail) +
+            '</pre>';
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', render, { once: true });
+        } else {
+          render();
+        }
+      };
+
+      window.addEventListener('error', (event) => {
+        captureShopOptiBootError(
+          'Erreur module avant démarrage React',
+          [
+            event.message || 'Unknown JavaScript error',
+            event.filename ? 'File: ' + event.filename : '',
+            event.lineno ? 'Line: ' + event.lineno + ':' + (event.colno || 0) : '',
+            event.error && event.error.stack ? event.error.stack : ''
+          ].filter(Boolean).join('\n')
+        );
+      }, true);
+
+      window.addEventListener('unhandledrejection', (event) => {
+        const reason = event.reason instanceof Error
+          ? (event.reason.stack || event.reason.message)
+          : String(event.reason || 'Unhandled promise rejection');
+        captureShopOptiBootError('Promesse rejetée avant démarrage React', reason);
+      });
+    </script>
   </head>
   <body>
     <div id="shopopti-static-diagnostic" style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px;color:#0f172a;background:#f8fafc;min-height:100vh;">
