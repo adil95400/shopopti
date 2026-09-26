@@ -1,6 +1,8 @@
 import { serve } from "npm:@supabase/functions-js";
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
 
+import { encryptSecretPayload } from "../_shared/secretEnvelope.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -15,39 +17,42 @@ type ConnectRequest = {
   clientId?: string;
   clientSecret?: string;
   sellerId?: string | number;
+  persist?: boolean;
 };
 
 type OctopiaTokenResponse = {
   access_token?: string;
   expires_in?: number;
-  token_type?: string;
-  error?: string;
-  error_description?: string;
 };
 
-function jsonResponse(
-  body: Record<string, unknown>,
-  status = 200,
-): Response {
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-function getPublishableKey(): string {
-  const legacyAnon = Deno.env.get("SUPABASE_ANON_KEY");
-  if (legacyAnon) return legacyAnon;
-
-  const raw = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+function readKeySet(name: string): string {
+  const raw = Deno.env.get(name);
   if (!raw) return "";
 
   try {
     const parsed = JSON.parse(raw) as Record<string, string>;
     return parsed.default || Object.values(parsed)[0] || "";
   } catch {
-    return "";
+    return raw;
   }
+}
+
+function getPublishableKey(): string {
+  return Deno.env.get("SUPABASE_ANON_KEY") ||
+    readKeySet("SUPABASE_PUBLISHABLE_KEYS");
+}
+
+function getServerKey(): string {
+  return readKeySet("SUPABASE_SECRET_KEYS") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    "";
 }
 
 async function requireAuthenticatedUser(req: Request) {
@@ -99,11 +104,11 @@ async function getOctopiaToken(
   const body = (await response.json().catch(() => ({}))) as OctopiaTokenResponse;
 
   if (!response.ok || !body.access_token) {
-    const message =
+    throw new Error(
       response.status === 401
         ? "Octopia rejected the client credentials"
-        : "Octopia token request failed";
-    throw new Error(message);
+        : "Octopia token request failed",
+    );
   }
 
   return {
@@ -130,15 +135,80 @@ async function getSellerProfile(token: string, sellerId: string) {
         "Octopia authenticated the client but denied access to this seller",
       );
     }
-
     if (response.status === 404) {
       throw new Error("Octopia seller account not found");
     }
-
     throw new Error("Octopia seller verification failed");
   }
 
   return body as Record<string, unknown>;
+}
+
+async function persistConnection(
+  userId: string,
+  clientId: string,
+  clientSecret: string,
+  sellerId: string,
+  seller: Record<string, unknown>,
+) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const serverKey = getServerKey();
+  const encryptionKey = Deno.env.get("CDISCOUNT_CREDENTIALS_ENCRYPTION_KEY") || "";
+
+  if (!supabaseUrl || !serverKey || !encryptionKey) {
+    throw new Error("Secure Cdiscount persistence is not configured");
+  }
+
+  const encryptedCredentials = await encryptSecretPayload(
+    { clientId, clientSecret, sellerId },
+    encryptionKey,
+  );
+
+  const admin = createClient(supabaseUrl, serverKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await admin
+    .from("integrations")
+    .upsert(
+      {
+        user_id: userId,
+        platform_type: "cdiscount",
+        platform_name: "Cdiscount / Octopia",
+        platform_url: "https://marketplace.cdiscount.com",
+        api_key: null,
+        api_secret: null,
+        access_token: null,
+        refresh_token: null,
+        seller_id: sellerId,
+        encrypted_credentials: encryptedCredentials,
+        credential_encryption_version: 1,
+        connection_status: "connected",
+        is_active: true,
+        last_error: null,
+        store_config: {
+          provider: "octopia",
+          seller_id: seller.seller_id ?? sellerId,
+          shop_name: seller.shop_name ?? null,
+          shop_url: seller.shop_url ?? null,
+          seller_state: seller.seller_state ?? seller.status ?? null,
+          seller_sub_state: seller.seller_sub_state ?? null,
+          subscription_step: seller.subscription_step ?? null,
+          language: seller.language ?? null,
+          verified_at: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,platform_type" },
+    )
+    .select("id, platform_type, platform_name, seller_id, connection_status, is_active")
+    .single();
+
+  if (error) {
+    throw new Error("Cdiscount connection could not be stored securely");
+  }
+
+  return data;
 }
 
 serve(async (req) => {
@@ -174,13 +244,24 @@ serve(async (req) => {
     const { token, expiresIn } = await getOctopiaToken(clientId, clientSecret);
     const seller = await getSellerProfile(token, sellerId);
 
-    // Never return the OAuth token or client secret to the browser.
+    const connection = payload.persist
+      ? await persistConnection(
+        auth.user.id,
+        clientId,
+        clientSecret,
+        sellerId,
+        seller,
+      )
+      : null;
+
+    // Never return the OAuth token, client secret or encrypted credential blob.
     return jsonResponse({
       success: true,
       verified: true,
+      persisted: Boolean(connection),
       provider: "cdiscount-octopia",
-      userId: auth.user.id,
       tokenExpiresIn: expiresIn,
+      connection,
       seller: {
         sellerId: seller.seller_id ?? sellerId,
         shopName: seller.shop_name ?? null,
