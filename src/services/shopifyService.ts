@@ -147,6 +147,35 @@ export const shopifyService = {
     });
   },
 
+  async getOrders() {
+    const response = await invoke<{
+      success: true;
+      orders: Array<{
+        id: string;
+        name: string;
+        email?: string | null;
+        customer_name?: string | null;
+        created_at?: string | null;
+        updated_at?: string | null;
+        financial_status?: string | null;
+        fulfillment_status?: string | null;
+        total_price: number;
+        currency: string;
+        line_items: unknown[];
+      }>;
+    }>({ action: 'orders' });
+    return response.orders;
+  },
+
+  async ensureOrderWebhooks() {
+    const response = await invoke<{
+      success: true;
+      configured: true;
+      subscriptions: Array<{ id: string; topic: string; uri: string }>;
+    }>({ action: 'webhooks' });
+    return response.subscriptions;
+  },
+
   async getCategories(): Promise<Array<{ id: string; name: string }>> {
     const response = await invoke<{ success: true; available: false; categories: [] }>({ action: 'categories' });
     return response.categories;
