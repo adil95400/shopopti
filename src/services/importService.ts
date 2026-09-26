@@ -1,5 +1,4 @@
 import Papa from 'papaparse';
-import { parseString } from 'xml2js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
