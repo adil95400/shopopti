@@ -1,3 +1,4 @@
+/* global document, window */
 (() => {
   const el = document.getElementById('shopopti-static-diagnostic');
   if (!el) return;
