@@ -1,19 +1,26 @@
-import { OpenAI } from 'openai';
+import { askChatGPT } from './openai';
 
-const apiKey =
-  import.meta.env.VITE_OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+type ChatMessage = { role: string; content: string };
 
-if (!apiKey) {
-  console.error(
-    'VITE_OPENAI_API_KEY is not defined. Set this value in your .env file.'
-  );
-  throw new Error('VITE_OPENAI_API_KEY is not defined');
-}
-
-const openai = new OpenAI({
-  apiKey,
-  dangerouslyAllowBrowser: true
-});
+const openai = {
+  chat: {
+    completions: {
+      create: async ({
+        messages,
+      }: {
+        messages: ChatMessage[];
+        model?: string;
+        temperature?: number;
+      }) => {
+        const prompt = messages
+          .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
+          .join('\n\n');
+        const content = await askChatGPT(prompt);
+        return { choices: [{ message: { content } }] };
+      },
+    },
+  },
+};
 
 export async function auditSEOWithAI({
   title,
