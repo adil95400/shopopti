@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, AlertCircle, FileCode } from 'lucide-react';
-import { parseString } from 'xml2js';
 
 interface XMLImporterProps {
   marketplace?: string;
@@ -21,13 +20,15 @@ const XMLImporter: React.FC<XMLImporterProps> = () => {
 
     try {
       const text = await file.text();
-      parseString(text, (err, result) => {
-        if (err) {
-          setError('Format XML invalide');
-        } else {
-          setPreview(result);
-        }
-      });
+      const doc = new DOMParser().parseFromString(text, 'application/xml');
+      if (doc.querySelector('parsererror')) {
+        setError('Format XML invalide');
+      } else {
+        setPreview({
+          root: doc.documentElement.nodeName,
+          xml: new XMLSerializer().serializeToString(doc.documentElement),
+        });
+      }
     } catch (err) {
       setError('Une erreur est survenue lors de l\'importation');
     } finally {
