@@ -78,6 +78,26 @@ jobs:
             echo "Supabase: shopopti-staging (oskgbfpztggzunazongx)"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Smoke test deployed module bundle
+        run: |
+          preview_url="${{ steps.deploy.outputs.preview_url }}"
+          vercel curl "$preview_url/" --token="$VERCEL_TOKEN" > /tmp/preview-index.html
+          echo "--- deployed index.html ---"
+          cat /tmp/preview-index.html
+          asset_path="$(grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' /tmp/preview-index.html | head -n1)"
+          if [ -z "$asset_path" ]; then
+            echo "No Vite module bundle path found in deployed HTML."
+            exit 1
+          fi
+          echo "Module bundle: $asset_path"
+          vercel curl "$preview_url$asset_path" --token="$VERCEL_TOKEN" > /tmp/preview-bundle.js
+          test -s /tmp/preview-bundle.js
+          if head -c 200 /tmp/preview-bundle.js | grep -qi '<!doctype\|<html'; then
+            echo "Module URL returned HTML instead of JavaScript."
+            exit 1
+          fi
+          echo "Module bundle fetched successfully."
+
       - name: Fail closed without preview URL
         if: ${{ steps.deploy.outputs.preview_url == '' }}
         run: |
