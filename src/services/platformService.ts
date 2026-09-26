@@ -166,6 +166,14 @@ export const platformService = {
           // In a real implementation, you would make an actual API call to Squarespace
           
           return { success: true, message: 'Squarespace credentials validated successfully' };
+
+        case 'cdiscount':
+          // Fail closed until the Cdiscount/Octopia server-side connector performs
+          // a real remote credential check. Never persist a simulated connection.
+          return {
+            success: false,
+            message: 'Cdiscount is not production-ready yet. A verified Octopia API connection is required.'
+          };
         
         default:
           return { success: false, message: `Unknown platform: ${platformId}` };
