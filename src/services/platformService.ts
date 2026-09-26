@@ -53,17 +53,32 @@ export const platformService = {
 
   async connectPlatform(platformId: string, credentials: Record<string, string>): Promise<boolean> {
     try {
+      if (platformId === 'cdiscount') {
+        const { data, error } = await supabase.functions.invoke('cdiscount-connect', {
+          body: {
+            clientId: credentials.clientId,
+            clientSecret: credentials.clientSecret,
+            sellerId: credentials.sellerId,
+            persist: true
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Cdiscount connection failed');
+        }
+
+        if (!data?.success || !data?.verified || !data?.persisted) {
+          throw new Error(data?.error || 'Cdiscount connection could not be verified and stored securely');
+        }
+
+        return true;
+      }
+
       // Validate credentials with the platform's API
       const validationResult = await this.validatePlatformCredentials(platformId, credentials);
       
       if (!validationResult.success) {
         throw new Error(validationResult.message);
-      }
-
-      if (platformId === 'cdiscount') {
-        throw new Error(
-          'Cdiscount credentials are verified by Octopia, but activation is blocked until secure server-side credential persistence is implemented.'
-        );
       }
       
       // Save platform connection to database
@@ -186,7 +201,7 @@ export const platformService = {
           }
 
           const { data, error } = await supabase.functions.invoke('cdiscount-connect', {
-            body: { clientId, clientSecret, sellerId }
+            body: { clientId, clientSecret, sellerId, persist: false }
           });
 
           if (error) {
