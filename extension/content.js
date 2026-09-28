@@ -22,21 +22,26 @@
   };
 
   const readJsonLd = () => {
+    const products = [];
     const blocks = [...document.querySelectorAll('script[type="application/ld+json"]')];
+
     for (const block of blocks) {
       try {
         const parsed = JSON.parse(block.textContent || 'null');
         const entries = Array.isArray(parsed) ? parsed : [parsed];
+
         for (const entry of entries) {
           if (!entry || typeof entry !== 'object') continue;
           const type = Array.isArray(entry['@type']) ? entry['@type'] : [entry['@type']];
-          if (type.includes('Product')) return entry;
+          if (type.includes('ProductGroup')) return entry;
+          if (type.includes('Product')) products.push(entry);
         }
       } catch {
         // Ignore malformed third-party JSON-LD and continue with safe fallbacks.
       }
     }
-    return null;
+
+    return products[0] || null;
   };
 
   const collectImages = (jsonLd) => {
@@ -80,6 +85,41 @@
     return null;
   };
 
+  const collectStructuredVariants = (jsonLd) => {
+    if (!Array.isArray(jsonLd?.hasVariant)) return [];
+
+    const optionFields = ['color', 'size', 'material', 'pattern', 'suggestedAge', 'suggestedGender'];
+
+    return jsonLd.hasVariant.flatMap((variant) => {
+      if (!variant || typeof variant !== 'object') return [];
+
+      const variantOffer = normalizeOffer(variant.offers);
+      const rawVariantPrice = variantOffer.price ?? variantOffer.lowPrice;
+      const variantPrice = rawVariantPrice === undefined || rawVariantPrice === null || rawVariantPrice === ''
+        ? null
+        : Number.parseFloat(String(rawVariantPrice).replace(',', '.'));
+
+      if (!Number.isFinite(variantPrice)) return [];
+
+      const options = {};
+      for (const field of optionFields) {
+        const value = entityName(variant[field]);
+        if (value) options[field] = value;
+      }
+
+      const title = cleanText(variant.name || Object.values(options).join(' / ')) || 'Variante';
+      const sku = cleanText(variant.sku || variant.productID || '');
+
+      return [{
+        id: cleanText(variant['@id'] || '') || undefined,
+        title,
+        price: variantPrice,
+        sku: sku || undefined,
+        options
+      }];
+    });
+  };
+
   const extractProduct = () => {
     if (!/\.aliexpress\.com$/i.test(window.location.hostname) || !/\/item\//i.test(window.location.pathname)) {
       return {
@@ -119,6 +159,7 @@
 
     const seller = entityName(offer.seller || jsonLd?.seller);
     const images = collectImages(jsonLd);
+    const variants = collectStructuredVariants(jsonLd);
     const productIdMatch = window.location.pathname.match(/\/item\/(\d+)\.html/i);
 
     const payload = {
@@ -134,7 +175,7 @@
       images,
       availability: cleanText(offer.availability || '') || null,
       seller,
-      variants: [],
+      variants,
       extraction: {
         method: jsonLd ? 'json-ld+dom-fallback' : 'dom-fallback',
         verifiedFields: {
@@ -142,7 +183,8 @@
           price: Number.isFinite(price),
           currency: Boolean(currency),
           images: images.length > 0,
-          seller: Boolean(seller)
+          seller: Boolean(seller),
+          variants: variants.length > 0
         }
       }
     };
