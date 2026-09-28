@@ -1,3 +1,5 @@
+/* global chrome, document */
+
 const statusEl = document.getElementById('status');
 const previewEl = document.getElementById('preview');
 const imageEl = document.getElementById('product-image');
