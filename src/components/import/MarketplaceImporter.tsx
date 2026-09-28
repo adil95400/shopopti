@@ -8,6 +8,8 @@ interface MarketplaceImporterProps {
   marketplace?: string;
 }
 
+type ExtensionSource = 'aliexpress' | 'amazon';
+
 interface ExtensionVariant {
   id?: string;
   title: string;
@@ -18,12 +20,13 @@ interface ExtensionVariant {
 
 interface ExtensionProduct {
   schemaVersion: number;
-  source: 'aliexpress';
+  source: ExtensionSource;
   sourceUrl: string;
   extractedAt: string;
   productId?: string | null;
   title: string;
   description?: string;
+  brand?: string | null;
   price?: number | null;
   currency?: string | null;
   images?: string[];
@@ -38,7 +41,7 @@ interface ExtensionProduct {
 
 interface ExtensionHandoffMessage {
   source: 'shopopti-extension';
-  type: 'SHOPOPTI_ALIEXPRESS_HANDOFF';
+  type: 'SHOPOPTI_PRODUCT_HANDOFF' | 'SHOPOPTI_ALIEXPRESS_HANDOFF';
   handoffId: string;
   product: ExtensionProduct;
 }
@@ -46,12 +49,16 @@ interface ExtensionHandoffMessage {
 const isExtensionHandoff = (value: unknown): value is ExtensionHandoffMessage => {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<ExtensionHandoffMessage>;
+  const productSource = candidate.product?.source;
 
   return candidate.source === 'shopopti-extension'
-    && candidate.type === 'SHOPOPTI_ALIEXPRESS_HANDOFF'
+    && (
+      candidate.type === 'SHOPOPTI_PRODUCT_HANDOFF'
+      || candidate.type === 'SHOPOPTI_ALIEXPRESS_HANDOFF'
+    )
     && typeof candidate.handoffId === 'string'
     && Boolean(candidate.product)
-    && candidate.product?.source === 'aliexpress'
+    && (productSource === 'aliexpress' || productSource === 'amazon')
     && typeof candidate.product?.title === 'string'
     && typeof candidate.product?.sourceUrl === 'string';
 };
@@ -63,7 +70,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
   const [queuedJob, setQueuedJob] = useState<{ job_id: string; created: boolean; stage: string } | null>(null);
 
   useEffect(() => {
-    if (marketplace !== 'aliexpress') return undefined;
+    if (marketplace !== 'aliexpress' && marketplace !== 'amazon') return undefined;
 
     const params = new URLSearchParams(window.location.search);
     const expectedHandoffId = params.get('handoff');
@@ -74,6 +81,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
       if (event.source !== window || event.origin !== window.location.origin) return;
       if (!isExtensionHandoff(event.data)) return;
       if (event.data.handoffId !== expectedHandoffId) return;
+      if (event.data.product.source !== marketplace) return;
 
       setExtensionProduct(event.data.product);
       setQueuedJob(null);
@@ -92,15 +100,17 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
     .map(([field]) => field);
 
   const enqueueExtensionProduct = async () => {
-    if (!extensionProduct || marketplace !== 'aliexpress') return;
+    if (!extensionProduct) return;
+    if (marketplace !== extensionProduct.source) return;
 
     try {
       setEnqueueing(true);
 
+      const source = extensionProduct.source;
       const identity = extensionProduct.productId || extensionProduct.sourceUrl;
       const digest = await crypto.subtle.digest(
         'SHA-256',
-        new TextEncoder().encode(`aliexpress-extension:${identity}`)
+        new TextEncoder().encode(`${source}-extension:${identity}`)
       );
       const hash = Array.from(new Uint8Array(digest))
         .map((byte) => byte.toString(16).padStart(2, '0'))
@@ -111,7 +121,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
         extraction_method: 'extension_verified_v1',
         extracted_at: extensionProduct.extractedAt,
         source: {
-          id: 'aliexpress',
+          id: source,
           product_id: extensionProduct.productId || null,
           requested_url: extensionProduct.sourceUrl,
           final_url: extensionProduct.sourceUrl,
@@ -121,7 +131,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
           description: extensionProduct.description || '',
           price: typeof extensionProduct.price === 'number' ? extensionProduct.price : null,
           currency: extensionProduct.currency || '',
-          brand: null,
+          brand: extensionProduct.brand || null,
           sku: null,
           gtin: null,
           images: (extensionProduct.images || []).slice(0, 30),
@@ -133,8 +143,8 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
       };
 
       const { data, error } = await supabase.rpc('enqueue_import_pipeline_snapshot_job', {
-        p_idempotency_key: `aliexpress-extension:${hash}`,
-        p_source_id: 'aliexpress',
+        p_idempotency_key: `${source}-extension:${hash}`,
+        p_source_id: source,
         p_source_product_id: extensionProduct.productId || null,
         p_source_url: extensionProduct.sourceUrl,
         p_destination_id: 'draft',
@@ -155,10 +165,11 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
         stage: result.stage,
       });
 
+      const supplierLabel = source === 'amazon' ? 'Amazon' : 'AliExpress';
       toast.success(
         result.created
-          ? 'Import AliExpress ajouté au pipeline.'
-          : 'Cet import existe déjà dans le pipeline.'
+          ? `Import ${supplierLabel} ajouté au pipeline.`
+          : `Cet import ${supplierLabel} existe déjà dans le pipeline.`
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Échec de création du job d’import.';
@@ -168,6 +179,8 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
     }
   };
 
+  const marketplaceLabel = marketplace === 'aliexpress' ? 'AliExpress' : 'Amazon';
+
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">
@@ -175,11 +188,11 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
           <ShoppingBag className="h-4 w-4 text-primary-400" />
         </div>
         <h3 className="text-lg font-medium text-white">
-          Rechercher sur {marketplace === 'aliexpress' ? 'AliExpress' : 'Amazon'}
+          Rechercher sur {marketplaceLabel}
         </h3>
       </div>
 
-      {marketplace === 'aliexpress' && extensionProduct && (
+      {extensionProduct && extensionProduct.source === marketplace && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-slate-900">
           <div className="flex gap-4">
             {extensionProduct.images?.[0] && (
@@ -191,7 +204,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
             )}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
-                Produit reçu depuis l’extension ShopOpti
+                Produit {marketplaceLabel} reçu depuis l’extension ShopOpti
               </p>
               <h4 className="mt-1 font-semibold">{extensionProduct.title}</h4>
               <p className="mt-1 text-sm text-slate-600">
@@ -201,6 +214,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
                 {extensionProduct.seller ? ` · ${extensionProduct.seller}` : ''}
               </p>
               <p className="mt-2 text-xs text-slate-500">
+                {extensionProduct.productId ? `ID source : ${extensionProduct.productId} · ` : ''}
                 {extensionProduct.variants?.length || 0} variante(s) structurée(s)
                 {verifiedFields.length ? ` · vérifié : ${verifiedFields.join(', ')}` : ''}
               </p>
