@@ -106,13 +106,40 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
         .map((byte) => byte.toString(16).padStart(2, '0'))
         .join('');
 
-      const { data, error } = await supabase.rpc('enqueue_import_pipeline_job', {
+      const extractedSnapshot = {
+        contract: 'shopopti_extracted_product_v1',
+        extraction_method: 'extension_verified_v1',
+        extracted_at: extensionProduct.extractedAt,
+        source: {
+          id: 'aliexpress',
+          product_id: extensionProduct.productId || null,
+          requested_url: extensionProduct.sourceUrl,
+          final_url: extensionProduct.sourceUrl,
+        },
+        product: {
+          title: extensionProduct.title,
+          description: extensionProduct.description || '',
+          price: typeof extensionProduct.price === 'number' ? extensionProduct.price : null,
+          currency: extensionProduct.currency || '',
+          brand: null,
+          sku: null,
+          gtin: null,
+          images: (extensionProduct.images || []).slice(0, 30),
+          availability: extensionProduct.availability || null,
+          seller: extensionProduct.seller || null,
+          variants: (extensionProduct.variants || []).slice(0, 200),
+          verification: extensionProduct.extraction?.verifiedFields || {},
+        },
+      };
+
+      const { data, error } = await supabase.rpc('enqueue_import_pipeline_snapshot_job', {
         p_idempotency_key: `aliexpress-extension:${hash}`,
         p_source_id: 'aliexpress',
         p_source_product_id: extensionProduct.productId || null,
         p_source_url: extensionProduct.sourceUrl,
         p_destination_id: 'draft',
         p_max_attempts: 5,
+        p_extracted_product: extractedSnapshot,
       });
 
       if (error) throw error;
