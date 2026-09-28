@@ -1,3 +1,5 @@
+/* global chrome, document, URL, window */
+
 (() => {
   const cleanText = (value) => (value || '').replace(/\s+/g, ' ').trim();
 
