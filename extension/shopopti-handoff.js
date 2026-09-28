@@ -1,4 +1,4 @@
-/* global chrome, window */
+/* global chrome, URLSearchParams, window */
 
 (() => {
   const params = new URLSearchParams(window.location.search);
