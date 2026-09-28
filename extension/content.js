@@ -1,4 +1,4 @@
-/* global chrome, document, DOMParser, URL, window */
+/* global chrome, document, DOMParser, fetch, URL, window */
 
 (() => {
   const cleanText = (value) => (value || '').replace(/\s+/g, ' ').trim();
