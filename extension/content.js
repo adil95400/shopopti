@@ -203,6 +203,26 @@
     return { ok: true, product: payload };
   };
 
+  const parseLocalizedPrice = (value) => {
+    const compact = String(value || '').replace(/\s+/g, '').replace(/[^0-9,.-]/g, '');
+    if (!compact) return null;
+
+    const lastComma = compact.lastIndexOf(',');
+    const lastDot = compact.lastIndexOf('.');
+    let normalized = compact;
+
+    if (lastComma > lastDot) {
+      normalized = compact.replace(/\./g, '').replace(',', '.');
+    } else if (lastDot > lastComma && lastComma >= 0) {
+      normalized = compact.replace(/,/g, '');
+    } else if (lastComma >= 0) {
+      normalized = compact.replace(',', '.');
+    }
+
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const extractAmazon = () => {
     const path = window.location.pathname;
     const asinMatch = path.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/i);
@@ -232,8 +252,7 @@
       document.querySelector('.a-price .a-offscreen')?.textContent ||
       '';
 
-    const normalizedPrice = String(rawPrice).replace(/[^0-9,.-]/g, '').replace(',', '.');
-    const price = normalizedPrice ? Number.parseFloat(normalizedPrice) : null;
+    const price = parseLocalizedPrice(rawPrice);
 
     const currency = cleanText(
       offer.priceCurrency ||
