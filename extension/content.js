@@ -1,3 +1,4 @@
+/* global chrome, document, location, URL, Error */
 function text(selectors) {
   for (const selector of selectors) {
     const node = document.querySelector(selector);
@@ -18,16 +19,25 @@ function attr(selectors, name) {
 
 function absoluteUrl(value) {
   if (!value) return '';
-  try { return new URL(value, location.href).href; } catch { return ''; }
+  try {
+    return new URL(value, location.href).href;
+  } catch (_error) {
+    return '';
+  }
 }
 
 function extractAmazon() {
   return {
     source: 'amazon',
     url: location.href,
-    title: text(['#productTitle','h1 span','#title']),
-    priceText: text(['#corePrice_feature_div .a-offscreen','.a-price .a-offscreen','#priceblock_ourprice','#price_inside_buybox']),
-    image: absoluteUrl(attr(['#landingImage','#imgBlkFront','#main-image'], 'src'))
+    title: text(['#productTitle', 'h1 span', '#title']),
+    priceText: text([
+      '#corePrice_feature_div .a-offscreen',
+      '.a-price .a-offscreen',
+      '#priceblock_ourprice',
+      '#price_inside_buybox'
+    ]),
+    image: absoluteUrl(attr(['#landingImage', '#imgBlkFront', '#main-image'], 'src'))
   };
 }
 
@@ -37,9 +47,9 @@ function extractAliExpress() {
   return {
     source: 'aliexpress',
     url: location.href,
-    title: text(['h1[data-pl="product-title"]','h1']) || ogTitle,
-    priceText: text(['[data-pl="product-price"]','.product-price-value','div[class*="price"] span']),
-    image: absoluteUrl(ogImage || attr(['img[class*="magnifier--image"]','img[class*="images--item"]'], 'src'))
+    title: text(['h1[data-pl="product-title"]', 'h1']) || ogTitle,
+    priceText: text(['[data-pl="product-price"]', '.product-price-value', 'div[class*="price"] span']),
+    image: absoluteUrl(ogImage || attr(['img[class*="magnifier--image"]', 'img[class*="images--item"]'], 'src'))
   };
 }
 
