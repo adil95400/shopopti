@@ -1,3 +1,4 @@
+/* global chrome, URL */
 const supportedHosts = ['aliexpress.', 'amazon.'];
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -6,7 +7,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   try {
     const host = new URL(tab.url).hostname;
     supported = supportedHosts.some((part) => host.includes(part));
-  } catch {}
+  } catch (_error) {
+    supported = false;
+  }
 
   chrome.action.setBadgeText({ tabId, text: supported ? '✓' : '' });
   if (supported) {
