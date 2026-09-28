@@ -1,3 +1,4 @@
+/* global chrome, document, URL, URLSearchParams, Error */
 const els = {
   status: document.getElementById('status'),
   unsupported: document.getElementById('unsupported'),
@@ -30,7 +31,9 @@ function supplierFromUrl(url) {
     const host = new URL(url).hostname;
     if (host.includes('aliexpress.')) return 'aliexpress';
     if (host.includes('amazon.')) return 'amazon';
-  } catch {}
+  } catch (_error) {
+    return null;
+  }
   return null;
 }
 
