@@ -32,7 +32,8 @@ import {
   SplitSquareVertical,
   Mail,
   HelpCircle,
-  Star
+  Star,
+  Chrome
 } from 'lucide-react';
 
 import Logo from './Logo';
