@@ -70,6 +70,16 @@
     return offers && typeof offers === 'object' ? offers : {};
   };
 
+  const entityName = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') return cleanText(value) || null;
+    if (typeof value === 'object') {
+      const name = cleanText(value.name || value.legalName || '');
+      return name || null;
+    }
+    return null;
+  };
+
   const extractProduct = () => {
     if (!/\.aliexpress\.com$/i.test(window.location.hostname) || !/\/item\//i.test(window.location.pathname)) {
       return {
@@ -107,6 +117,8 @@
       firstMeta('meta[property="product:price:currency"]', 'meta[itemprop="priceCurrency"]')
     ) || null;
 
+    const seller = entityName(offer.seller || jsonLd?.seller);
+    const images = collectImages(jsonLd);
     const productIdMatch = window.location.pathname.match(/\/item\/(\d+)\.html/i);
 
     const payload = {
@@ -119,9 +131,9 @@
       description,
       price: Number.isFinite(price) ? price : null,
       currency,
-      images: collectImages(jsonLd),
+      images,
       availability: cleanText(offer.availability || '') || null,
-      seller: null,
+      seller,
       variants: [],
       extraction: {
         method: jsonLd ? 'json-ld+dom-fallback' : 'dom-fallback',
@@ -129,7 +141,8 @@
           title: Boolean(title),
           price: Number.isFinite(price),
           currency: Boolean(currency),
-          images: collectImages(jsonLd).length > 0
+          images: images.length > 0,
+          seller: Boolean(seller)
         }
       }
     };
