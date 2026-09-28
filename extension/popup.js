@@ -1,4 +1,4 @@
-/* global chrome, document */
+/* global chrome, crypto, document */
 
 const statusEl = document.getElementById('status');
 const previewEl = document.getElementById('preview');
@@ -10,6 +10,7 @@ const extractButton = document.getElementById('extract');
 const openShopOptiButton = document.getElementById('open-shopopti');
 
 let currentProduct = null;
+let currentHandoffId = null;
 
 const setStatus = (message) => {
   statusEl.textContent = message;
@@ -73,8 +74,11 @@ extractButton.addEventListener('click', async () => {
       throw new Error(response?.error || 'Extraction AliExpress impossible.');
     }
 
+    currentHandoffId = crypto.randomUUID();
+
     await chrome.storage.local.set({
-      shopoptiPendingImport: response.product
+      shopoptiPendingImport: response.product,
+      shopoptiPendingImportId: currentHandoffId
     });
 
     renderProduct(response.product);
@@ -93,8 +97,14 @@ openShopOptiButton.addEventListener('click', async () => {
     return;
   }
 
+  if (!currentHandoffId) {
+    setStatus('Le transfert sécurisé a expiré. Relance l’analyse.');
+    return;
+  }
+
   const sourceUrl = encodeURIComponent(currentProduct.sourceUrl || '');
+  const handoffId = encodeURIComponent(currentHandoffId);
   await chrome.tabs.create({
-    url: `https://shopopti.io/import?source=aliexpress&mode=extension&url=${sourceUrl}`
+    url: `https://shopopti.io/import?source=aliexpress&mode=extension&handoff=${handoffId}&url=${sourceUrl}`
   });
 });
