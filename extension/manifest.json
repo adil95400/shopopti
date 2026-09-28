@@ -1,14 +1,20 @@
 {
   "manifest_version": 3,
   "name": "ShopOpti Product Importer",
-  "version": "1.2.0",
-  "description": "Prepare AliExpress product data for import into ShopOpti.",
+  "version": "1.3.0",
+  "description": "Prepare verified AliExpress and Amazon product data for import into ShopOpti.",
   "permissions": [
     "activeTab",
     "storage"
   ],
   "host_permissions": [
     "https://*.aliexpress.com/*",
+    "https://*.amazon.com/*",
+    "https://*.amazon.fr/*",
+    "https://*.amazon.de/*",
+    "https://*.amazon.es/*",
+    "https://*.amazon.it/*",
+    "https://*.amazon.co.uk/*",
     "https://shopopti.io/*"
   ],
   "action": {
@@ -17,7 +23,25 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.aliexpress.com/item/*"
+        "https://*.aliexpress.com/item/*",
+        "https://*.amazon.com/*/dp/*",
+        "https://*.amazon.com/dp/*",
+        "https://*.amazon.fr/*/dp/*",
+        "https://*.amazon.fr/dp/*",
+        "https://*.amazon.de/*/dp/*",
+        "https://*.amazon.de/dp/*",
+        "https://*.amazon.es/*/dp/*",
+        "https://*.amazon.es/dp/*",
+        "https://*.amazon.it/*/dp/*",
+        "https://*.amazon.it/dp/*",
+        "https://*.amazon.co.uk/*/dp/*",
+        "https://*.amazon.co.uk/dp/*",
+        "https://*.amazon.com/gp/product/*",
+        "https://*.amazon.fr/gp/product/*",
+        "https://*.amazon.de/gp/product/*",
+        "https://*.amazon.es/gp/product/*",
+        "https://*.amazon.it/gp/product/*",
+        "https://*.amazon.co.uk/gp/product/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
