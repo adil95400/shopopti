@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { supabase } from '@/lib/supabase';
 
 interface MarketplaceImporterProps {
   marketplace?: string;
@@ -56,6 +59,8 @@ const isExtensionHandoff = (value: unknown): value is ExtensionHandoffMessage =>
 const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [extensionProduct, setExtensionProduct] = useState<ExtensionProduct | null>(null);
+  const [enqueueing, setEnqueueing] = useState(false);
+  const [queuedJob, setQueuedJob] = useState<{ job_id: string; created: boolean; stage: string } | null>(null);
 
   useEffect(() => {
     if (marketplace !== 'aliexpress') return undefined;
@@ -71,6 +76,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
       if (event.data.handoffId !== expectedHandoffId) return;
 
       setExtensionProduct(event.data.product);
+      setQueuedJob(null);
 
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('handoff');
@@ -84,6 +90,56 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
   const verifiedFields = Object.entries(extensionProduct?.extraction?.verifiedFields || {})
     .filter(([, verified]) => verified)
     .map(([field]) => field);
+
+  const enqueueExtensionProduct = async () => {
+    if (!extensionProduct || marketplace !== 'aliexpress') return;
+
+    try {
+      setEnqueueing(true);
+
+      const identity = extensionProduct.productId || extensionProduct.sourceUrl;
+      const digest = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(`aliexpress-extension:${identity}`)
+      );
+      const hash = Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+
+      const { data, error } = await supabase.rpc('enqueue_import_pipeline_job', {
+        p_idempotency_key: `aliexpress-extension:${hash}`,
+        p_source_id: 'aliexpress',
+        p_source_product_id: extensionProduct.productId || null,
+        p_source_url: extensionProduct.sourceUrl,
+        p_destination_id: 'draft',
+        p_max_attempts: 5,
+      });
+
+      if (error) throw error;
+
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result?.job_id || !result?.stage) {
+        throw new Error('Le pipeline canonique n’a pas retourné de job valide.');
+      }
+
+      setQueuedJob({
+        job_id: result.job_id,
+        created: Boolean(result.created),
+        stage: result.stage,
+      });
+
+      toast.success(
+        result.created
+          ? 'Import AliExpress ajouté au pipeline.'
+          : 'Cet import existe déjà dans le pipeline.'
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Échec de création du job d’import.';
+      toast.error(message);
+    } finally {
+      setEnqueueing(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -124,6 +180,24 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
               <p className="mt-2 text-xs text-amber-700">
                 Vérification humaine requise avant publication. Le transfert ne publie rien automatiquement.
               </p>
+              <button
+                type="button"
+                className="mt-3 rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={enqueueing || Boolean(queuedJob)}
+                onClick={() => void enqueueExtensionProduct()}
+              >
+                {enqueueing
+                  ? 'Ajout au pipeline…'
+                  : queuedJob
+                    ? `Job ${queuedJob.stage}`
+                    : 'Ajouter au pipeline d’import'}
+              </button>
+              {queuedJob && (
+                <p className="mt-2 break-all text-xs text-slate-500">
+                  Job canonique : {queuedJob.job_id}
+                  {queuedJob.created ? ' · créé' : ' · déjà existant'}
+                </p>
+              )}
             </div>
           </div>
         </div>
