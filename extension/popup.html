@@ -1,46 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopopti+ Product Importer</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
+  <title>ShopOpti Product Importer</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
-<body class="w-80 p-4 bg-gray-50">
-  <div class="flex items-center justify-between mb-4">
-    <h1 class="text-lg font-semibold">Shopopti+</h1>
-    <div id="status" class="text-sm"></div>
-  </div>
+<body>
+  <main class="shell">
+    <header class="header">
+      <div>
+        <p class="eyebrow">ShopOpti</p>
+        <h1>Product Importer</h1>
+      </div>
+      <span id="status" class="status status-idle">Analyse...</span>
+    </header>
 
-  <div id="login-form" class="hidden">
-    <input type="text" id="shop-url" placeholder="your-store.myshopify.com" class="w-full mb-2 p-2 border rounded">
-    <input type="password" id="access-token" placeholder="Access Token" class="w-full mb-2 p-2 border rounded">
-    <button id="login" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Connect Store</button>
-  </div>
+    <section id="unsupported" class="panel hidden" aria-live="polite">
+      <h2>Page non prise en charge</h2>
+      <p>Ouvrez une fiche produit AliExpress ou Amazon prise en charge, puis relancez l’extension.</p>
+    </section>
 
-  <div id="import-panel" class="hidden">
-    <div id="product-preview" class="mb-4">
-      <img id="product-image" class="w-full h-40 object-cover rounded mb-2">
-      <h2 id="product-title" class="text-sm font-medium mb-1"></h2>
-      <p id="product-price" class="text-sm text-gray-600"></p>
-    </div>
+    <section id="product-panel" class="panel hidden">
+      <img id="product-image" class="product-image hidden" alt="">
+      <div class="product-copy">
+        <p id="product-source" class="source"></p>
+        <h2 id="product-title">Produit détecté</h2>
+        <p id="product-price" class="price"></p>
+      </div>
 
-    <button id="import" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-2">
-      Import to Shopify
-    </button>
+      <dl class="meta">
+        <div>
+          <dt>Source</dt>
+          <dd id="source-host"></dd>
+        </div>
+        <div>
+          <dt>URL</dt>
+          <dd id="source-url" class="truncate"></dd>
+        </div>
+      </dl>
 
-    <div id="settings" class="text-sm">
-      <label class="flex items-center mb-2">
-        <input type="checkbox" id="optimize-title" checked class="mr-2">
-        Optimize title with AI
-      </label>
-      <label class="flex items-center">
-        <input type="checkbox" id="optimize-description" checked class="mr-2">
-        Generate optimized description
-      </label>
-    </div>
-  </div>
+      <button id="continue-import" class="primary" type="button">
+        Continuer l’import dans ShopOpti
+      </button>
+      <p class="hint">Aucun mot de passe ni token Shopify n’est demandé par l’extension.</p>
+    </section>
 
+    <section id="error-panel" class="panel error hidden" aria-live="polite">
+      <h2>Impossible d’analyser cette page</h2>
+      <p id="error-message">Rechargez la fiche produit puis réessayez.</p>
+    </section>
+  </main>
   <script src="popup.js"></script>
 </body>
 </html>
