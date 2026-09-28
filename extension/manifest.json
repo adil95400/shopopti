@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ShopOpti Product Importer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Prepare AliExpress product data for import into ShopOpti.",
   "permissions": [
     "activeTab",
@@ -20,6 +20,13 @@
         "https://*.aliexpress.com/item/*"
       ],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://shopopti.io/import*"
+      ],
+      "js": ["shopopti-handoff.js"],
       "run_at": "document_idle"
     }
   ]
