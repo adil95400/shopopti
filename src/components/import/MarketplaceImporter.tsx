@@ -92,6 +92,7 @@ interface ExtensionProduct {
     complete: boolean;
   } | null;
   availability?: string | null;
+  stock?: number | null;
   seller?: string | null;
   sellerDetails?: {
     name?: string | null;
@@ -229,6 +230,7 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
           reviewDistribution: extensionProduct.reviewDistribution || null,
           reviewPagination: extensionProduct.reviewPagination || null,
           availability: extensionProduct.availability || null,
+          stock: typeof extensionProduct.stock === 'number' ? extensionProduct.stock : null,
           seller: extensionProduct.seller || null,
           sellerDetails: extensionProduct.sellerDetails || null,
           breadcrumbs: (extensionProduct.breadcrumbs || []).slice(0, 20),
