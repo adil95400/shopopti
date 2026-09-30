@@ -10,7 +10,7 @@ interface IntegrationCardProps {
     description: string;
     icon: React.ReactNode;
     connected: boolean;
-    category: 'marketplace' | 'payment' | 'shipping' | 'marketing' | 'analytics';
+    category: 'marketplace' | 'webstore' | 'payment' | 'shipping' | 'marketing' | 'analytics';
     url?: string;
     logo?: string;
   };
