@@ -5,7 +5,7 @@ export const CDISCOUNT_STOCK_PRICE_HEADERS = [
   'Prix (€)(TTC)',
 ] as const;
 
-export const CDISCOUNT_FULL_OFFER_HEADERS = [
+export const CDISCOUNT_FULL_OFFER_HEADER_ROW_4 = [
   'Votre référence',
   'EAN/GTIN',
   'Sous-état du produit',
@@ -21,19 +21,50 @@ export const CDISCOUNT_FULL_OFFER_HEADERS = [
   'Prix barré (TTC)',
   'Commentaire offre (Disponible uniquement sur Cdiscount)',
   'Activer les soldes (obligatoire)',
-  'Début (facultatif) - Date (jj/mm/aaaa)',
-  'Début (facultatif) - Heure (hh:mm)',
-  'Fin (facultatif) - Date (jj/mm/aaaa)',
-  'Fin (facultatif) - Heure (hh:mm)',
+  'Début (facultatif)',
+  null,
+  'Fin (facultatif)',
+  null,
   'Remise en % (obligatoire)',
   'Prix de référence – utilisé pour le calcul du prix soldé (obligatoire)',
   'Activer la concurrence prix (obligatoire)',
   'Prix plancher (TTC – hors frais de port)',
   'Délai de préparation\n(nb jours ouvrés max)',
-  'Suivi (1) - Principal',
-  'Suivi (1) - Additionnel Facultatif',
-  'Recommandé (1) - Principal',
-  'Recommandé (1) - Additionnel Facultatif',
+  'Suivi (1)',
+  null,
+  'Recommandé (1)',
+  null,
+] as const;
+
+export const CDISCOUNT_FULL_OFFER_HEADER_ROW_5 = [
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  'Date (jj/mm/aaaa)',
+  'Heure (hh:mm)',
+  'Date (jj/mm/aaaa)',
+  'Heure (hh:mm)',
+  null,
+  null,
+  null,
+  null,
+  null,
+  'Principal',
+  'Additionnel \nFacultatif',
+  'Principal',
+  'Additionnel \nFacultatif',
 ] as const;
 
 export type CdiscountStockPriceInput = {
@@ -54,7 +85,6 @@ export type CdiscountValidationResult =
   | { ok: false; errors: CdiscountValidationError[] };
 
 const REFERENCE_MAX_LENGTH = 50;
-const EAN_LENGTH = 13;
 const STOCK_MAX_DIGITS = 10;
 
 const decimalComma = (value: number): string => value.toFixed(2).replace('.', ',');
