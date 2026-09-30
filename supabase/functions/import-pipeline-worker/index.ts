@@ -266,7 +266,7 @@ function normalizeExtractedProduct(extracted: Record<string, unknown>) {
     } catch {
       // Invalid image URLs are omitted rather than guessed or rewritten.
     }
-    if (images.length >= 20) break
+    if (images.length >= 30) break
   }
 
   const sku = String(product.sku || '').trim() || null
