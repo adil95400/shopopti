@@ -314,6 +314,11 @@ function normalizeExtractedProduct(extracted: Record<string, unknown>) {
   const attributes = product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes)
     ? product.attributes as Record<string, unknown>
     : {}
+  const verification = product.verification && typeof product.verification === 'object' && !Array.isArray(product.verification)
+    ? product.verification as Record<string, unknown>
+    : {}
+  const extractionMethod = String(extracted.extraction_method || '').trim() || null
+  const extractedAt = String(extracted.extracted_at || '').trim() || null
   const shippingInfo = Array.isArray(product.shipping)
     ? product.shipping.filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry)).slice(0, 20)
     : []
@@ -436,6 +441,11 @@ function normalizeExtractedProduct(extracted: Record<string, unknown>) {
     priceCountry,
     qualityScore: null,
     completenessScore,
+    extractionEvidence: {
+      method: extractionMethod,
+      extractedAt,
+      verifiedFields: verification,
+    },
     sourceAttribution: {
       title: { source: 'html', confidence: 1, extractedAt: String(extracted.extracted_at || '') },
       description: { source: 'html', confidence: description ? 1 : 0, extractedAt: String(extracted.extracted_at || '') },
