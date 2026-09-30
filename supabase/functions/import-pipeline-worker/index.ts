@@ -345,6 +345,10 @@ function normalizeExtractedProduct(extracted: Record<string, unknown>) {
       .filter((variant) => variant && typeof variant === 'object' && !Array.isArray(variant))
       .slice(0, 200)
     : []
+  const rawStock = product.stock
+  const stock = typeof rawStock === 'number' && Number.isFinite(rawStock) && rawStock >= 0
+    ? Math.trunc(rawStock)
+    : null
   const availability = String(product.availability || '').trim()
   const available = availability
     ? /(?:InStock|LimitedAvailability|PreOrder|PreSale)$/i.test(availability)
@@ -401,7 +405,8 @@ function normalizeExtractedProduct(extracted: Record<string, unknown>) {
     categoryPath: breadcrumbs,
     breadcrumbs,
     brand,
-    stock: null,
+    stock,
+    availability: availability || null,
     available,
     weight,
     weightUnit,
