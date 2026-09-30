@@ -631,6 +631,12 @@
       firstMeta('meta[property="product:price:currency"]', 'meta[itemprop="priceCurrency"]')
     ) || null;
 
+    const productStockRaw = offer.inventoryLevel?.value ?? offer.inventoryLevel ?? jsonLd?.inventoryLevel?.value ?? jsonLd?.inventoryLevel;
+    const productStockParsed = productStockRaw === undefined || productStockRaw === null || productStockRaw === ''
+      ? null
+      : Number.parseInt(String(productStockRaw), 10);
+    const productStock = Number.isFinite(productStockParsed) && productStockParsed >= 0 ? productStockParsed : null;
+
     const sellerDetails = collectSellerDetails(jsonLd, offer);
     const seller = sellerDetails.name;
     const brand = entityName(jsonLd?.brand);
@@ -699,6 +705,7 @@
       reviewDistribution,
       reviewPagination,
       availability: cleanText(offer.availability || '') || null,
+      stock: productStock,
       seller,
       sellerDetails,
       brand,
