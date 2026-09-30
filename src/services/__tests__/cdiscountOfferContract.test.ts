@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CDISCOUNT_FULL_OFFER_HEADERS,
+  CDISCOUNT_FULL_OFFER_HEADER_ROW_4,
+  CDISCOUNT_FULL_OFFER_HEADER_ROW_5,
   CDISCOUNT_STOCK_PRICE_HEADERS,
   assertCdiscountStockPriceHeaders,
   validateAndBuildCdiscountStockPriceRow,
@@ -17,11 +18,19 @@ describe('Cdiscount offer contract', () => {
     ]);
   });
 
-  it('keeps the full offer contract at 28 columns', () => {
-    expect(CDISCOUNT_FULL_OFFER_HEADERS).toHaveLength(28);
-    expect(CDISCOUNT_FULL_OFFER_HEADERS[0]).toBe('Votre référence');
-    expect(CDISCOUNT_FULL_OFFER_HEADERS[1]).toBe('EAN/GTIN');
-    expect(CDISCOUNT_FULL_OFFER_HEADERS[23]).toContain('Délai de préparation');
+  it('keeps the exact two-row full-offer header structure at 28 columns', () => {
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4).toHaveLength(28);
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_5).toHaveLength(28);
+
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4[0]).toBe('Votre référence');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4[1]).toBe('EAN/GTIN');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4[15]).toBe('Début (facultatif)');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4[16]).toBeNull();
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_5[15]).toBe('Date (jj/mm/aaaa)');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_5[16]).toBe('Heure (hh:mm)');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4[23]).toContain('Délai de préparation');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_4[24]).toBe('Suivi (1)');
+    expect(CDISCOUNT_FULL_OFFER_HEADER_ROW_5[24]).toBe('Principal');
   });
 
   it('builds a valid stock/price row using the decimal comma required by the template', () => {
