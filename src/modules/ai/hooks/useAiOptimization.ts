@@ -27,7 +27,8 @@ export function useAiOptimization() {
       seo: true,
       tags: true,
       pricing: false
-    }
+    },
+    requestOptions: { regenerate?: boolean } = {}
   ) => {
     setLoading(true);
     setError(null);
@@ -35,21 +36,28 @@ export function useAiOptimization() {
     try {
       const optimized: any = {};
 
-      // Only perform optimizations that are enabled
-      if (options.title || options.description || options.seo) {
-        const result = await aiService.optimizeProduct({
-          name: product.name,
-          description: product.description,
-          category: product.category || ''
-        });
+      if (options.title || options.description || options.seo || options.tags) {
+        const result = await aiService.optimizeProduct(
+          {
+            name: product.name,
+            description: product.description,
+            category: product.category || ''
+          },
+          { bypassCache: requestOptions.regenerate === true }
+        );
 
         if (options.title) optimized.title = result.title;
         if (options.description) optimized.description = result.description_html;
         if (options.tags) optimized.tags = result.tags;
+
+        if (options.seo && result.seo) {
+          optimized.seo = result.seo;
+        }
       }
 
-      // SEO optimization
-      if (options.seo) {
+      // Compatibility fallback only. The optimized product response normally includes SEO,
+      // so this extra paid request should not run during the normal path.
+      if (options.seo && !optimized.seo) {
         const seoData = await aiService.optimizeForSEO({
           title: optimized.title || product.name,
           description: optimized.description || product.description,
@@ -63,9 +71,7 @@ export function useAiOptimization() {
         };
       }
 
-      // Price optimization
       if (options.pricing && product.price) {
-        // Simple price optimization logic - in a real app this would be more sophisticated
         optimized.price = Math.round(product.price * 1.15 * 100) / 100;
       }
 
