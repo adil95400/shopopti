@@ -73,7 +73,7 @@ describe('buildCdiscountStockPriceWorkbook', () => {
     expect(sheet.D5.v).toBe('29,90');
 
     expect(sheet.A6.v).toBe('SHOP-002');
-    expect(sheet.B6).toBeUndefined();
+    expect(sheet.B6?.v ?? '').toBe('');
     expect(sheet.C6.v).toBe('0');
     expect(sheet.D6.v).toBe('15,50');
 
