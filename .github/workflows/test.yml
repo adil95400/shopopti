@@ -22,6 +22,9 @@ jobs:
       - name: 📦 Install JS dependencies
         run: npm ci
 
+      - name: 🧪 Run unit tests
+        run: npm test -- --run
+
       - name: 🔍 Lint code
         run: npm run lint
 
@@ -43,7 +46,3 @@ jobs:
 
       - name: 📘 Générer docs API
         run: npm run docs:api
-
-      - name: ✅ Placeholder tests (à compléter)
-        run: echo "✔️ Tests ici (unitaires, e2e, etc.)"
-
