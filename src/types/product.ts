@@ -29,6 +29,7 @@ export interface ProductData {
   variants?: ProductVariant[];
   sku?: string;
   stock?: number;
+  availability?: string | null;
   category?: string;
   breadcrumbs?: string[];
   brand?: string;
