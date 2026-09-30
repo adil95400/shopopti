@@ -63,6 +63,10 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
           { name: 'apiKey', label: 'API Key', placeholder: 'AKIA...', icon: <Key className="h-5 w-5 text-gray-400" /> },
           { name: 'apiSecret', label: 'API Secret', placeholder: 'Your API Secret', icon: <Lock className="h-5 w-5 text-gray-400" /> }
         ];
+      case 'ebay':
+        return [
+          { name: 'accessToken', label: 'User Access Token', placeholder: 'eBay OAuth user access token', icon: <Key className="h-5 w-5 text-gray-400" /> }
+        ];
       case 'etsy':
         return [
           { name: 'apiKey', label: 'API Key', placeholder: 'Your Etsy API Key', icon: <Key className="h-5 w-5 text-gray-400" /> },
@@ -262,10 +266,20 @@ const PlatformConnector: React.FC<PlatformConnectorProps> = ({
         <div className="mt-4">
           {platform.connected ? (
             <div className="flex justify-between items-center">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => window.open(`https://${platform.id}.com/admin`, '_blank')}
+                onClick={() => {
+                  const dashboardUrls: Record<string, string> = {
+                    ebay: 'https://www.ebay.com/sh/ovw',
+                    shopify: 'https://admin.shopify.com'
+                  };
+                  const dashboardUrl = dashboardUrls[platform.id];
+                  if (dashboardUrl) {
+                    window.open(dashboardUrl, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+                disabled={!['ebay', 'shopify'].includes(platform.id)}
               >
                 <LinkIcon className="h-4 w-4 mr-2" />
                 Open Dashboard

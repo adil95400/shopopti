@@ -19,6 +19,7 @@ import CategoryMapping, { CategoryMapping as CategoryMappingType } from '@/compo
 import SyncHistory from '@/components/integrations/SyncHistory';
 import NotificationSettings, { NotificationSettings as NotificationSettingsType } from '@/components/integrations/NotificationSettings';
 import { Button } from '@/components/ui/button';
+import { platformService } from '@/services/platformService';
 
 
 const MultiPlatformIntegration: React.FC = () => {
@@ -56,6 +57,14 @@ const MultiPlatformIntegration: React.FC = () => {
       syncStatus: 'error' as const
     },
     {
+      id: 'ebay',
+      name: 'eBay',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png',
+      type: 'marketplace' as const,
+      connected: false,
+      syncStatus: 'pending' as const
+    },
+    {
       id: 'etsy',
       name: 'Etsy',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Etsy_logo.svg/2560px-Etsy_logo.svg.png',
@@ -81,20 +90,56 @@ const MultiPlatformIntegration: React.FC = () => {
     }
   ]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConnectionState = async () => {
+      try {
+        const savedPlatforms = await platformService.getPlatforms();
+        if (cancelled) return;
+
+        const savedById = new Map(savedPlatforms.map(platform => [platform.id, platform]));
+        setPlatforms(current => current.map(platform => {
+          const saved = savedById.get(platform.id);
+          if (!saved) return platform;
+
+          return {
+            ...platform,
+            connected: saved.connected,
+            lastSync: saved.lastSync,
+            syncStatus: saved.connected ? 'synced' as const : 'pending' as const
+          };
+        }));
+      } catch (error) {
+        console.error('Unable to load persisted platform state:', error);
+      }
+    };
+
+    void loadConnectionState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleConnectPlatform = async (platformId: string, credentials: any) => {
     setLoading(true);
     try {
-      // In a real implementation, you would make an API call to connect the platform
-      console.log(`Connecting to ${platformId} with credentials:`, credentials);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update platform status
-      setPlatforms(platforms.map(platform => 
-        platform.id === platformId ? { ...platform, connected: true } : platform
+      if (platformId !== 'ebay') {
+        throw new Error(`${platformId} connection is not enabled in the production-safe path`);
+      }
+
+      const success = await platformService.connectPlatform(platformId, credentials);
+      if (!success) {
+        return false;
+      }
+
+      setPlatforms(current => current.map(platform =>
+        platform.id === platformId
+          ? { ...platform, connected: true, syncStatus: 'synced' as const }
+          : platform
       ));
-      
+
       return true;
     } catch (error) {
       console.error(`Error connecting to ${platformId}:`, error);
@@ -107,17 +152,21 @@ const MultiPlatformIntegration: React.FC = () => {
   const handleDisconnectPlatform = async (platformId: string) => {
     setLoading(true);
     try {
-      // In a real implementation, you would make an API call to disconnect the platform
-      console.log(`Disconnecting from ${platformId}`);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update platform status
-      setPlatforms(platforms.map(platform => 
-        platform.id === platformId ? { ...platform, connected: false } : platform
+      if (platformId !== 'ebay') {
+        throw new Error(`${platformId} disconnect is not enabled in the production-safe path`);
+      }
+
+      const success = await platformService.disconnectPlatform(platformId);
+      if (!success) {
+        return false;
+      }
+
+      setPlatforms(current => current.map(platform =>
+        platform.id === platformId
+          ? { ...platform, connected: false, syncStatus: 'pending' as const }
+          : platform
       ));
-      
+
       return true;
     } catch (error) {
       console.error(`Error disconnecting from ${platformId}:`, error);
