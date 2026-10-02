@@ -7,7 +7,6 @@ import { aiService } from '@/services/aiService';
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [category, setCategory] = useState('');
-  const [supplierName, setSupplierName] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,30 +33,34 @@ const Products = () => {
         category: p.category
       });
 
-      const response = await fetch(`https://${import.meta.env.VITE_SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/products.json`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": import.meta.env.VITE_SHOPIFY_ADMIN_TOKEN
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('shopify', {
+        body: {
+          operation: 'create_product',
           product: {
             title: optimized.title,
-            body_html: optimized.description_html,
-            tags: optimized.tags?.join(", "),
-            images: [{ src: p.image_url }]
+            descriptionHtml: optimized.description_html,
+            productType: p.category,
+            vendor: p.brand || p.vendor || 'ShopOpti',
+            tags: optimized.tags || [],
+            imageUrl: p.image_url,
+            price: p.price
           }
-        })
+        }
       });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.errors || "Erreur Shopify");
+      if (error) {
+        throw new Error(error.message || 'Erreur Shopify');
       }
 
-      alert(`✅ Produit "${optimized.title}" importé dans Shopify avec succès !`);
+      if (!data?.success || data?.mode !== 'real' || !data?.shopifyProduct?.id) {
+        throw new Error(data?.error || 'Écriture Shopify non confirmée par le serveur');
+      }
+
+      alert(
+        `✅ Produit créé dans Shopify en brouillon. ID: ${data.shopifyProduct.id}`
+      );
     } catch (e: any) {
-      alert("❌ Échec : " + e.message);
+      alert('❌ Échec : ' + (e?.message || 'Erreur Shopify inconnue'));
     }
   };
 
