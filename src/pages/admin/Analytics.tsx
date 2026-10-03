@@ -135,9 +135,16 @@ const AdminAnalytics: React.FC = () => {
                 <h3 className="text-sm font-medium text-gray-500">Commandes</h3>
                 <BarChart3 className="h-5 w-5 text-gray-500" />
               </div>
-              <p className="text-2xl font-bold">{data.metrics.periodOrders}</p>
+              <p className="text-2xl font-bold">
+                {data.completeness.currentOrdersCappedAt5000
+                  ? 'Non vérifié'
+                  : data.metrics.periodOrders}
+              </p>
               <p className="mt-2 text-xs text-gray-500">
-                {formatGrowth(data.metrics.ordersGrowthPct)} vs période précédente
+                {data.completeness.currentOrdersCappedAt5000 ||
+                data.completeness.previousOrdersCappedAt5000
+                  ? 'Comparaison indisponible : source tronquée'
+                  : `${formatGrowth(data.metrics.ordersGrowthPct)} vs période précédente`}
               </p>
             </div>
 
@@ -148,7 +155,9 @@ const AdminAnalytics: React.FC = () => {
               </div>
               <p className="text-2xl font-bold">{data.metrics.totalUsers}</p>
               <p className="mt-2 text-xs text-gray-500">
-                {data.metrics.activeUsers} actifs · {data.metrics.newUsers} nouveaux
+                {data.completeness.authUsersCappedAt1000
+                  ? 'Actifs / nouveaux : Non vérifié (source tronquée)'
+                  : `${data.metrics.activeUsers} actifs · ${data.metrics.newUsers} nouveaux`}
               </p>
             </div>
 
@@ -181,25 +190,31 @@ const AdminAnalytics: React.FC = () => {
             <div className="rounded-lg bg-white p-6 shadow-sm md:col-span-2">
               <h3 className="mb-4 font-medium">Commandes et revenu payé par jour</h3>
               <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.timeSeries}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="grossOrderValue"
-                      name="Montant brut commandes"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="paidRevenue"
-                      name="Revenu payé"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {data.completeness.currentOrdersCappedAt5000 ? (
+                  <div className="flex h-full items-center justify-center text-center text-gray-500">
+                    Série temporelle non vérifiée : la source de la période est tronquée.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data.timeSeries}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="grossOrderValue"
+                        name="Montant brut commandes"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="paidRevenue"
+                        name="Revenu payé"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
