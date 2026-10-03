@@ -1,9 +1,35 @@
 import { ProductVariant } from './product';
 
+export type SupplierProviderType =
+  | 'aliexpress'
+  | 'cj_dropshipping'
+  | 'bigbuy'
+  | 'alibaba'
+  | 'banggood'
+  | 'dhgate'
+  | 'cdiscount'
+  | 'spocket'
+  | 'eprolo'
+  | 'custom_api'
+  | 'custom_csv'
+  | 'custom_xml'
+  | 'custom_ftp';
+
+export interface SupplierSummary {
+  id: string;
+  name: string;
+  type: SupplierProviderType;
+  status: 'active' | 'inactive' | 'error';
+  lastSync?: string;
+  webhookStatus?: 'not_configured' | 'enabled' | 'error';
+  webhookLastEventAt?: string;
+  created_at: string;
+}
+
 export interface ExternalSupplier {
   id: string;
   name: string;
-  type: 'bigbuy' | 'eprolo' | 'cdiscount' | 'autods' | 'spocket';
+  type: SupplierProviderType;
   apiKey: string;
   apiSecret?: string;
   baseUrl: string;
@@ -76,9 +102,15 @@ export interface OrderRequest {
     state: string;
     zip: string;
     country: string;
+    country_name?: string;
     phone?: string;
     email?: string;
   };
+  logisticName?: string;
+  fromCountryCode?: string;
+  payType?: 2 | 3;
+  orderFlow?: 1 | 2;
+  platform?: string;
   items: {
     product_id: string;
     quantity: number;
@@ -90,5 +122,8 @@ export interface OrderResult {
   success: boolean;
   message: string;
   externalOrderId?: string;
+  status?: string;
+  trackingNumber?: string;
+  estimatedDelivery?: string;
   errors?: string[];
 }

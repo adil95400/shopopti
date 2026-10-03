@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -12,15 +13,13 @@ import {
   Trash2,
   ShoppingBag,
   ArrowRight,
-  X,
   Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { supabase } from '@/lib/supabase';
 import { supplierService } from '@/services/supplierService';
 import {
-  ExternalSupplier,
+  SupplierSummary,
   SupplierProduct,
   ImportFilter,
   SupplierCategory
@@ -29,24 +28,15 @@ import { Button } from '@/components/ui/button';
 
 
 const Imports: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<ExternalSupplier[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<ExternalSupplier | null>(null);
+  const navigate = useNavigate();
+  const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<SupplierSummary | null>(null);
   const [products, setProducts] = useState<SupplierProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [categories, setCategories] = useState<SupplierCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [showAddSupplier, setShowAddSupplier] = useState(false);
-  const [newSupplier, setNewSupplier] = useState<Omit<ExternalSupplier, 'id' | 'created_at'>>({
-    name: '',
-    type: 'bigbuy',
-    apiKey: '',
-    apiSecret: '',
-    baseUrl: '',
-    status: 'inactive',
-    user_id: ''
-  });
   const [filters, setFilters] = useState<ImportFilter>({
     search: '',
     minPrice: undefined,
@@ -59,22 +49,12 @@ const Imports: React.FC = () => {
 
   useEffect(() => {
     fetchSuppliers();
-    
-    // Get the current user ID
-    const getCurrentUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setNewSupplier(prev => ({ ...prev, user_id: data.user!.id }));
-      }
-    };
-    
-    getCurrentUser();
   }, []);
 
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
-      const fetchedSuppliers = await supplierService.getSuppliers();
+      const fetchedSuppliers = await supplierService.getSupplierSummaries();
       setSuppliers(fetchedSuppliers);
       
       // If there are suppliers, select the first one
@@ -126,59 +106,6 @@ const Imports: React.FC = () => {
       fetchProducts();
     }
   }, [filters]);
-
-  const handleAddSupplier = async () => {
-    try {
-      setLoading(true);
-      
-      if (!newSupplier.name || !newSupplier.apiKey || !newSupplier.type) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-      
-      // Set default base URL based on supplier type if not provided
-      if (!newSupplier.baseUrl) {
-        switch (newSupplier.type) {
-          case 'bigbuy':
-            newSupplier.baseUrl = 'https://api.bigbuy.eu';
-            break;
-          case 'eprolo':
-            newSupplier.baseUrl = 'https://api.eprolo.com';
-            break;
-          case 'cdiscount':
-            newSupplier.baseUrl = 'https://api.cdiscount.com';
-            break;
-          case 'autods':
-            newSupplier.baseUrl = 'https://api.autods.com';
-            break;
-          case 'spocket':
-            newSupplier.baseUrl = 'https://api.spocket.co';
-            break;
-        }
-      }
-      
-      const createdSupplier = await supplierService.createSupplier(newSupplier);
-      setSuppliers([...suppliers, createdSupplier]);
-      setSelectedSupplier(createdSupplier);
-      setShowAddSupplier(false);
-      setNewSupplier({
-        name: '',
-        type: 'bigbuy',
-        apiKey: '',
-        apiSecret: '',
-        baseUrl: '',
-        status: 'inactive',
-        user_id: newSupplier.user_id
-      });
-      
-      toast.success('Supplier added successfully');
-    } catch (error) {
-      console.error('Error adding supplier:', error);
-      toast.error('Failed to add supplier');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteSupplier = async (id: string) => {
     if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
@@ -305,9 +232,9 @@ const Imports: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setShowAddSupplier(true)}>
+          <Button onClick={() => navigate('/app/suppliers')}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Supplier
+            Open Supplier Hub
           </Button>
         </div>
       </div>
@@ -329,11 +256,11 @@ const Imports: React.FC = () => {
                     <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-700 mb-2">No suppliers yet</h3>
                     <p className="text-gray-500 mb-4">
-                      Add your first supplier to start importing products
+                      Connect your first supplier in Supplier Hub to start importing products
                     </p>
-                    <Button onClick={() => setShowAddSupplier(true)}>
+                    <Button onClick={() => navigate('/app/suppliers')}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Supplier
+                      Open Supplier Hub
                     </Button>
                   </div>
                 ) : (
@@ -489,13 +416,18 @@ const Imports: React.FC = () => {
                     
                     {selectedProducts.length > 0 && (
                       <div className="flex space-x-2">
-                        <Button variant="outline" onClick={handleImportFromSupplier} disabled={importLoading}>
+                        <Button
+                          variant="outline"
+                          onClick={handleImportFromSupplier}
+                          disabled
+                          title="Import désactivé tant que le pipeline canonique n'accepte pas les snapshots fournisseurs vérifiés"
+                        >
                           {importLoading ? (
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           ) : (
                             <Download className="h-4 w-4 mr-2" />
                           )}
-                          Import to Database
+                          Import pipeline à connecter
                         </Button>
                         <Button onClick={handleImportToShopify} disabled={importLoading}>
                           {importLoading ? (
@@ -575,13 +507,19 @@ const Imports: React.FC = () => {
                             
                             <div className="mt-2 flex justify-between">
                               <div>
-                                <p className="text-lg font-bold text-primary">${product.price.toFixed(2)}</p>
+                                <p className="text-lg font-bold text-primary">
+                                  {product.metadata?.priceVerified === false
+                                    ? 'Prix non vérifié'
+                                    : `${product.price.toFixed(2)}`}
+                                </p>
                                 {product.msrp && product.msrp > product.price && (
                                   <p className="text-sm text-gray-500 line-through">${product.msrp.toFixed(2)}</p>
                                 )}
                               </div>
                               <div className="text-right">
-                                <p className="text-sm text-gray-600">Stock: {product.stock}</p>
+                                <p className="text-sm text-gray-600">
+                                  Stock: {product.metadata?.stockVerified === false ? 'Non vérifié' : product.stock}
+                                </p>
                                 {product.sku && (
                                   <p className="text-xs text-gray-500">SKU: {product.sku}</p>
                                 )}
@@ -645,12 +583,12 @@ const Imports: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-700 mb-2">No supplier selected</h3>
                 <p className="text-gray-500 mb-4">
                   {suppliers.length === 0
-                    ? 'Add your first supplier to start importing products'
+                    ? 'Connect your first supplier in Supplier Hub to start importing products'
                     : 'Select a supplier from the list to view and import products'}
                 </p>
-                <Button onClick={() => setShowAddSupplier(true)}>
+                <Button onClick={() => navigate('/app/suppliers')}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Supplier
+                  Open Supplier Hub
                 </Button>
               </div>
             )}
@@ -658,119 +596,6 @@ const Imports: React.FC = () => {
         </div>
       )}
       
-      {/* Add Supplier Modal */}
-      {showAddSupplier && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Add Supplier</h3>
-                <button
-                  onClick={() => setShowAddSupplier(false)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Supplier Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.name}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                    placeholder="e.g., BigBuy Account"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Supplier Type
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.type}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, type: e.target.value as any })}
-                  >
-                    <option value="bigbuy">BigBuy</option>
-                    <option value="eprolo">EPROLO</option>
-                    <option value="cdiscount">Cdiscount</option>
-                    <option value="autods">AutoDS</option>
-                    <option value="spocket">Spocket</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Key
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.apiKey}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, apiKey: e.target.value })}
-                    placeholder="Enter your API key"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Secret (if required)
-                  </label>
-                  <input
-                    type="password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.apiSecret || ''}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, apiSecret: e.target.value })}
-                    placeholder="Enter your API secret"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Base URL (optional)
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={newSupplier.baseUrl}
-                    onChange={(e) => setNewSupplier({ ...newSupplier, baseUrl: e.target.value })}
-                    placeholder={`e.g., https://api.${newSupplier.type}.com`}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Leave empty to use the default URL for the selected supplier
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddSupplier(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddSupplier}
-                  disabled={loading || !newSupplier.name || !newSupplier.apiKey}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Add Supplier
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

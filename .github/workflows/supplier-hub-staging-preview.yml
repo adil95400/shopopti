@@ -1,0 +1,105 @@
+name: Supplier Hub Staging Preview
+
+on:
+  push:
+    branches:
+      - agent/supplier-hub-p0
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supplier-hub-staging-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build staging preview
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_E4vqxmv9hxjqW4lKpUmQdSIo
+      VERCEL_PROJECT_ID: prj_vongMEYioZ4JYkdksxyp8JC9wpDP
+      VITE_SUPABASE_URL: https://oskgbfpztggzunazongx.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable__t1vqYVhdlZsLl3GAnfQVQ_UeEVSruo
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout #201 branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Link Vercel project
+        run: |
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > .vercel/project.json
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Force staging Supabase client variables
+        run: |
+          env_file=".vercel/.env.preview.local"
+          touch "$env_file"
+          grep -v -E '^VITE_SUPABASE_(URL|ANON_KEY)=' "$env_file" > "$env_file.tmp" || true
+          mv "$env_file.tmp" "$env_file"
+          printf 'VITE_SUPABASE_URL="%s"\n' "$VITE_SUPABASE_URL" >> "$env_file"
+          printf 'VITE_SUPABASE_ANON_KEY="%s"\n' "$VITE_SUPABASE_ANON_KEY" >> "$env_file"
+
+      - name: Build with staging Supabase
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Verify staging Supabase is embedded
+        run: |
+          if ! grep -R -q "oskgbfpztggzunazongx" .vercel/output/static; then
+            echo "Staging Supabase project ref is missing from the browser bundle."
+            exit 1
+          fi
+
+      - name: Deploy preview
+        id: deploy
+        run: |
+          preview_url="$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Supplier Hub staging preview"
+            echo
+            echo "$preview_url"
+            echo
+            echo "Supabase: shopopti-staging (oskgbfpztggzunazongx)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test deployed module bundle
+        run: |
+          preview_url="${{ steps.deploy.outputs.preview_url }}"
+          vercel curl "$preview_url/" > /tmp/preview-index.html
+          echo "--- deployed index.html ---"
+          cat /tmp/preview-index.html
+          asset_path="$(grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' /tmp/preview-index.html | head -n1)"
+          if [ -z "$asset_path" ]; then
+            echo "No Vite module bundle path found in deployed HTML."
+            exit 1
+          fi
+          echo "Module bundle: $asset_path"
+          vercel curl "$preview_url$asset_path" > /tmp/preview-bundle.js
+          test -s /tmp/preview-bundle.js
+          if head -c 200 /tmp/preview-bundle.js | grep -qi '<!doctype\|<html'; then
+            echo "Module URL returned HTML instead of JavaScript."
+            exit 1
+          fi
+          echo "Module bundle fetched successfully."
+
+      - name: Fail closed without preview URL
+        if: ${{ steps.deploy.outputs.preview_url == '' }}
+        run: |
+          echo "Preview URL was not returned by Vercel."
+          exit 1

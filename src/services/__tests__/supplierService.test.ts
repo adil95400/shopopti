@@ -1,38 +1,203 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('axios', () => ({ default: { post: vi.fn(), get: vi.fn() } }))
-vi.mock('../../lib/supabase', () => ({ supabase: { auth: { getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok' } } }) } } }))
+vi.mock('axios', () => ({
+  default: {
+    post: vi.fn(),
+    get: vi.fn(),
+  },
+}))
+
+vi.mock('../cjSupplierService', () => ({
+  cjSupplierService: {
+    createOrder: vi.fn(),
+    getOrderDetail: vi.fn(),
+  },
+}))
+
+vi.mock('../../lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: { access_token: 'session-token' } },
+      }),
+    },
+  },
+}))
 
 import axios from 'axios'
+
+import { cjSupplierService } from '../cjSupplierService'
 import { supplierService } from '../supplierService'
 
-beforeEach(() => {
-  vi.spyOn(supplierService, 'getSupplierById').mockResolvedValue({
-    id: '1',
-    type: 'autods',
-    apiKey: 'k',
-    apiSecret: 's',
-    baseUrl: 'https://api.autods.com',
-    name: 'AutoDS'
-  } as any)
-  ;(axios.post as any).mockClear()
-  ;(axios.get as any).mockClear()
-})
+describe('supplierService server-side supplier contracts', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.spyOn(supplierService, 'getSupplierSummaryById').mockResolvedValue({
+      id: 'supplier-1',
+      name: 'CJ account',
+      type: 'cj_dropshipping',
+      status: 'active',
+      created_at: '2026-09-25T00:00:00.000Z',
+    })
+    vi.mocked(axios.post).mockReset()
+    vi.mocked(cjSupplierService.createOrder).mockReset()
+    vi.mocked(cjSupplierService.getOrderDetail).mockReset()
+  })
 
-it('calls AutoDS categories endpoint', async () => {
-  ;(axios.post as any).mockResolvedValueOnce({ data: { categories: [] } })
-  await supplierService.getCategories('1')
-  expect((axios.post as any).mock.calls[0][0]).toContain('/providers/autods/categories')
-})
+  it('creates CJ supplier through the server-only credential endpoint', async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({
+      data: {
+        success: true,
+        supplier: {
+          id: 'supplier-1',
+          name: 'CJ account',
+          type: 'cj_dropshipping',
+          status: 'active',
+          created_at: '2026-09-25T00:00:00.000Z',
+        },
+      },
+    })
 
-it('creates order via AutoDS endpoint', async () => {
-  ;(axios.post as any).mockResolvedValueOnce({ data: { success: true } })
-  await supplierService.createOrder('1', { external_order_id: '1', shipping_address: { name: 'Test', address1: '1 Test St', city: 'Paris', state: 'IDF', zip: '75001', country: 'FR' }, items: [] })
-  expect((axios.post as any).mock.calls[0][0]).toContain('/providers/autods/orders')
-})
+    await supplierService.createSupplier({
+      name: 'CJ account',
+      type: 'cj_dropshipping',
+      apiKey: 'cj-api-key',
+      baseUrl: '',
+      status: 'inactive',
+      user_id: 'user-1',
+    })
 
-it('checks order status via AutoDS endpoint', async () => {
-  ;(axios.get as any).mockResolvedValueOnce({ data: { status: 'processing' } })
-  await supplierService.getOrderStatus('1', '100')
-  expect((axios.get as any).mock.calls[0][0]).toContain('/providers/autods/orders/100')
+    const [url, payload, config] = vi.mocked(axios.post).mock.calls[0]
+    expect(url).toContain('/functions/v1/supplier-cj-connect')
+    expect(payload).toEqual({
+      name: 'CJ account',
+      apiKey: 'cj-api-key',
+    })
+    expect(config?.headers?.Authorization).toBe('Bearer session-token')
+  })
+
+  it('loads CJ products without sending supplier credentials from the browser', async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({
+      data: { products: [] },
+    })
+
+    await supplierService.getProducts('supplier-1', { search: 'hoodie', page: 1, limit: 20 })
+
+    expect(axios.post).toHaveBeenCalledTimes(1)
+    const [, payload, config] = vi.mocked(axios.post).mock.calls[0]
+
+    expect(payload).toEqual({
+      supplierId: 'supplier-1',
+      action: 'search',
+      filters: { search: 'hoodie', page: 1, limit: 20 },
+    })
+    expect(payload).not.toHaveProperty('apiKey')
+    expect(payload).not.toHaveProperty('apiSecret')
+    expect(config?.headers?.Authorization).toBe('Bearer session-token')
+  })
+
+  it('queries CJ stock by variant id without browser-side credentials', async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({
+      data: { stock: 42 },
+    })
+
+    await expect(
+      supplierService.getVariantStock('supplier-1', 'variant-1')
+    ).resolves.toBe(42)
+
+    const [, payload] = vi.mocked(axios.post).mock.calls[0]
+    expect(payload).toEqual({
+      supplierId: 'supplier-1',
+      action: 'stock',
+      variantId: 'variant-1',
+    })
+    expect(payload).not.toHaveProperty('apiKey')
+  })
+
+  it('imports CJ products through the verified snapshot pipeline without credentials', async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({
+      data: {
+        success: true,
+        importedCount: 1,
+        failedCount: 0,
+        imported: [{ externalId: 'product-1', snapshotId: 'snapshot-1' }],
+        failed: [],
+      },
+    })
+
+    await expect(
+      supplierService.importProducts('supplier-1', ['product-1'])
+    ).resolves.toEqual({
+      success: true,
+      message: 'Imported 1 verified CJdropshipping product snapshots',
+      importedCount: 1,
+      failedCount: 0,
+      errors: [],
+    })
+
+    const [, payload] = vi.mocked(axios.post).mock.calls[0]
+    expect(payload).toEqual({
+      supplierId: 'supplier-1',
+      action: 'snapshot_import',
+      productIds: ['product-1'],
+    })
+    expect(payload).not.toHaveProperty('apiKey')
+    expect(payload).not.toHaveProperty('apiSecret')
+  })
+
+  it('creates CJ orders through the credential-free CJ facade', async () => {
+    vi.mocked(cjSupplierService.createOrder).mockResolvedValueOnce({
+      success: true,
+      data: { data: { orderId: 'cj-order-1', orderStatus: 'CREATED' } },
+    })
+
+    await expect(
+      supplierService.createOrder('supplier-1', {
+        external_order_id: 'order-1',
+        shipping_address: {
+          name: 'Test',
+          address1: '1 Test St',
+          city: 'Paris',
+          state: 'IDF',
+          zip: '75001',
+          country: 'FR',
+          country_name: 'France',
+        },
+        logisticName: 'CJPacket',
+        items: [{ product_id: 'variant-1', quantity: 1, price: 10 }],
+      })
+    ).resolves.toMatchObject({
+      success: true,
+      message: 'CJdropshipping order created',
+      externalOrderId: 'cj-order-1',
+      status: 'CREATED',
+    })
+
+    expect(cjSupplierService.createOrder).toHaveBeenCalledWith(
+      'supplier-1',
+      expect.objectContaining({
+        orderNumber: 'order-1',
+        shippingCountryCode: 'FR',
+        shippingCountry: 'France',
+        logisticName: 'CJPacket',
+        payType: 3,
+        products: [{ vid: 'variant-1', quantity: 1 }],
+      })
+    )
+  })
+
+  it('returns CJ order status without inventing tracking data', async () => {
+    vi.mocked(cjSupplierService.getOrderDetail).mockResolvedValueOnce({
+      success: true,
+      data: { data: { orderStatus: 'SHIPPED', trackingNumber: 'TRACK-1' } },
+    })
+
+    await expect(
+      supplierService.getOrderStatus('supplier-1', 'remote-1')
+    ).resolves.toEqual({
+      status: 'SHIPPED',
+      trackingNumber: 'TRACK-1',
+      estimatedDelivery: undefined,
+    })
+  })
 })
