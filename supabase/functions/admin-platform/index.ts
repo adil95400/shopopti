@@ -57,23 +57,34 @@ serve(async (req) => {
 
   try {
     if (action === "overview") {
-      const [flagsResult, ticketsResult, settingsResult, flagAuditResult] = await Promise.all([
+      const [
+        flagsResult,
+        ticketsCountResult,
+        ticketsResult,
+        settingsCountResult,
+        settingsResult,
+        flagAuditCountResult,
+        flagAuditResult,
+      ] = await Promise.all([
         service
           .from("feature_flags")
           .select("id,key,name,description,category,is_enabled,is_public,min_plan,rollout_percentage,expires_at,updated_at")
           .order("category", { ascending: true })
           .order("key", { ascending: true }),
+        service.from("support_tickets").select("id", { count: "exact", head: true }),
         service
           .from("support_tickets")
           .select("id,user_id,subject,email,status,priority,category,created_at,updated_at")
           .order("created_at", { ascending: false })
           .limit(100),
+        service.from("enterprise_settings").select("id", { count: "exact", head: true }),
         service
           .from("enterprise_settings")
           .select("id,setting_category,setting_key,setting_value,is_encrypted,access_level,updated_at")
           .order("setting_category", { ascending: true })
           .order("setting_key", { ascending: true })
           .limit(100),
+        service.from("feature_flag_audit_log").select("id", { count: "exact", head: true }),
         service
           .from("feature_flag_audit_log")
           .select("id,flag_id,flag_key,action,actor_id,old_value,new_value,metadata,created_at")
@@ -81,28 +92,51 @@ serve(async (req) => {
           .limit(50),
       ]);
 
-      for (const result of [flagsResult, ticketsResult, settingsResult, flagAuditResult]) {
+      for (const result of [
+        flagsResult,
+        ticketsCountResult,
+        ticketsResult,
+        settingsCountResult,
+        settingsResult,
+        flagAuditCountResult,
+        flagAuditResult,
+      ]) {
         if (result.error) throw result.error;
       }
 
       const flags = flagsResult.data ?? [];
       const tickets = ticketsResult.data ?? [];
+      const settings = settingsResult.data ?? [];
+      const flagAudit = flagAuditResult.data ?? [];
+
+      const supportTicketsTotal = ticketsCountResult.count ?? 0;
+      const enterpriseSettingsTotal = settingsCountResult.count ?? 0;
+      const flagAuditTotal = flagAuditCountResult.count ?? 0;
 
       return json({
         generatedAt: new Date().toISOString(),
         flags,
         supportTickets: tickets,
-        enterpriseSettings: settingsResult.data ?? [],
-        featureFlagAudit: flagAuditResult.data ?? [],
+        enterpriseSettings: settings,
+        featureFlagAudit: flagAudit,
         totals: {
           flags: flags.length,
           enabledFlags: flags.filter((row) => row.is_enabled === true).length,
           publicFlags: flags.filter((row) => row.is_public === true).length,
-          supportTickets: tickets.length,
+          supportTickets: supportTicketsTotal,
           openSupportTickets: tickets.filter((row) =>
             ["open", "pending", "in_progress"].includes(String(row.status ?? "").toLowerCase())
           ).length,
-          enterpriseSettings: (settingsResult.data ?? []).length,
+          enterpriseSettings: enterpriseSettingsTotal,
+        },
+        completeness: {
+          supportTicketsTruncated: supportTicketsTotal > tickets.length,
+          enterpriseSettingsTruncated: enterpriseSettingsTotal > settings.length,
+          featureFlagAuditTruncated: flagAuditTotal > flagAudit.length,
+          supportTicketListLimit: 100,
+          enterpriseSettingsListLimit: 100,
+          featureFlagAuditListLimit: 50,
+          featureFlagAuditTotal: flagAuditTotal,
         },
         provenance: {
           flags: "public.feature_flags",
@@ -148,7 +182,22 @@ serve(async (req) => {
         metadata: { source: "admin-platform-controls" },
       });
 
-      if (auditError) throw auditError;
+      if (auditError) {
+        const { error: rollbackError } = await service
+          .from("feature_flags")
+          .update({
+            is_enabled: current.is_enabled,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", flagId);
+
+        if (rollbackError) {
+          console.error("feature flag audit rollback failed", rollbackError);
+          throw new Error("flag_audit_failed_and_rollback_failed");
+        }
+
+        throw new Error("flag_audit_failed_mutation_rolled_back");
+      }
 
       return json({ success: true, flag: updated });
     }
@@ -160,6 +209,16 @@ serve(async (req) => {
 
       if (!ticketId || !allowed.has(status)) {
         return json({ error: "invalid_ticket_update" }, 400);
+      }
+
+      const { data: currentTicket, error: currentTicketError } = await service
+        .from("support_tickets")
+        .select("id,status")
+        .eq("id", ticketId)
+        .single();
+
+      if (currentTicketError || !currentTicket) {
+        return json({ error: "ticket_not_found" }, 404);
       }
 
       const { data, error } = await service
@@ -182,11 +241,27 @@ serve(async (req) => {
         resource_type: "support_ticket",
         resource_id: ticketId,
         description: "Support ticket status changed",
+        old_values: { status: currentTicket.status },
         new_values: { status },
         metadata: { source: "admin-platform-controls" },
       });
 
-      if (auditError) throw auditError;
+      if (auditError) {
+        const { error: rollbackError } = await service
+          .from("support_tickets")
+          .update({
+            status: currentTicket.status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", ticketId);
+
+        if (rollbackError) {
+          console.error("support ticket audit rollback failed", rollbackError);
+          throw new Error("ticket_audit_failed_and_rollback_failed");
+        }
+
+        throw new Error("ticket_audit_failed_mutation_rolled_back");
+      }
 
       return json({ success: true, ticket: data });
     }
