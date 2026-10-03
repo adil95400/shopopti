@@ -44,7 +44,7 @@ const AdminOperations: React.FC = () => {
 
   const empty = (label: string) => (
     <div className="rounded-lg border bg-white p-10 text-center text-gray-500">
-      Aucun {label} enregistré dans la table canonique du staging.
+      Aucun {label} enregistré dans la table canonique interrogée.
     </div>
   );
 
@@ -172,8 +172,24 @@ const AdminOperations: React.FC = () => {
             )
           )}
 
-          <div className="text-xs text-gray-500">
-            Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Sources : {Object.values(data.provenance).join(', ')}. Les logs runtime Supabase/Vercel ne sont pas inclus dans cette page.
+          <div className="space-y-1 text-xs text-gray-500">
+            <div>
+              Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Sources : {Object.values(data.provenance).join(', ')}.
+            </div>
+            <div>
+              Les compteurs des onglets sont exacts. Chaque liste affiche au maximum les {data.completeness.pageLimit} éléments les plus récents.
+            </div>
+            {(data.completeness.auditsTruncated ||
+              data.completeness.backgroundJobsTruncated ||
+              data.completeness.syncQueueTruncated ||
+              data.completeness.webhookDeliveriesTruncated) && (
+              <div>
+                Certaines listes sont tronquées ; les résumés de statut portent uniquement sur les éléments récents affichés, pas sur l'ensemble des lignes.
+              </div>
+            )}
+            <div>
+              Les logs runtime Supabase/Vercel ne sont pas inclus dans cette page.
+            </div>
           </div>
         </>
       )}
