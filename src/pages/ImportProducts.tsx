@@ -120,7 +120,12 @@ const marketplaces = [
 
 const ImportProducts: React.FC = () => {
   const { isConnected, connectShopify } = useShop();
-  const [selectedMethod, setSelectedMethod] = useState(importMethods[0]);
+  const requestedSource = new URLSearchParams(window.location.search).get('source');
+  const requestedMethodIndex = Math.max(
+    0,
+    importMethods.findIndex((method) => method.id === requestedSource)
+  );
+  const [selectedMethod, setSelectedMethod] = useState(importMethods[requestedMethodIndex]);
   const [recentImports, setRecentImports] = useState([
     { id: 1, source: 'AliExpress', date: '2025-06-01', count: 15, status: 'completed' },
     { id: 2, source: 'CSV Import', date: '2025-05-28', count: 120, status: 'completed' },
@@ -325,7 +330,7 @@ const ImportProducts: React.FC = () => {
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2">
-                    <Tab.Group>
+                    <Tab.Group defaultIndex={requestedMethodIndex}>
                       <Tab.List className="flex space-x-2 rounded-lg bg-gray-100 p-1 overflow-x-auto">
                         {filteredMethods.map((method) => (
                           <Tab
