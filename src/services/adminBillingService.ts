@@ -67,6 +67,7 @@ export interface AdminBillingData {
     verified: boolean;
   };
   webhookSummary: {
+    scope: 'latest_100';
     processed: number;
     pending: number;
   };
@@ -77,7 +78,17 @@ export interface AdminBillingData {
     activePaidSubscribers: number | null;
   };
   provenance: Record<string, string>;
-  completeness: Record<string, boolean>;
+  completeness: {
+    listLimit: number;
+    subscriptionsTruncated: boolean;
+    userSubscriptionsTruncated: boolean;
+    overagesTruncated: boolean;
+    stripeWebhooksTruncated: boolean;
+    stripeLiveApiQueried: boolean;
+    invoicesIncluded: boolean;
+    chargesIncluded: boolean;
+    mrrDerivableFromCurrentTables: boolean;
+  };
 }
 
 export const adminBillingService = {
