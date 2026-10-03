@@ -53,6 +53,7 @@ import MarketingHub from './pages/MarketingHub';
 import GlobalMarketplaces from './pages/GlobalMarketplaces';
 import AdvancedSuppliers from './pages/AdvancedSuppliers';
 import WinningProducts from './pages/WinningProducts';
+import ExtensionHub from './pages/ExtensionHub';
 
 // Dashboard pages
 import Dashboard from './pages/Dashboard';
@@ -141,6 +142,7 @@ const AppRoutes = () => {
                   <Route path="subscription" element={<Subscription />} />
                   <Route path="automations" element={<AutomationsPage />} />
                   <Route path="winning-products" element={<WinningProducts />} />
+                  <Route path="extension" element={<ExtensionHub />} />
                   
                   {/* Advanced modules */}
                   <Route path="seo-audit" element={<SeoAuditPage />} />
