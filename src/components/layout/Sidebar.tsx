@@ -33,7 +33,8 @@ import {
   Mail,
   HelpCircle,
   Star,
-  Activity
+  Activity,
+  Chrome
 } from 'lucide-react';
 
 import Logo from './Logo';
@@ -54,7 +55,8 @@ const sections = [
       { path: '/app/support', label: 'Support', icon: <HelpCircle size={18} /> },
       { path: '/app/contact', label: 'Contact', icon: <Mail size={18} /> },
       { path: '/app/subscription', label: 'Abonnement', icon: <CreditCard size={18} /> },
-      { path: '/app/advanced-analytics', label: 'Advanced Analytics', icon: <BarChart3 size={18} /> }
+      { path: '/app/advanced-analytics', label: 'Advanced Analytics', icon: <BarChart3 size={18} /> },
+      { path: '/app/extension', label: 'Extension Chrome', icon: <Chrome size={18} /> }
     ]
   },
   {
