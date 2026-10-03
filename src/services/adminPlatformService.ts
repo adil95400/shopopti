@@ -54,6 +54,15 @@ export interface AdminPlatformData {
     openSupportTickets: number;
     enterpriseSettings: number;
   };
+  completeness: {
+    supportTicketsTruncated: boolean;
+    enterpriseSettingsTruncated: boolean;
+    featureFlagAuditTruncated: boolean;
+    supportTicketListLimit: number;
+    enterpriseSettingsListLimit: number;
+    featureFlagAuditListLimit: number;
+    featureFlagAuditTotal: number;
+  };
   provenance: Record<string, string>;
 }
 
