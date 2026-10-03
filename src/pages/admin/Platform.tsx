@@ -226,8 +226,20 @@ const AdminPlatform: React.FC = () => {
             )
           )}
 
-          <div className="text-xs text-gray-500">
-            Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Toute modification de feature flag passe par le serveur et est auditée.
+          <div className="space-y-1 text-xs text-gray-500">
+            <div>
+              Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Les compteurs d'onglets utilisent des totaux exacts lorsque disponibles.
+            </div>
+            {(data.completeness.supportTicketsTruncated ||
+              data.completeness.enterpriseSettingsTruncated ||
+              data.completeness.featureFlagAuditTruncated) && (
+              <div>
+                Certaines listes sont tronquées : support {data.completeness.supportTicketListLimit}, paramètres {data.completeness.enterpriseSettingsListLimit}, audit flags {data.completeness.featureFlagAuditListLimit} éléments maximum.
+              </div>
+            )}
+            <div>
+              Toute modification de feature flag ou de statut support passe par le serveur ; si l'écriture d'audit échoue, la mutation est annulée de façon compensatoire.
+            </div>
           </div>
         </>
       )}
