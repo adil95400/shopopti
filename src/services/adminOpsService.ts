@@ -9,6 +9,7 @@ export interface AdminOpsData {
     webhookDeliveries: number;
   };
   statusSummary: {
+    scope: 'latest_50';
     backgroundJobs: Record<string, number>;
     syncQueue: Record<string, number>;
     webhookDeliveries: {
@@ -76,6 +77,10 @@ export interface AdminOpsData {
   provenance: Record<string, string>;
   completeness: {
     pageLimit: number;
+    auditsTruncated: boolean;
+    backgroundJobsTruncated: boolean;
+    syncQueueTruncated: boolean;
+    webhookDeliveriesTruncated: boolean;
     platformLogsIncluded: boolean;
     supabaseRuntimeLogsIncluded: boolean;
   };
