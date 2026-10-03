@@ -33,6 +33,7 @@ import {
   Mail,
   HelpCircle,
   Star,
+  Activity,
   Chrome
 } from 'lucide-react';
 
@@ -54,7 +55,8 @@ const sections = [
       { path: '/app/support', label: 'Support', icon: <HelpCircle size={18} /> },
       { path: '/app/contact', label: 'Contact', icon: <Mail size={18} /> },
       { path: '/app/subscription', label: 'Abonnement', icon: <CreditCard size={18} /> },
-      { path: '/app/advanced-analytics', label: 'Advanced Analytics', icon: <BarChart3 size={18} /> }
+      { path: '/app/advanced-analytics', label: 'Advanced Analytics', icon: <BarChart3 size={18} /> },
+      { path: '/app/extension', label: 'Extension Chrome', icon: <Chrome size={18} /> }
     ]
   },
   {
@@ -120,7 +122,10 @@ const sections = [
       { path: '/app/admin/dashboard', label: 'Dashboard Admin', icon: <LayoutDashboard size={18} /> },
       { path: '/app/admin/users', label: 'Utilisateurs', icon: <Building size={18} /> },
       { path: '/app/admin/analytics', label: 'Analytics Admin', icon: <BarChart3 size={18} /> },
-      { path: '/app/admin/imports', label: 'Imports', icon: <Import size={18} /> }
+      { path: '/app/admin/imports', label: 'Imports', icon: <Import size={18} /> },
+      { path: '/app/admin/operations', label: 'Admin Ops', icon: <Activity size={18} /> },
+      { path: '/app/admin/billing', label: 'Billing', icon: <CreditCard size={18} /> },
+      { path: '/app/admin/platform', label: 'Platform', icon: <Settings size={18} /> }
     ]
   }
 ];
