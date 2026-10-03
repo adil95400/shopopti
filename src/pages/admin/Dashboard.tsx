@@ -106,8 +106,11 @@ const AdminDashboard: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{data.metrics.users.total}</div>
                 <p className="pt-1 text-xs text-gray-500">
-                  {data.metrics.users.currentPeriodNew} nouveaux ·{' '}
-                  {growthLabel(data.metrics.users.growthPct)}
+                  {data.completeness.authUsersCappedAt1000
+                    ? 'Nouveaux utilisateurs : Non vérifié (source tronquée)'
+                    : `${data.metrics.users.currentPeriodNew} nouveaux · ${growthLabel(
+                        data.metrics.users.growthPct
+                      )}`}
                 </p>
               </CardContent>
             </Card>
@@ -125,8 +128,11 @@ const AdminDashboard: React.FC = () => {
                   )}
                 </div>
                 <p className="pt-1 text-xs text-gray-500">
-                  {data.metrics.paidRevenue.paidOrders} commande(s) payée(s) ·{' '}
-                  {growthLabel(data.metrics.paidRevenue.growthPct)}
+                  {data.completeness.currentOrdersCappedAt5000
+                    ? 'Commandes payées : Non vérifié (source tronquée)'
+                    : `${data.metrics.paidRevenue.paidOrders} commande(s) payée(s) · ${growthLabel(
+                        data.metrics.paidRevenue.growthPct
+                      )}`}
                 </p>
               </CardContent>
             </Card>
@@ -139,8 +145,11 @@ const AdminDashboard: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{data.metrics.orders.total}</div>
                 <p className="pt-1 text-xs text-gray-500">
-                  {data.metrics.orders.currentPeriod} sur 30 jours ·{' '}
-                  {growthLabel(data.metrics.orders.growthPct)}
+                  {data.completeness.currentOrdersCappedAt5000
+                    ? '30 jours : Non vérifié (source tronquée)'
+                    : `${data.metrics.orders.currentPeriod} sur 30 jours · ${growthLabel(
+                        data.metrics.orders.growthPct
+                      )}`}
                 </p>
               </CardContent>
             </Card>
@@ -171,8 +180,9 @@ const AdminDashboard: React.FC = () => {
                 )}
               </div>
               <p className="mt-2 text-sm text-amber-700">
-                Ce montant additionne les commandes sans supposer qu'elles sont payées.
-                Il ne doit pas être interprété comme du chiffre d'affaires encaissé.
+                {data.completeness.currentOrdersCappedAt5000
+                  ? 'Non vérifié : la source de la période est tronquée.'
+                  : "Ce montant additionne les commandes sans supposer qu'elles sont payées. Il ne doit pas être interprété comme du chiffre d'affaires encaissé."}
               </p>
             </CardContent>
           </Card>
