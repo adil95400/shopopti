@@ -1,4 +1,4 @@
-/* global chrome, crypto, document */
+/* global chrome, crypto, document, URL */
 
 const statusEl = document.getElementById('status');
 const previewEl = document.getElementById('preview');
@@ -29,7 +29,7 @@ const renderProduct = (product) => {
 
   if (product.images?.[0]) {
     imageEl.src = product.images[0];
-    imageEl.alt = product.title || 'Produit AliExpress';
+    imageEl.alt = product.title || 'Produit';
     imageEl.classList.remove('hidden');
   } else {
     imageEl.removeAttribute('src');
@@ -43,7 +43,7 @@ const renderProduct = (product) => {
     .map(([key]) => key);
 
   verificationEl.textContent = verifiedNames.length
-    ? `Champs détectés : ${verifiedNames.join(', ')}. Vérification humaine requise avant publication.`
+    ? `Source ${product.source}. Champs détectés : ${verifiedNames.join(', ')}. Vérification humaine requise avant publication.`
     : 'Données non vérifiées. Vérification humaine requise avant publication.';
 
   previewEl.classList.remove('hidden');
@@ -54,16 +54,30 @@ const getActiveTab = async () => {
   return tabs[0] || null;
 };
 
+const supportedSourceFromUrl = (value) => {
+  try {
+    const url = new URL(value);
+    if (/\.aliexpress\.com$/i.test(url.hostname) && /\/item\//i.test(url.pathname)) return 'aliexpress';
+    if (/\.amazon\.(com|fr|de|es|it|co\.uk)$/i.test(url.hostname)
+      && /\/(dp|gp\/product)\/[A-Z0-9]{10}/i.test(url.pathname)) return 'amazon';
+  } catch (_error) {
+    return null;
+  }
+  return null;
+};
+
 extractButton.addEventListener('click', async () => {
   extractButton.disabled = true;
   previewEl.classList.add('hidden');
   currentProduct = null;
+  currentHandoffId = null;
   setStatus('Analyse locale de la page…');
 
   try {
     const tab = await getActiveTab();
-    if (!tab?.id || !tab.url?.includes('aliexpress.com/item/')) {
-      throw new Error('Ouvre une fiche produit AliExpress puis relance l’analyse.');
+    const source = supportedSourceFromUrl(tab?.url || '');
+    if (!tab?.id || !source) {
+      throw new Error('Ouvre une fiche produit AliExpress ou Amazon prise en charge puis relance l’analyse.');
     }
 
     const response = await chrome.tabs.sendMessage(tab.id, {
@@ -71,7 +85,7 @@ extractButton.addEventListener('click', async () => {
     });
 
     if (!response?.ok || !response.product) {
-      throw new Error(response?.error || 'Extraction AliExpress impossible.');
+      throw new Error(response?.error || 'Extraction fournisseur impossible.');
     }
 
     currentHandoffId = crypto.randomUUID();
@@ -82,7 +96,7 @@ extractButton.addEventListener('click', async () => {
     });
 
     renderProduct(response.product);
-    setStatus('Produit préparé localement.');
+    setStatus(`Produit ${response.product.source} préparé localement.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur inconnue.';
     setStatus(message);
@@ -103,8 +117,9 @@ openShopOptiButton.addEventListener('click', async () => {
   }
 
   const sourceUrl = encodeURIComponent(currentProduct.sourceUrl || '');
+  const source = encodeURIComponent(currentProduct.source || '');
   const handoffId = encodeURIComponent(currentHandoffId);
   await chrome.tabs.create({
-    url: `https://shopopti.io/import?source=aliexpress&mode=extension&handoff=${handoffId}&url=${sourceUrl}`
+    url: `https://shopopti.io/import?source=${source}&mode=extension&handoff=${handoffId}&url=${sourceUrl}`
   });
 });

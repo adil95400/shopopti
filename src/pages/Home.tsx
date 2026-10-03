@@ -381,7 +381,7 @@ const Home: React.FC = () => {
                 Extension Chrome — Beta
               </h2>
               <p className="mt-4 text-lg text-gray-600">
-                Préparez des fiches produit AliExpress compatibles dans Chrome, vérifiez les données détectées puis transférez-les vers ShopOpti.
+                Préparez des fiches produit AliExpress ou Amazon compatibles dans Chrome, vérifiez les données détectées puis transférez-les vers ShopOpti.
               </p>
               
               <div className="mt-8 space-y-4">
@@ -389,7 +389,7 @@ const Home: React.FC = () => {
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
-                  <p className="ml-3 text-gray-600">Préparer des fiches produit AliExpress compatibles</p>
+                  <p className="ml-3 text-gray-600">Préparer des fiches produit AliExpress et Amazon compatibles</p>
                 </div>
                 <div className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
