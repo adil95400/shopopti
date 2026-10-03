@@ -135,6 +135,7 @@ serve(async (req) => {
         webhookDeliveries: webhookCount.count ?? 0,
       },
       statusSummary: {
+        scope: "latest_50",
         backgroundJobs: countBy(jobs as Array<Record<string, unknown>>, "status"),
         syncQueue: countBy(syncs as Array<Record<string, unknown>>, "status"),
         webhookDeliveries: {
@@ -155,6 +156,11 @@ serve(async (req) => {
       },
       completeness: {
         pageLimit: 50,
+        auditsTruncated: (auditCount.count ?? 0) > (recentAudits.data?.length ?? 0),
+        backgroundJobsTruncated: (jobCount.count ?? 0) > jobs.length,
+        syncQueueTruncated: (syncCount.count ?? 0) > syncs.length,
+        webhookDeliveriesTruncated:
+          (webhookCount.count ?? 0) > webhooks.length,
         platformLogsIncluded: false,
         supabaseRuntimeLogsIncluded: false,
       },
