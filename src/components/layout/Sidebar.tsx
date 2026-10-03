@@ -32,7 +32,8 @@ import {
   SplitSquareVertical,
   Mail,
   HelpCircle,
-  Star
+  Star,
+  Activity
 } from 'lucide-react';
 
 import Logo from './Logo';
@@ -119,7 +120,8 @@ const sections = [
       { path: '/app/admin/dashboard', label: 'Dashboard Admin', icon: <LayoutDashboard size={18} /> },
       { path: '/app/admin/users', label: 'Utilisateurs', icon: <Building size={18} /> },
       { path: '/app/admin/analytics', label: 'Analytics Admin', icon: <BarChart3 size={18} /> },
-      { path: '/app/admin/imports', label: 'Imports', icon: <Import size={18} /> }
+      { path: '/app/admin/imports', label: 'Imports', icon: <Import size={18} /> },
+      { path: '/app/admin/operations', label: 'Admin Ops', icon: <Activity size={18} /> }
     ]
   }
 ];

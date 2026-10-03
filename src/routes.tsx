@@ -72,6 +72,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import UsersAdmin from './pages/admin/Users';
 import AdminAnalytics from './pages/admin/Analytics';
 import Imports from './pages/admin/Imports';
+import AdminOperations from './pages/admin/Operations';
 
 // Missing modules pages
 import RepricingPage from './pages/repricing';
@@ -175,6 +176,7 @@ const AppRoutes = () => {
                     <Route path="users" element={<UsersAdmin />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="imports" element={<Imports />} />
+                    <Route path="operations" element={<AdminOperations />} />
                   </Route>
                 </Route>
                 
