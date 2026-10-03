@@ -152,6 +152,13 @@ serve(async (req) => {
     const currentOrders = currentOrdersResult.data ?? [];
     const previousOrders = previousOrdersResult.data ?? [];
 
+    const authUsersCappedAt1000 = totalUsers > users.length;
+    const currentOrdersCappedAt5000 = currentOrders.length >= 5000;
+    const previousOrdersCappedAt5000 = previousOrders.length >= 5000;
+    const currentOrdersVerified = !currentOrdersCappedAt5000;
+    const comparativeOrdersVerified =
+      currentOrdersVerified && !previousOrdersCappedAt5000;
+
     const currentPaidOrders = currentOrders.filter((order) =>
       ["paid", "partially_paid"].includes(String(order.financial_status ?? "").toLowerCase()),
     );
@@ -262,9 +269,9 @@ serve(async (req) => {
         grossOrderValueRule: "sum(orders.total_amount), regardless of payment status",
       },
       completeness: {
-        authUsersCappedAt1000: totalUsers > 1000,
-        currentOrdersCappedAt5000: currentOrders.length >= 5000,
-        previousOrdersCappedAt5000: previousOrders.length >= 5000,
+        authUsersCappedAt1000,
+        currentOrdersCappedAt5000,
+        previousOrdersCappedAt5000,
         topProductsAvailable: false,
         conversionRateAvailable: false,
       },
@@ -277,7 +284,9 @@ serve(async (req) => {
           users: {
             total: totalUsers,
             currentPeriodNew: newUsers,
-            growthPct: pctGrowth(newUsers, previousNewUsers),
+            growthPct: authUsersCappedAt1000
+              ? null
+              : pctGrowth(newUsers, previousNewUsers),
           },
           products: {
             total: productsResult.count ?? 0,
@@ -285,26 +294,32 @@ serve(async (req) => {
           orders: {
             total: ordersCountResult.count ?? 0,
             currentPeriod: currentOrders.length,
-            growthPct: pctGrowth(currentOrders.length, previousOrders.length),
+            growthPct: comparativeOrdersVerified
+              ? pctGrowth(currentOrders.length, previousOrders.length)
+              : null,
           },
           paidRevenue: {
-            amount: singleCurrency ? currentPaid : null,
-            currency: singleCurrency,
+            amount:
+              singleCurrency && currentOrdersVerified ? currentPaid : null,
+            currency:
+              singleCurrency && currentOrdersVerified ? singleCurrency : null,
             paidOrders: currentPaidOrders.length,
             growthPct:
-              comparableCurrency
+              comparableCurrency && comparativeOrdersVerified
                 ? pctGrowth(currentPaid, previousPaid)
                 : null,
-            verified: singleCurrency !== null,
+            verified: singleCurrency !== null && currentOrdersVerified,
           },
           grossOrderValue: {
-            amount: singleCurrency ? currentGross : null,
-            currency: singleCurrency,
+            amount:
+              singleCurrency && currentOrdersVerified ? currentGross : null,
+            currency:
+              singleCurrency && currentOrdersVerified ? singleCurrency : null,
             growthPct:
-              comparableCurrency
+              comparableCurrency && comparativeOrdersVerified
                 ? pctGrowth(currentGross, previousGross)
                 : null,
-            verified: singleCurrency !== null,
+            verified: singleCurrency !== null && currentOrdersVerified,
           },
         },
         recentUsers,
@@ -313,7 +328,7 @@ serve(async (req) => {
     }
 
     const averageOrderValue =
-      currentPaidOrders.length > 0 && singleCurrency
+      currentPaidOrders.length > 0 && singleCurrency && currentOrdersVerified
         ? currentPaid / currentPaidOrders.length
         : null;
 
@@ -326,15 +341,25 @@ serve(async (req) => {
         products: productsResult.count ?? 0,
         totalOrders: ordersCountResult.count ?? 0,
         periodOrders: currentOrders.length,
-        ordersGrowthPct: pctGrowth(currentOrders.length, previousOrders.length),
-        paidRevenue: singleCurrency ? currentPaid : null,
-        paidRevenueCurrency: singleCurrency,
+        ordersGrowthPct: comparativeOrdersVerified
+          ? pctGrowth(currentOrders.length, previousOrders.length)
+          : null,
+        paidRevenue:
+          singleCurrency && currentOrdersVerified ? currentPaid : null,
+        paidRevenueCurrency:
+          singleCurrency && currentOrdersVerified ? singleCurrency : null,
         paidRevenueGrowthPct:
-          comparableCurrency ? pctGrowth(currentPaid, previousPaid) : null,
-        grossOrderValue: singleCurrency ? currentGross : null,
-        grossOrderValueCurrency: singleCurrency,
+          comparableCurrency && comparativeOrdersVerified
+            ? pctGrowth(currentPaid, previousPaid)
+            : null,
+        grossOrderValue:
+          singleCurrency && currentOrdersVerified ? currentGross : null,
+        grossOrderValueCurrency:
+          singleCurrency && currentOrdersVerified ? singleCurrency : null,
         grossOrderValueGrowthPct:
-          comparableCurrency ? pctGrowth(currentGross, previousGross) : null,
+          comparableCurrency && comparativeOrdersVerified
+            ? pctGrowth(currentGross, previousGross)
+            : null,
         averageOrderValue,
         conversionRate: null,
       },
