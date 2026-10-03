@@ -355,7 +355,7 @@ const Home: React.FC = () => {
                   <td className="py-4 px-6 text-center"><CheckCircle className="h-5 w-5 text-gray-300 mx-auto" /></td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-gray-800">Extension Chrome avancée</td>
+                  <td className="py-4 px-6 text-gray-800">Extension Chrome — Beta</td>
                   <td className="py-4 px-6 text-center"><CheckCircle className="h-5 w-5 text-green-500 mx-auto" /></td>
                   <td className="py-4 px-6 text-center"><CheckCircle className="h-5 w-5 text-green-500 mx-auto" /></td>
                   <td className="py-4 px-6 text-center"><CheckCircle className="h-5 w-5 text-gray-300 mx-auto" /></td>
@@ -378,10 +378,10 @@ const Home: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">
-                Extension Chrome avancée
+                Extension Chrome — Beta
               </h2>
               <p className="mt-4 text-lg text-gray-600">
-                Importez des produits et des avis depuis n'importe quel site en un clic. Notre extension Chrome vous permet de:
+                Préparez des fiches produit AliExpress compatibles dans Chrome, vérifiez les données détectées puis transférez-les vers ShopOpti.
               </p>
               
               <div className="mt-8 space-y-4">
@@ -389,31 +389,31 @@ const Home: React.FC = () => {
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
-                  <p className="ml-3 text-gray-600">Importer des produits depuis AliExpress, Amazon, Temu et plus</p>
+                  <p className="ml-3 text-gray-600">Préparer des fiches produit AliExpress compatibles</p>
                 </div>
                 <div className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
-                  <p className="ml-3 text-gray-600">Capturer toutes les variantes, images et descriptions</p>
+                  <p className="ml-3 text-gray-600">Conserver les champs structurés réellement détectés et vérifiés</p>
                 </div>
                 <div className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
-                  <p className="ml-3 text-gray-600">Importer les avis clients pour ajouter de la preuve sociale</p>
+                  <p className="ml-3 text-gray-600">Transférer un snapshot vérifié vers le pipeline canonique ShopOpti</p>
                 </div>
                 <div className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
-                  <p className="ml-3 text-gray-600">Comparer automatiquement les prix entre différents fournisseurs</p>
+                  <p className="ml-3 text-gray-600">Vérification humaine requise avant toute publication</p>
                 </div>
               </div>
               
               <div className="mt-8">
-                <Button size="lg">
-                  Télécharger l'extension
+                <Button size="lg" asChild>
+                  <Link to="/app/extension">Voir l’état de l’extension</Link>
                 </Button>
               </div>
             </div>
