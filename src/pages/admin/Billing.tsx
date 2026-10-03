@@ -111,7 +111,9 @@ const AdminBilling: React.FC = () => {
             <div className="rounded-lg border bg-white p-6">
               <h2 className="text-lg font-semibold">Stripe webhooks</h2>
               <div className="mt-3 text-sm text-gray-500">
-                Traités : {data.webhookSummary.processed} · En attente : {data.webhookSummary.pending}
+                {data.completeness.stripeWebhooksTruncated
+                  ? `100 derniers événements — traités : ${data.webhookSummary.processed} · en attente : ${data.webhookSummary.pending}`
+                  : `Traités : ${data.webhookSummary.processed} · En attente : ${data.webhookSummary.pending}`}
               </div>
               {data.stripeWebhooks.length === 0 && (
                 <p className="mt-3 text-sm text-gray-500">Aucun webhook Stripe enregistré.</p>
@@ -132,8 +134,19 @@ const AdminBilling: React.FC = () => {
             </p>
           </div>
 
-          <div className="text-xs text-gray-500">
-            Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Stripe Live API n'est pas interrogée depuis cette page.
+          <div className="space-y-1 text-xs text-gray-500">
+            <div>
+              Généré le {new Date(data.generatedAt).toLocaleString('fr-FR')}. Les compteurs sont exacts.
+            </div>
+            {(data.completeness.subscriptionsTruncated ||
+              data.completeness.userSubscriptionsTruncated ||
+              data.completeness.overagesTruncated ||
+              data.completeness.stripeWebhooksTruncated) && (
+              <div>
+                Certaines listes affichent seulement les {data.completeness.listLimit} éléments les plus récents. Les résumés calculés sur ces listes ne représentent pas l'ensemble de la table.
+              </div>
+            )}
+            <div>Stripe Live API n'est pas interrogée depuis cette page.</div>
           </div>
         </>
       )}
