@@ -60,22 +60,28 @@ serve(async (req) => {
   try {
     const [
       plansResult,
+      subscriptionsCountResult,
       subscriptionsResult,
+      userSubscriptionsCountResult,
       userSubscriptionsResult,
       usageEventsResult,
       usageCountersResult,
+      overagesCountResult,
       overagesResult,
+      stripeWebhooksCountResult,
       stripeWebhooksResult,
     ] = await Promise.all([
       service
         .from("subscription_plans")
         .select("id,name,display_name,description,price_monthly,price_yearly,currency,is_active,trial_days,features,limits")
         .order("price_monthly", { ascending: true }),
+      service.from("subscriptions").select("id", { count: "exact", head: true }),
       service
         .from("subscriptions")
         .select("id,user_id,status,plan_name,plan,current_period_start,current_period_end,cancel_at_period_end,canceled_at,created_at,updated_at,stripe_customer_id,stripe_subscription_id")
         .order("created_at", { ascending: false })
         .limit(100),
+      service.from("user_subscriptions").select("id", { count: "exact", head: true }),
       service
         .from("user_subscriptions")
         .select("id,user_id,plan_id,status,current_period_start,current_period_end,trial_end,billing_cycle,created_at,updated_at")
@@ -83,11 +89,13 @@ serve(async (req) => {
         .limit(100),
       service.from("usage_events").select("id", { count: "exact", head: true }),
       service.from("usage_counters").select("id", { count: "exact", head: true }),
+      service.from("billing_overages").select("id", { count: "exact", head: true }),
       service
         .from("billing_overages")
         .select("id,user_id,quota_key,action_type,quantity,amount_cents,currency,plan_name,status,period_start,period_end,created_at")
         .order("created_at", { ascending: false })
         .limit(100),
+      service.from("stripe_webhooks").select("id", { count: "exact", head: true }),
       service
         .from("stripe_webhooks")
         .select("id,stripe_event_id,event_type,processed,created_at,processed_at")
@@ -97,11 +105,15 @@ serve(async (req) => {
 
     for (const result of [
       plansResult,
+      subscriptionsCountResult,
       subscriptionsResult,
+      userSubscriptionsCountResult,
       userSubscriptionsResult,
       usageEventsResult,
       usageCountersResult,
+      overagesCountResult,
       overagesResult,
+      stripeWebhooksCountResult,
       stripeWebhooksResult,
     ]) {
       if (result.error) throw result.error;
@@ -112,6 +124,17 @@ serve(async (req) => {
     const userSubscriptions = userSubscriptionsResult.data ?? [];
     const overages = overagesResult.data ?? [];
     const stripeWebhooks = stripeWebhooksResult.data ?? [];
+
+    const subscriptionsTotal = subscriptionsCountResult.count ?? 0;
+    const userSubscriptionsTotal = userSubscriptionsCountResult.count ?? 0;
+    const overagesTotal = overagesCountResult.count ?? 0;
+    const stripeWebhooksTotal = stripeWebhooksCountResult.count ?? 0;
+
+    const subscriptionsTruncated = subscriptionsTotal > subscriptions.length;
+    const userSubscriptionsTruncated =
+      userSubscriptionsTotal > userSubscriptions.length;
+    const overagesTruncated = overagesTotal > overages.length;
+    const stripeWebhooksTruncated = stripeWebhooksTotal > stripeWebhooks.length;
 
     const statusCounts = subscriptions.reduce<Record<string, number>>((acc, row) => {
       const key = String(row.status ?? "unknown");
@@ -130,7 +153,7 @@ serve(async (req) => {
     );
     const singleOverageCurrency = overageCurrency.length === 1 ? overageCurrency[0] : null;
     const overageAmount =
-      singleOverageCurrency === null
+      singleOverageCurrency === null || overagesTruncated
         ? null
         : overages.reduce((sum, row) => sum + Number(row.amount_cents ?? 0), 0) / 100;
 
@@ -145,21 +168,22 @@ serve(async (req) => {
       overages,
       stripeWebhooks,
       totals: {
-        subscriptions: subscriptions.length,
-        userSubscriptions: userSubscriptions.length,
+        subscriptions: subscriptionsTotal,
+        userSubscriptions: userSubscriptionsTotal,
         usageEvents: usageEventsResult.count ?? 0,
         usageCounters: usageCountersResult.count ?? 0,
-        overages: overages.length,
-        stripeWebhooks: stripeWebhooks.length,
+        overages: overagesTotal,
+        stripeWebhooks: stripeWebhooksTotal,
       },
       statusCounts,
       userSubscriptionStatusCounts,
       overageSummary: {
         amount: overageAmount,
         currency: singleOverageCurrency,
-        verified: singleOverageCurrency !== null,
+        verified: singleOverageCurrency !== null && !overagesTruncated,
       },
       webhookSummary: {
+        scope: "latest_100",
         processed: processedWebhookCount,
         pending: pendingWebhookCount,
       },
@@ -179,6 +203,11 @@ serve(async (req) => {
         stripeWebhooks: "public.stripe_webhooks",
       },
       completeness: {
+        listLimit: 100,
+        subscriptionsTruncated,
+        userSubscriptionsTruncated,
+        overagesTruncated,
+        stripeWebhooksTruncated,
         stripeLiveApiQueried: false,
         invoicesIncluded: false,
         chargesIncluded: false,
