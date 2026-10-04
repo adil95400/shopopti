@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { supabase } from '@/lib/supabase';
 import { aiService } from '@/services/aiService';
+import { shopifyService } from '@/services/shopifyService';
 
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -28,34 +29,18 @@ const Products = () => {
   const optimizeAndImportToShopify = async (p: any) => {
     alert(`🤖 Optimisation AI en cours pour "${p.title}"...`);
     try {
-      const optimized = await aiService.optimizeProduct({
+      await aiService.optimizeProduct({
         name: p.title,
         description: p.description,
         category: p.category
       });
 
-      const response = await fetch(`https://${import.meta.env.VITE_SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/products.json`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": import.meta.env.VITE_SHOPIFY_ADMIN_TOKEN
-        },
-        body: JSON.stringify({
-          product: {
-            title: optimized.title,
-            body_html: optimized.description_html,
-            tags: optimized.tags?.join(", "),
-            images: [{ src: p.image_url }]
-          }
-        })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.errors || "Erreur Shopify");
+      const result = await shopifyService.publishProduct(p.id);
+      if (result.published !== true || result.confirmed !== true) {
+        throw new Error('Publication Shopify non confirmée par le serveur');
       }
 
-      alert(`✅ Produit "${optimized.title}" importé dans Shopify avec succès !`);
+      alert(`✅ Produit "${p.title}" publié sur Shopify avec confirmation serveur.`);
     } catch (e: any) {
       alert("❌ Échec : " + e.message);
     }
