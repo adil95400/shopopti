@@ -22,6 +22,13 @@ jobs:
       - name: 📦 Install JS dependencies
         run: npm ci
 
+      - name: 🧪 Cdiscount unit tests
+        run: >
+          npm test -- --run
+          src/services/__tests__/cdiscountOfferContract.test.ts
+          src/services/__tests__/cdiscountStockPriceWorkbook.test.ts
+          src/services/__tests__/cdiscountProductMapper.test.ts
+
       - name: 🔍 Lint code
         run: npm run lint
 
@@ -43,7 +50,3 @@ jobs:
 
       - name: 📘 Générer docs API
         run: npm run docs:api
-
-      - name: ✅ Placeholder tests (à compléter)
-        run: echo "✔️ Tests ici (unitaires, e2e, etc.)"
-
