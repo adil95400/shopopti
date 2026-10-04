@@ -42,6 +42,18 @@ describe('Shopify production contract', () => {
     expect(shopifyFunction).not.toContain(".eq('platform_id', 'shopify')")
   })
 
+  it('writes Shopify sync history using the current canonical staging schema', () => {
+    const shopifyFunction = read('supabase/functions/shopify/index.ts')
+
+    expect(shopifyFunction).toContain("entity_type: 'product'")
+    expect(shopifyFunction).toContain('entity_id: productId')
+    expect(shopifyFunction).toContain('sync_type:')
+    expect(shopifyFunction).toContain('items_total: 1')
+    expect(shopifyFunction).toContain("platform: 'shopify'")
+    expect(shopifyFunction).not.toContain('items_succeeded:')
+    expect(shopifyFunction).not.toContain('platforms:')
+  })
+
   it('contains no malformed redirect escape', () => {
     const routes = read('src/routes.tsx')
     expect(routes).not.toContain('dashboard\\')
