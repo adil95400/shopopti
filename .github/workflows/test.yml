@@ -12,15 +12,19 @@ jobs:
 
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+          cache: npm
 
       - name: 📦 Install JS dependencies
         run: npm ci
+
+      - name: 🧪 Run unit tests
+        run: npm test -- --run
 
       - name: 🔍 Lint code
         run: npm run lint
@@ -29,7 +33,7 @@ jobs:
         run: npm run build
 
       - name: 🐍 Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -43,7 +47,3 @@ jobs:
 
       - name: 📘 Générer docs API
         run: npm run docs:api
-
-      - name: ✅ Placeholder tests (à compléter)
-        run: echo "✔️ Tests ici (unitaires, e2e, etc.)"
-
