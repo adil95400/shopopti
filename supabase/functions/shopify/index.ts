@@ -460,15 +460,20 @@ async function publishProduct(options: {
 
   const { error: historyError } = await admin.from('sync_history').insert({
     user_id: userId,
-    type: options.stockOverride !== undefined ? 'inventory' : options.priceOverride !== undefined ? 'prices' : 'products',
+    entity_type: 'product',
+    entity_id: productId,
+    sync_type: options.stockOverride !== undefined ? 'inventory' : options.priceOverride !== undefined ? 'prices' : 'products',
     status: 'success',
-    platforms: [{ id: 'shopify', name: 'Shopify', status: 'success' }],
     items_processed: 1,
-    items_succeeded: 1,
-    items_failed: 0,
-    duration: 0,
-    initiated_by: 'user',
-    details: { product_id: productId, operation },
+    items_total: 1,
+    errors: [],
+    metadata: {
+      platform: 'shopify',
+      product_id: productId,
+      operation,
+    },
+    duration_ms: 0,
+    completed_at: new Date().toISOString(),
   })
   if (historyError) {
     throw new ShopifyIntegrationError(
