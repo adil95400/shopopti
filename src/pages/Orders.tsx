@@ -1,253 +1,185 @@
-import React, { useState } from 'react';
-import { 
-  PackageCheck, 
-  Search, 
-  Filter, 
-  SlidersHorizontal, 
-  MoreVertical,
-  Download,
-  CheckCircle,
-  Truck
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { CheckCircle, Download, PackageCheck, RefreshCw, Search, Truck } from 'lucide-react';
 
-import { useShop } from '@/contexts/ShopContext';
+import { useSupplierOrders } from '@/hooks/useSupplierOrders';
 
-// Mock order data
-const mockOrders = [
-  {
-    id: '#2301',
-    customer: 'Michael Johnson',
-    email: 'michael.j@example.com',
-    date: '2023-06-15T14:23:54Z',
-    amount: 129.99,
-    status: 'delivered',
-    items: 2,
-  },
-  {
-    id: '#2302',
-    customer: 'Sarah Williams',
-    email: 'sarahw@example.com',
-    date: '2023-06-14T09:12:11Z',
-    amount: 89.95,
-    status: 'shipped',
-    items: 1,
-  },
-  {
-    id: '#2303',
-    customer: 'David Brown',
-    email: 'david.brown@example.com',
-    date: '2023-06-13T18:45:30Z',
-    amount: 204.50,
-    status: 'processing',
-    items: 3,
-  },
-  {
-    id: '#2304',
-    customer: 'Emily Davis',
-    email: 'edavis@example.com',
-    date: '2023-06-12T10:33:22Z',
-    amount: 59.99,
-    status: 'delivered',
-    items: 1,
-  },
-  {
-    id: '#2305',
-    customer: 'James Wilson',
-    email: 'jwilson@example.com',
-    date: '2023-06-11T15:19:45Z',
-    amount: 149.98,
-    status: 'processing',
-    items: 2,
-  },
-];
+const PAGE_SIZE = 20;
 
-const Orders: React.FC = () => {
-  const { isConnected } = useShop();
-  const [orders] = useState(mockOrders);
+function statusLabel(status: string) {
+  const normalized = status.toLowerCase();
+  if (normalized === 'delivered') return { label: 'Livrée', icon: CheckCircle };
+  if (normalized === 'shipped') return { label: 'Expédiée', icon: Truck };
+  if (normalized === 'processing') return { label: 'En traitement', icon: RefreshCw };
+  if (normalized === 'pending') return { label: 'En attente', icon: RefreshCw };
+  return { label: status || 'Non renseigné', icon: PackageCheck };
+}
+
+export default function Orders() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [status, setStatus] = useState('all');
+  const [sort, setSort] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
+  const [page, setPage] = useState(1);
+  const { orders, loading, error, refresh } = useSupplierOrders({ status });
 
-  // Filter orders based on search query
-  const filteredOrders = orders.filter(order => 
-    order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const rows = orders.filter((order) => {
+      if (!query) return true;
+      return (
+        order.id.toLowerCase().includes(query) ||
+        order.status.toLowerCase().includes(query) ||
+        (order.tracking_number || '').toLowerCase().includes(query)
+      );
+    });
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'delivered':
-        return (
-          <span className="inline-flex items-center rounded-full bg-success-400/10 px-2.5 py-0.5 text-xs font-medium text-success-400">
-            <CheckCircle size={12} className="mr-1" />
-            Delivered
-          </span>
-        );
-      case 'shipped':
-        return (
-          <span className="inline-flex items-center rounded-full bg-primary-400/10 px-2.5 py-0.5 text-xs font-medium text-primary-600">
-            <Truck size={12} className="mr-1" />
-            Shipped
-          </span>
-        );
-      case 'processing':
-        return (
-          <span className="inline-flex items-center rounded-full bg-warning-400/10 px-2.5 py-0.5 text-xs font-medium text-warning-400">
-            <svg className="mr-1 h-2 w-2 animate-pulse-slow text-warning-400" fill="currentColor" viewBox="0 0 8 8">
-              <circle cx="4" cy="4" r="3" />
-            </svg>
-            Processing
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
-            {status}
-          </span>
-        );
-    }
-  };
+    return [...rows].sort((a, b) => {
+      if (sort === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sort === 'amount_desc') return b.total_amount - a.total_amount;
+      if (sort === 'amount_asc') return a.total_amount - b.total_amount;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [orders, searchQuery, sort]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' · ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  if (!isConnected) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center py-12 text-center">
-        <div className="rounded-full bg-neutral-100 p-3">
-          <PackageCheck size={28} className="text-neutral-400" />
-        </div>
-        <h2 className="mt-4 text-lg font-medium text-neutral-900">No store connected</h2>
-        <p className="mt-1 text-neutral-500">Connect your store to manage orders</p>
-      </div>
+  const exportCsv = () => {
+    const header = ['id', 'status', 'total_amount', 'tracking_number', 'created_at'];
+    const lines = filtered.map((order) =>
+      [order.id, order.status, order.total_amount, order.tracking_number || '', order.created_at]
+        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+        .join(',')
     );
-  }
+
+    const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `shopopti-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 md:text-3xl">Orders</h1>
-          <p className="text-neutral-500">
-            Manage and track your customer orders.
-          </p>
+          <h1 className="text-2xl font-bold text-neutral-900 md:text-3xl">Commandes fournisseur</h1>
+          <p className="text-neutral-500">Données réelles issues de supplier_orders. Aucun ordre fictif n'est affiché.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button className="btn btn-outline">
-            <Download size={16} className="mr-2" />
-            Export Orders
+        <div className="flex gap-2">
+          <button type="button" className="btn btn-outline" onClick={() => void refresh()}>
+            <RefreshCw size={16} className="mr-2" />Actualiser
+          </button>
+          <button type="button" className="btn btn-outline" onClick={exportCsv} disabled={filtered.length === 0}>
+            <Download size={16} className="mr-2" />Exporter CSV
           </button>
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Commandes indisponibles : {error}
+        </div>
+      )}
+
       <div className="card">
-        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="mb-6 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
             <input
               type="text"
-              placeholder="Search orders, customers..."
-              className="input pl-10 w-full"
+              placeholder="ID, statut ou numéro de suivi…"
+              className="input w-full pl-10"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setPage(1);
+              }}
             />
           </div>
-          <div className="flex gap-2">
-            <button className="btn btn-outline">
-              <Filter size={16} className="mr-2" />
-              Filters
-            </button>
-            <button className="btn btn-outline">
-              <SlidersHorizontal size={16} className="mr-2" />
-              Sort
-            </button>
-          </div>
+          <select
+            className="input"
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="all">Tous les statuts</option>
+            <option value="pending">En attente</option>
+            <option value="processing">En traitement</option>
+            <option value="shipped">Expédiée</option>
+            <option value="delivered">Livrée</option>
+            <option value="cancelled">Annulée</option>
+          </select>
+          <select className="input" value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}>
+            <option value="newest">Plus récentes</option>
+            <option value="oldest">Plus anciennes</option>
+            <option value="amount_desc">Montant décroissant</option>
+            <option value="amount_asc">Montant croissant</option>
+          </select>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-neutral-200">
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
           <table className="min-w-full divide-y divide-neutral-200">
             <thead className="bg-neutral-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Order ID
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Customer
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Date
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Amount
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Status
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-neutral-500">Commande</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-neutral-500">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-neutral-500">Articles</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-neutral-500">Montant</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-neutral-500">Statut</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-neutral-500">Suivi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 bg-white">
-              {filteredOrders.map((order) => (
-                <motion.tr 
-                  key={order.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="hover:bg-neutral-50"
-                >
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-neutral-900">{order.id}</div>
-                    <div className="text-xs text-neutral-500">{order.items} item{order.items !== 1 ? 's' : ''}</div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-neutral-900">{order.customer}</div>
-                    <div className="text-xs text-neutral-500">{order.email}</div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-neutral-900">
-                      {formatDate(order.date)}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-neutral-900">
-                      ${order.amount.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    {getStatusBadge(order.status)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    <div className="relative inline-block text-left">
-                      <button className="text-neutral-600 hover:text-neutral-900">
-                        <MoreVertical size={16} />
-                      </button>
-                      {/* Dropdown menu would go here */}
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-              {filteredOrders.length === 0 && (
+              {visible.map((order) => {
+                const state = statusLabel(order.status);
+                const StatusIcon = state.icon;
+                return (
+                  <tr key={order.id} className="hover:bg-neutral-50">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-neutral-900">#{order.id.slice(0, 8)}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-700">{new Date(order.created_at).toLocaleString('fr-FR')}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-700">{order.items.length}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-neutral-900">
+                      {order.total_amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <span className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700">
+                        <StatusIcon size={12} className="mr-1" />{state.label}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-neutral-700">{order.tracking_number || 'Non disponible'}</td>
+                  </tr>
+                );
+              })}
+
+              {!loading && visible.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <Search className="h-8 w-8 text-neutral-300" />
-                      <h3 className="mt-2 text-sm font-medium text-neutral-900">No orders found</h3>
-                      <p className="mt-1 text-sm text-neutral-500">Try adjusting your search or filters.</p>
-                    </div>
-                  </td>
+                  <td colSpan={6} className="px-6 py-12 text-center text-sm text-neutral-500">Aucune commande vérifiée.</td>
+                </tr>
+              )}
+
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-sm text-neutral-500">Chargement…</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        <div className="mt-4 flex items-center justify-between text-sm text-neutral-600">
+          <span>{filtered.length} commande{filtered.length > 1 ? 's' : ''}</span>
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn btn-outline" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Précédent</button>
+            <span>Page {safePage} / {totalPages}</span>
+            <button type="button" className="btn btn-outline" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Suivant</button>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Orders;
+}
