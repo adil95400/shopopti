@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { percentChange } from '../dashboardMetrics';
+import { percentChange } from './dashboardMetrics';
 
 describe('percentChange', () => {
   it('computes verified previous-period change', () => {
