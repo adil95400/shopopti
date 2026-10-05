@@ -63,6 +63,8 @@ import ImportProducts from './pages/ImportProducts';
 import Analytics from './pages/Analytics';
 import Reviews from './pages/Reviews';
 import Suppliers from './pages/Suppliers';
+import SupplierDetail from './pages/SupplierDetail';
+import AdminSupplierConnectors from './pages/admin/SupplierConnectors';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Contact from './pages/Contact';
@@ -133,6 +135,7 @@ const AppRoutes = () => {
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="reviews" element={<Reviews />} />
                   <Route path="suppliers" element={<Suppliers />} />
+                  <Route path="suppliers/:supplierId" element={<SupplierDetail />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="support" element={<Support />} />
                   <Route path="contact" element={<Contact />} />
@@ -158,7 +161,7 @@ const AppRoutes = () => {
                   <Route path="custom-reports" element={<CustomReports />} />
                   <Route path="marketing-hub" element={<MarketingHub />} />
                   <Route path="global-marketplaces" element={<GlobalMarketplaces />} />
-                  <Route path="advanced-suppliers" element={<AdvancedSuppliers />} />
+                  <Route path="advanced-suppliers" element={<Navigate to="/app/suppliers" replace />} />
                   
                   {/* Missing modules */}
                   <Route path="repricing" element={<RepricingPage />} />
@@ -177,6 +180,7 @@ const AppRoutes = () => {
                     <Route path="users" element={<UsersAdmin />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
                     <Route path="imports" element={<Imports />} />
+                    <Route path="supplier-connectors" element={<AdminSupplierConnectors />} />
                   </Route>
                 </Route>
                 
