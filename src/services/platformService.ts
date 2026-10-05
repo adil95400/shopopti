@@ -53,6 +53,27 @@ export const platformService = {
 
   async connectPlatform(platformId: string, credentials: Record<string, string>): Promise<boolean> {
     try {
+      if (platformId === 'cdiscount') {
+        const { data, error } = await supabase.functions.invoke('cdiscount-connect', {
+          body: {
+            clientId: credentials.clientId,
+            clientSecret: credentials.clientSecret,
+            sellerId: credentials.sellerId,
+            persist: true
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Cdiscount connection failed');
+        }
+
+        if (!data?.success || !data?.verified || !data?.persisted) {
+          throw new Error(data?.error || 'Cdiscount connection could not be verified and stored securely');
+        }
+
+        return true;
+      }
+
       // Validate credentials with the platform's API
       const validationResult = await this.validatePlatformCredentials(platformId, credentials);
       
@@ -166,6 +187,42 @@ export const platformService = {
           // In a real implementation, you would make an actual API call to Squarespace
           
           return { success: true, message: 'Squarespace credentials validated successfully' };
+
+        case 'cdiscount': {
+          const clientId = credentials.clientId;
+          const clientSecret = credentials.clientSecret;
+          const sellerId = credentials.sellerId;
+
+          if (!clientId || !clientSecret || !sellerId) {
+            return {
+              success: false,
+              message: 'Octopia clientId, clientSecret and sellerId are required'
+            };
+          }
+
+          const { data, error } = await supabase.functions.invoke('cdiscount-connect', {
+            body: { clientId, clientSecret, sellerId, persist: false }
+          });
+
+          if (error) {
+            return {
+              success: false,
+              message: error.message || 'Cdiscount verification failed'
+            };
+          }
+
+          if (!data?.success || !data?.verified) {
+            return {
+              success: false,
+              message: data?.error || 'Cdiscount verification failed'
+            };
+          }
+
+          return {
+            success: true,
+            message: 'Cdiscount credentials verified successfully via Octopia'
+          };
+        }
         
         default:
           return { success: false, message: `Unknown platform: ${platformId}` };
