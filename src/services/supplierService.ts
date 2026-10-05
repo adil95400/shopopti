@@ -152,6 +152,37 @@ export const supplierService = {
     }
   },
 
+  async disconnectSupplier(id: string): Promise<{ remoteLogoutConfirmed: boolean }> {
+    const supplier = await this.getSupplierSummaryById(id);
+
+    if (supplier.type !== 'cj_dropshipping') {
+      await this.deleteSupplier(id);
+      return { remoteLogoutConfirmed: false };
+    }
+
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) throw new Error('Authentication required');
+
+    const response = await axios.post(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-disconnect`,
+      { supplierId: id },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      },
+    );
+
+    if (response.data?.success !== true) {
+      throw new Error(response.data?.error || 'Supplier disconnect failed');
+    }
+
+    return {
+      remoteLogoutConfirmed: response.data?.remoteLogoutConfirmed === true,
+    };
+  },
+
   async deleteSupplier(id: string): Promise<void> {
     try {
       const { error } = await supabase
