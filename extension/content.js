@@ -37,7 +37,7 @@
           if (type.includes('Product')) products.push(entry);
         }
       } catch {
-        // Ignore malformed third-party JSON-LD and continue with safe fallbacks.
+        // Ignore malformed third-party JSON-LD.
       }
     }
 
@@ -120,12 +120,16 @@
     });
   };
 
-  const extractProduct = () => {
-    if (!/\.aliexpress\.com$/i.test(window.location.hostname) || !/\/item\//i.test(window.location.pathname)) {
-      return {
-        ok: false,
-        error: 'Cette page n’est pas une fiche produit AliExpress prise en charge.'
-      };
+  const detectSource = () => {
+    const host = window.location.hostname;
+    if (/\.aliexpress\.com$/i.test(host)) return 'aliexpress';
+    if (/\.amazon\.(com|fr|de|es|it|co\.uk)$/i.test(host)) return 'amazon';
+    return null;
+  };
+
+  const extractAliExpress = () => {
+    if (!/\/item\//i.test(window.location.pathname)) {
+      return { ok: false, error: 'Cette page n’est pas une fiche produit AliExpress prise en charge.' };
     }
 
     const jsonLd = readJsonLd();
@@ -170,6 +174,7 @@
       productId: productIdMatch?.[1] || null,
       title,
       description,
+      brand: entityName(jsonLd?.brand),
       price: Number.isFinite(price) ? price : null,
       currency,
       images,
@@ -180,6 +185,8 @@
         method: jsonLd ? 'json-ld+dom-fallback' : 'dom-fallback',
         verifiedFields: {
           title: Boolean(title),
+          description: Boolean(description),
+          brand: Boolean(entityName(jsonLd?.brand)),
           price: Number.isFinite(price),
           currency: Boolean(currency),
           images: images.length > 0,
@@ -190,13 +197,129 @@
     };
 
     if (!payload.title) {
-      return {
-        ok: false,
-        error: 'Le titre du produit n’a pas pu être extrait de manière fiable.'
-      };
+      return { ok: false, error: 'Le titre du produit n’a pas pu être extrait de manière fiable.' };
     }
 
     return { ok: true, product: payload };
+  };
+
+  const parseLocalizedPrice = (value) => {
+    const compact = String(value || '').replace(/\s+/g, '').replace(/[^0-9,.-]/g, '');
+    if (!compact) return null;
+
+    const lastComma = compact.lastIndexOf(',');
+    const lastDot = compact.lastIndexOf('.');
+    let normalized = compact;
+
+    if (lastComma > lastDot) {
+      normalized = compact.replace(/\./g, '').replace(',', '.');
+    } else if (lastDot > lastComma && lastComma >= 0) {
+      normalized = compact.replace(/,/g, '');
+    } else if (lastComma >= 0) {
+      normalized = compact.replace(',', '.');
+    }
+
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const extractAmazon = () => {
+    const path = window.location.pathname;
+    const asinMatch = path.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/i);
+    if (!asinMatch) {
+      return { ok: false, error: 'Cette page n’est pas une fiche produit Amazon prise en charge.' };
+    }
+
+    const jsonLd = readJsonLd();
+    const offer = normalizeOffer(jsonLd?.offers);
+    const title = cleanText(
+      document.querySelector('#productTitle')?.textContent ||
+      jsonLd?.name ||
+      firstMeta('meta[property="og:title"]') ||
+      document.title
+    );
+
+    const description = cleanText(
+      jsonLd?.description ||
+      document.querySelector('#feature-bullets')?.textContent ||
+      firstMeta('meta[name="description"]')
+    );
+
+    const rawPrice =
+      offer.price ||
+      firstMeta('meta[property="product:price:amount"]', 'meta[itemprop="price"]') ||
+      document.querySelector('#corePrice_feature_div .a-offscreen')?.textContent ||
+      document.querySelector('.a-price .a-offscreen')?.textContent ||
+      '';
+
+    const price = parseLocalizedPrice(rawPrice);
+
+    const currency = cleanText(
+      offer.priceCurrency ||
+      firstMeta('meta[property="product:price:currency"]', 'meta[itemprop="priceCurrency"]')
+    ) || null;
+
+    const seller = cleanText(
+      document.querySelector('#merchant-info')?.textContent ||
+      entityName(offer.seller || jsonLd?.seller) ||
+      ''
+    ) || null;
+
+    const brand = cleanText(
+      entityName(jsonLd?.brand) ||
+      document.querySelector('#bylineInfo')?.textContent ||
+      ''
+    ) || null;
+
+    const images = collectImages(jsonLd);
+    const availability = cleanText(
+      offer.availability ||
+      document.querySelector('#availability')?.textContent ||
+      ''
+    ) || null;
+
+    const payload = {
+      schemaVersion: 1,
+      source: 'amazon',
+      sourceUrl: window.location.href,
+      extractedAt: new Date().toISOString(),
+      productId: asinMatch[1].toUpperCase(),
+      title,
+      description,
+      brand,
+      price: Number.isFinite(price) ? price : null,
+      currency,
+      images,
+      availability,
+      seller,
+      variants: [],
+      extraction: {
+        method: jsonLd ? 'json-ld+amazon-dom-fallback' : 'amazon-dom-fallback',
+        verifiedFields: {
+          title: Boolean(title),
+          description: Boolean(description),
+          brand: Boolean(brand),
+          price: Number.isFinite(price),
+          currency: Boolean(currency),
+          images: images.length > 0,
+          seller: Boolean(seller),
+          variants: false
+        }
+      }
+    };
+
+    if (!payload.title) {
+      return { ok: false, error: 'Le titre du produit Amazon n’a pas pu être extrait de manière fiable.' };
+    }
+
+    return { ok: true, product: payload };
+  };
+
+  const extractProduct = () => {
+    const source = detectSource();
+    if (source === 'aliexpress') return extractAliExpress();
+    if (source === 'amazon') return extractAmazon();
+    return { ok: false, error: 'Cette page fournisseur n’est pas prise en charge.' };
   };
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

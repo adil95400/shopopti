@@ -24,7 +24,7 @@ const capabilities: Array<{
 }> = [
   {
     label: 'Détection des fiches produit',
-    description: 'AliExpress est pris en charge par le flux extension actuellement validé.',
+    description: 'AliExpress et Amazon sont pris en charge par le flux extension actuellement validé.',
     status: 'available'
   },
   {
@@ -44,11 +44,11 @@ const capabilities: Array<{
   },
   {
     label: 'Pipeline canonique persistant',
-    description: 'Le handoff AliExpress peut créer un job canonique idempotent dans ShopOpti. La publication boutique reste séparée.',
+    description: 'Les handoffs AliExpress et Amazon peuvent créer un job canonique idempotent dans ShopOpti. La publication boutique reste séparée.',
     status: 'partial'
   },
   {
-    label: 'Amazon, import en masse et multi-boutiques',
+    label: 'Import en masse et multi-boutiques',
     description: 'Ces fonctions ne sont pas encore validées dans le flux extension actuel.',
     status: 'planned'
   }
@@ -87,7 +87,7 @@ const ExtensionHub: React.FC = () => {
             </div>
             <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">Extension Chrome ShopOpti</h1>
             <p className="mt-3 text-gray-600">
-              Capturez une fiche AliExpress compatible dans Chrome, vérifiez les données détectées, puis
+              Capturez une fiche AliExpress ou Amazon compatible dans Chrome, vérifiez les données détectées, puis
               transférez-les vers le pipeline canonique ShopOpti. Les fonctions non validées restent
               volontairement désactivées ou signalées comme partielles.
             </p>
@@ -112,12 +112,12 @@ const ExtensionHub: React.FC = () => {
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <PackageSearch className="h-6 w-6 text-blue-600" />
           <p className="mt-3 text-sm text-gray-500">Source validée</p>
-          <p className="mt-1 text-xl font-semibold text-gray-900">AliExpress</p>
+          <p className="mt-1 text-xl font-semibold text-gray-900">AliExpress + Amazon</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <Image className="h-6 w-6 text-blue-600" />
           <p className="mt-3 text-sm text-gray-500">Capture vérifiée</p>
-          <p className="mt-1 text-xl font-semibold text-gray-900">Données structurées AliExpress</p>
+          <p className="mt-1 text-xl font-semibold text-gray-900">Données structurées vérifiées</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <Store className="h-6 w-6 text-blue-600" />
@@ -186,7 +186,7 @@ const ExtensionHub: React.FC = () => {
           <ol className="mt-4 space-y-4 text-sm text-gray-700">
             <li className="flex gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-700">1</span>
-              <span>Ouvrez une fiche produit AliExpress compatible dans Chrome.</span>
+              <span>Ouvrez une fiche produit AliExpress ou Amazon compatible dans Chrome.</span>
             </li>
             <li className="flex gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-700">2</span>
