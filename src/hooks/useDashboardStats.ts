@@ -17,6 +17,7 @@ interface MarketplaceOrderRow {
   order_date: string;
   platform: string;
   status: string;
+  currency: string | null;
 }
 
 interface ProductMetricRow {
@@ -72,12 +73,12 @@ export function useDashboardStats(period: DashboardPeriod) {
       ] = await Promise.all([
         supabase
           .from('marketplace_orders')
-          .select('id,total_amount,order_date,platform,status')
+          .select('id,total_amount,order_date,platform,status,currency')
           .gte('order_date', boundaries.currentStart)
           .order('order_date', { ascending: false }),
         supabase
           .from('marketplace_orders')
-          .select('id,total_amount,order_date,platform,status')
+          .select('id,total_amount,order_date,platform,status,currency')
           .gte('order_date', boundaries.previousStart)
           .lt('order_date', boundaries.currentStart),
         supabase
