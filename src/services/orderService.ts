@@ -101,67 +101,95 @@ export const orderService = {
       estimatedDelivery?: string;
     }[];
   }> {
-    try {
-      // Récupérer les détails de la commande
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('id', orderId)
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('id', orderId)
+      .single();
+
+    if (error) throw error;
+    if (!order) throw new Error('Order not found');
+
+    const supplierStatuses: {
+      supplierId: string;
+      supplierName: string;
+      status: string;
+      trackingNumber?: string;
+      estimatedDelivery?: string;
+    }[] = [];
+
+    const seen = new Set<string>();
+
+    for (const item of order.order_items || []) {
+      const supplierId = item.metadata?.supplier_id as string | undefined;
+      const externalOrderId = item.metadata?.external_order_id as string | undefined;
+      if (!supplierId || !externalOrderId) continue;
+
+      const key = `${supplierId}:${externalOrderId}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const { data: supplier, error: supplierError } = await supabase
+        .from('external_suppliers')
+        .select('id,name')
+        .eq('id', supplierId)
         .single();
-      
-      if (error) throw error;
-      
-      // Récupérer les statuts de commande auprès des fournisseurs
-      const supplierStatuses = [];
-      const uniqueSupplierIds = new Set();
-      
-      for (const item of order.order_items) {
-        if (item.metadata?.supplier_id && !uniqueSupplierIds.has(item.metadata.supplier_id)) {
-          uniqueSupplierIds.add(item.metadata.supplier_id);
-          
-          // Récupérer les informations du fournisseur
-          const { data: supplier, error: supplierError } = await supabase
-            .from('external_suppliers')
-            .select('*')
-            .eq('id', item.metadata.supplier_id)
-            .single();
-          
-          if (supplierError) {
-            console.error(`Error fetching supplier ${item.metadata.supplier_id}:`, supplierError);
-            continue;
-          }
-          
-          // Récupérer le statut de la commande auprès du fournisseur
-          // Dans une implémentation réelle, vous feriez un appel API au fournisseur
-          const status = {
-            supplierId: supplier.id,
-            supplierName: supplier.name,
-            status: ['processing', 'shipped', 'delivered'][Math.floor(Math.random() * 3)],
-            trackingNumber: Math.random() > 0.5 ? `TRK${Math.floor(Math.random() * 1000000000)}` : undefined,
-            estimatedDelivery: Math.random() > 0.5 ? new Date(Date.now() + Math.floor(Math.random() * 10) * 86400000).toISOString().split('T')[0] : undefined
-          };
-          
-          supplierStatuses.push(status);
-        }
+
+      if (supplierError || !supplier) {
+        supplierStatuses.push({
+          supplierId,
+          supplierName: 'Fournisseur indisponible',
+          status: 'unavailable',
+        });
+        continue;
       }
-      
-      // Déterminer le statut global de la commande
-      let overallStatus = 'processing';
-      if (supplierStatuses.every(s => s.status === 'delivered')) {
-        overallStatus = 'delivered';
-      } else if (supplierStatuses.some(s => s.status === 'shipped')) {
-        overallStatus = 'shipped';
+
+      try {
+        const remote = await supplierService.getOrderStatus(supplierId, externalOrderId);
+        supplierStatuses.push({
+          supplierId,
+          supplierName: supplier.name,
+          status: remote.status || 'unknown',
+          trackingNumber: remote.trackingNumber,
+          estimatedDelivery: remote.estimatedDelivery,
+        });
+      } catch (cause) {
+        console.error(`Error getting order status from supplier ${supplierId}:`, cause);
+        supplierStatuses.push({
+          supplierId,
+          supplierName: supplier.name,
+          status: 'unavailable',
+        });
       }
-      
-      return {
-        status: overallStatus,
-        trackingNumber: supplierStatuses.find(s => s.trackingNumber)?.trackingNumber,
-        estimatedDelivery: supplierStatuses.find(s => s.estimatedDelivery)?.estimatedDelivery,
-        supplierStatuses
-      };
-    } catch (error) {
-      console.error('Error getting order status:', error);
-      throw error;
     }
+
+    if (supplierStatuses.length === 0) {
+      return {
+        status: 'unknown',
+        supplierStatuses: [],
+      };
+    }
+
+    const verifiable = supplierStatuses.filter((entry) => entry.status !== 'unavailable' && entry.status !== 'unknown');
+    let overallStatus = 'unknown';
+
+    if (verifiable.length > 0) {
+      if (verifiable.every((entry) => entry.status === 'delivered')) {
+        overallStatus = 'delivered';
+      } else if (verifiable.some((entry) => entry.status === 'shipped')) {
+        overallStatus = 'shipped';
+      } else if (verifiable.some((entry) => entry.status === 'processing')) {
+        overallStatus = 'processing';
+      } else {
+        overallStatus = verifiable[0].status;
+      }
+    }
+
+    return {
+      status: overallStatus,
+      trackingNumber: supplierStatuses.find((entry) => entry.trackingNumber)?.trackingNumber,
+      estimatedDelivery: supplierStatuses.find((entry) => entry.estimatedDelivery)?.estimatedDelivery,
+      supplierStatuses,
+    };
   }
 };
