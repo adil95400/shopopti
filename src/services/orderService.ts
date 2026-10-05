@@ -101,67 +101,67 @@ export const orderService = {
       estimatedDelivery?: string;
     }[];
   }> {
-    try {
-      // Récupérer les détails de la commande
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('id', orderId)
-        .single();
-      
-      if (error) throw error;
-      
-      // Récupérer les statuts de commande auprès des fournisseurs
-      const supplierStatuses = [];
-      const uniqueSupplierIds = new Set();
-      
-      for (const item of order.order_items) {
-        if (item.metadata?.supplier_id && !uniqueSupplierIds.has(item.metadata.supplier_id)) {
-          uniqueSupplierIds.add(item.metadata.supplier_id);
-          
-          // Récupérer les informations du fournisseur
-          const { data: supplier, error: supplierError } = await supabase
-            .from('external_suppliers')
-            .select('*')
-            .eq('id', item.metadata.supplier_id)
-            .single();
-          
-          if (supplierError) {
-            console.error(`Error fetching supplier ${item.metadata.supplier_id}:`, supplierError);
-            continue;
-          }
-          
-          // Récupérer le statut de la commande auprès du fournisseur
-          // Dans une implémentation réelle, vous feriez un appel API au fournisseur
-          const status = {
-            supplierId: supplier.id,
-            supplierName: supplier.name,
-            status: ['processing', 'shipped', 'delivered'][Math.floor(Math.random() * 3)],
-            trackingNumber: Math.random() > 0.5 ? `TRK${Math.floor(Math.random() * 1000000000)}` : undefined,
-            estimatedDelivery: Math.random() > 0.5 ? new Date(Date.now() + Math.floor(Math.random() * 10) * 86400000).toISOString().split('T')[0] : undefined
-          };
-          
-          supplierStatuses.push(status);
-        }
-      }
-      
-      // Déterminer le statut global de la commande
-      let overallStatus = 'processing';
-      if (supplierStatuses.every(s => s.status === 'delivered')) {
-        overallStatus = 'delivered';
-      } else if (supplierStatuses.some(s => s.status === 'shipped')) {
-        overallStatus = 'shipped';
-      }
-      
+    const { data: supplierOrders, error } = await supabase
+      .from('supplier_orders')
+      .select('supplier_id,status,tracking_number,estimated_delivery,created_at')
+      .eq('shop_order_id', orderId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    if (!supplierOrders?.length) {
       return {
-        status: overallStatus,
-        trackingNumber: supplierStatuses.find(s => s.trackingNumber)?.trackingNumber,
-        estimatedDelivery: supplierStatuses.find(s => s.estimatedDelivery)?.estimatedDelivery,
-        supplierStatuses
+        status: 'unknown',
+        supplierStatuses: [],
       };
-    } catch (error) {
-      console.error('Error getting order status:', error);
-      throw error;
     }
+
+    const supplierStatuses = await Promise.all(
+      supplierOrders.map(async (supplierOrder) => {
+        const supplierId = supplierOrder.supplier_id as string | null;
+        let supplierName = 'Fournisseur';
+
+        if (supplierId) {
+          const { data: supplier } = await supabase
+            .from('external_suppliers')
+            .select('name')
+            .eq('id', supplierId)
+            .maybeSingle();
+          if (supplier?.name) supplierName = supplier.name;
+        }
+
+        return {
+          supplierId: supplierId ?? 'unknown',
+          supplierName,
+          status: supplierOrder.status || 'unknown',
+          trackingNumber: supplierOrder.tracking_number || undefined,
+          estimatedDelivery: supplierOrder.estimated_delivery || undefined,
+        };
+      }),
+    );
+
+    const verifiable = supplierStatuses.filter((entry) => entry.status && entry.status !== 'unknown');
+    let overallStatus = 'unknown';
+
+    if (verifiable.length > 0) {
+      if (verifiable.every((entry) => entry.status === 'delivered')) {
+        overallStatus = 'delivered';
+      } else if (verifiable.some((entry) => entry.status === 'shipped')) {
+        overallStatus = 'shipped';
+      } else if (verifiable.some((entry) => entry.status === 'confirmed')) {
+        overallStatus = 'confirmed';
+      } else if (verifiable.some((entry) => entry.status === 'processing' || entry.status === 'placed')) {
+        overallStatus = 'processing';
+      } else {
+        overallStatus = verifiable[0].status;
+      }
+    }
+
+    return {
+      status: overallStatus,
+      trackingNumber: supplierStatuses.find((entry) => entry.trackingNumber)?.trackingNumber,
+      estimatedDelivery: supplierStatuses.find((entry) => entry.estimatedDelivery)?.estimatedDelivery,
+      supplierStatuses,
+    };
   }
 };
