@@ -123,7 +123,7 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-500">{order.platform} · {order.status}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">{Number(order.total_amount ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €</p>
+                      <p className="font-medium">{order.total_amount === null ? 'Non disponible' : `${Number(order.total_amount).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${order.currency ?? ''}`}</p>
                       <p className="text-xs text-gray-500">{new Date(order.order_date).toLocaleString('fr-FR')}</p>
                     </div>
                   </div>
