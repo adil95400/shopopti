@@ -1,6 +1,7 @@
 import { ProductVariant } from './product';
 
 export type SupplierProviderType =
+  | 'autods' // legacy compatibility only; not exposed as an active Supplier Hub connector
   | 'aliexpress'
   | 'cj_dropshipping'
   | 'bigbuy'
