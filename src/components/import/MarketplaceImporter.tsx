@@ -12,23 +12,112 @@ interface ExtensionVariant {
   id?: string;
   title: string;
   price: number;
+  compareAtPrice?: number | null;
+  currency?: string | null;
   sku?: string;
+  stock?: number | null;
+  availability?: string | null;
+  images?: string[];
   options: Record<string, string>;
+}
+
+interface ExtensionReview {
+  externalId: string;
+  rating: number;
+  title?: string | null;
+  text: string;
+  author: string;
+  date?: string | null;
+  country?: string | null;
+  verifiedPurchase: boolean;
+  helpfulCount?: number | null;
+  purchasedVariant?: string | null;
+  images: string[];
+  videos: string[];
+  source: 'json-ld';
+}
+
+interface ExtensionShipping {
+  cost?: number | null;
+  currency?: string | null;
+  countries: string[];
+  method?: string | null;
+  carrier?: string | null;
+  shipFrom?: string | null;
+  freeShipping?: boolean | null;
+  handlingDays?: { min?: number | null; max?: number | null; unit?: string | null };
+  transitDays?: { min?: number | null; max?: number | null; unit?: string | null };
+}
+
+interface ExtensionDimensions {
+  width?: number | null;
+  height?: number | null;
+  length?: number | null;
+  unit?: string | null;
 }
 
 interface ExtensionProduct {
   schemaVersion: number;
   source: 'aliexpress';
   sourceUrl: string;
+  canonicalUrl?: string | null;
   extractedAt: string;
   productId?: string | null;
   title: string;
   description?: string;
   price?: number | null;
+  compareAtPrice?: number | null;
+  discountPercent?: number | null;
+  priceValidUntil?: string | null;
   currency?: string | null;
+  identifiers?: {
+    gtin?: string | null;
+    ean?: string | null;
+    upc?: string | null;
+    mpn?: string | null;
+    sku?: string | null;
+  };
   images?: string[];
+  videos?: string[];
+  reviews?: ExtensionReview[];
+  aggregateRating?: number | null;
+  reviewCount?: number | null;
+  reviewDistribution?: Record<string, number> | null;
+  reviewPagination?: {
+    captured: number;
+    total?: number | null;
+    pageSize?: number | null;
+    pagesFetched?: number;
+    nextUrl?: string | null;
+    complete: boolean;
+  } | null;
   availability?: string | null;
+  stock?: number | null;
   seller?: string | null;
+  sellerDetails?: {
+    name?: string | null;
+    id?: string | null;
+    url?: string | null;
+    rating?: number | null;
+    foundingDate?: string | null;
+  };
+  brand?: string | null;
+  category?: string | null;
+  breadcrumbs?: string[];
+  minimumOrderQuantity?: number | null;
+  packSize?: number | null;
+  condition?: string | null;
+  taxIncluded?: boolean | null;
+  priceCountry?: string | null;
+  soldCount?: number | null;
+  model?: string | null;
+  sourceKeywords?: string[];
+  sourceTags?: string[];
+  attributes?: Record<string, string>;
+  weight?: number | null;
+  weightUnit?: string | null;
+  dimensions?: ExtensionDimensions | null;
+  shipping?: ExtensionShipping[];
   variants?: ExtensionVariant[];
   extraction?: {
     method?: string;
@@ -114,19 +203,54 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
           id: 'aliexpress',
           product_id: extensionProduct.productId || null,
           requested_url: extensionProduct.sourceUrl,
-          final_url: extensionProduct.sourceUrl,
+          final_url: extensionProduct.canonicalUrl || extensionProduct.sourceUrl,
         },
         product: {
           title: extensionProduct.title,
           description: extensionProduct.description || '',
           price: typeof extensionProduct.price === 'number' ? extensionProduct.price : null,
+          compareAtPrice: typeof extensionProduct.compareAtPrice === 'number' ? extensionProduct.compareAtPrice : null,
+          discountPercent: typeof extensionProduct.discountPercent === 'number' ? extensionProduct.discountPercent : null,
+          priceValidUntil: extensionProduct.priceValidUntil || null,
           currency: extensionProduct.currency || '',
-          brand: null,
-          sku: null,
-          gtin: null,
+          sku: extensionProduct.identifiers?.sku || null,
+          gtin: extensionProduct.identifiers?.gtin || null,
+          ean: extensionProduct.identifiers?.ean || null,
+          upc: extensionProduct.identifiers?.upc || null,
+          mpn: extensionProduct.identifiers?.mpn || null,
           images: (extensionProduct.images || []).slice(0, 30),
+          videos: (extensionProduct.videos || []).slice(0, 10),
+          reviews: (extensionProduct.reviews || []).slice(0, 500),
+          aggregateRating: typeof extensionProduct.aggregateRating === 'number'
+            ? extensionProduct.aggregateRating
+            : null,
+          reviewCount: typeof extensionProduct.reviewCount === 'number'
+            ? extensionProduct.reviewCount
+            : null,
+          reviewDistribution: extensionProduct.reviewDistribution || null,
+          reviewPagination: extensionProduct.reviewPagination || null,
           availability: extensionProduct.availability || null,
+          stock: typeof extensionProduct.stock === 'number' ? extensionProduct.stock : null,
           seller: extensionProduct.seller || null,
+          sellerDetails: extensionProduct.sellerDetails || null,
+          breadcrumbs: (extensionProduct.breadcrumbs || []).slice(0, 20),
+          minimumOrderQuantity: typeof extensionProduct.minimumOrderQuantity === 'number' ? extensionProduct.minimumOrderQuantity : null,
+          packSize: typeof extensionProduct.packSize === 'number' ? extensionProduct.packSize : null,
+          canonicalUrl: extensionProduct.canonicalUrl || null,
+          condition: extensionProduct.condition || null,
+          taxIncluded: typeof extensionProduct.taxIncluded === 'boolean' ? extensionProduct.taxIncluded : null,
+          priceCountry: extensionProduct.priceCountry || null,
+          soldCount: typeof extensionProduct.soldCount === 'number' ? extensionProduct.soldCount : null,
+          brand: extensionProduct.brand || null,
+          category: extensionProduct.category || null,
+          model: extensionProduct.model || null,
+          sourceKeywords: (extensionProduct.sourceKeywords || []).slice(0, 50),
+          sourceTags: (extensionProduct.sourceTags || []).slice(0, 30),
+          attributes: extensionProduct.attributes || {},
+          weight: typeof extensionProduct.weight === 'number' ? extensionProduct.weight : null,
+          weightUnit: extensionProduct.weightUnit || null,
+          dimensions: extensionProduct.dimensions || null,
+          shipping: (extensionProduct.shipping || []).slice(0, 20),
           variants: (extensionProduct.variants || []).slice(0, 200),
           verification: extensionProduct.extraction?.verifiedFields || {},
         },
@@ -201,7 +325,9 @@ const MarketplaceImporter: React.FC<MarketplaceImporterProps> = ({ marketplace }
                 {extensionProduct.seller ? ` · ${extensionProduct.seller}` : ''}
               </p>
               <p className="mt-2 text-xs text-slate-500">
-                {extensionProduct.variants?.length || 0} variante(s) structurée(s)
+                {extensionProduct.variants?.length || 0} variante(s) · {extensionProduct.reviews?.length || 0} avis structurés
+                · {extensionProduct.videos?.length || 0} vidéo(s) produit
+                · {extensionProduct.shipping?.length || 0} option(s) livraison
                 {verifiedFields.length ? ` · vérifié : ${verifiedFields.join(', ')}` : ''}
               </p>
               <p className="mt-2 text-xs text-amber-700">
