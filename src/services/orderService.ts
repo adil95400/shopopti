@@ -101,76 +101,46 @@ export const orderService = {
       estimatedDelivery?: string;
     }[];
   }> {
-    const { data: order, error } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .eq('id', orderId)
-      .single();
+    const { data: supplierOrders, error } = await supabase
+      .from('supplier_orders')
+      .select('supplier_id,status,tracking_number,estimated_delivery,created_at')
+      .eq('shop_order_id', orderId)
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
-    if (!order) throw new Error('Order not found');
 
-    const supplierStatuses: {
-      supplierId: string;
-      supplierName: string;
-      status: string;
-      trackingNumber?: string;
-      estimatedDelivery?: string;
-    }[] = [];
-
-    const seen = new Set<string>();
-
-    for (const item of order.order_items || []) {
-      const supplierId = item.metadata?.supplier_id as string | undefined;
-      const externalOrderId = item.metadata?.external_order_id as string | undefined;
-      if (!supplierId || !externalOrderId) continue;
-
-      const key = `${supplierId}:${externalOrderId}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      const { data: supplier, error: supplierError } = await supabase
-        .from('external_suppliers')
-        .select('id,name')
-        .eq('id', supplierId)
-        .single();
-
-      if (supplierError || !supplier) {
-        supplierStatuses.push({
-          supplierId,
-          supplierName: 'Fournisseur indisponible',
-          status: 'unavailable',
-        });
-        continue;
-      }
-
-      try {
-        const remote = await supplierService.getOrderStatus(supplierId, externalOrderId);
-        supplierStatuses.push({
-          supplierId,
-          supplierName: supplier.name,
-          status: remote.status || 'unknown',
-          trackingNumber: remote.trackingNumber,
-          estimatedDelivery: remote.estimatedDelivery,
-        });
-      } catch (cause) {
-        console.error(`Error getting order status from supplier ${supplierId}:`, cause);
-        supplierStatuses.push({
-          supplierId,
-          supplierName: supplier.name,
-          status: 'unavailable',
-        });
-      }
-    }
-
-    if (supplierStatuses.length === 0) {
+    if (!supplierOrders?.length) {
       return {
         status: 'unknown',
         supplierStatuses: [],
       };
     }
 
-    const verifiable = supplierStatuses.filter((entry) => entry.status !== 'unavailable' && entry.status !== 'unknown');
+    const supplierStatuses = await Promise.all(
+      supplierOrders.map(async (supplierOrder) => {
+        const supplierId = supplierOrder.supplier_id as string | null;
+        let supplierName = 'Fournisseur';
+
+        if (supplierId) {
+          const { data: supplier } = await supabase
+            .from('external_suppliers')
+            .select('name')
+            .eq('id', supplierId)
+            .maybeSingle();
+          if (supplier?.name) supplierName = supplier.name;
+        }
+
+        return {
+          supplierId: supplierId ?? 'unknown',
+          supplierName,
+          status: supplierOrder.status || 'unknown',
+          trackingNumber: supplierOrder.tracking_number || undefined,
+          estimatedDelivery: supplierOrder.estimated_delivery || undefined,
+        };
+      }),
+    );
+
+    const verifiable = supplierStatuses.filter((entry) => entry.status && entry.status !== 'unknown');
     let overallStatus = 'unknown';
 
     if (verifiable.length > 0) {
@@ -178,7 +148,9 @@ export const orderService = {
         overallStatus = 'delivered';
       } else if (verifiable.some((entry) => entry.status === 'shipped')) {
         overallStatus = 'shipped';
-      } else if (verifiable.some((entry) => entry.status === 'processing')) {
+      } else if (verifiable.some((entry) => entry.status === 'confirmed')) {
+        overallStatus = 'confirmed';
+      } else if (verifiable.some((entry) => entry.status === 'processing' || entry.status === 'placed')) {
         overallStatus = 'processing';
       } else {
         overallStatus = verifiable[0].status;
