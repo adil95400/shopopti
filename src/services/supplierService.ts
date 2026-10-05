@@ -112,75 +112,73 @@ export const supplierService = {
     }
   },
 
-  async createSupplier(supplier: Omit<ExternalSupplier, 'id' | 'created_at'>): Promise<ExternalSupplier> {
-    try {
-      // Validate the supplier connection before saving
-      await this.testConnection(supplier);
-      
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .insert([{
-          ...supplier,
-          status: 'active',
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error creating supplier:', error);
-      throw error;
-    }
-  },
+  async createSupplier(
+    supplier: Omit<ExternalSupplier, 'id' | 'created_at'>
+  ): Promise<SupplierSummary> {
+    if (supplier.type === 'cj_dropshipping') {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Authentication required');
 
-  async updateSupplier(id: string, updates: Partial<ExternalSupplier>): Promise<ExternalSupplier> {
-    try {
-      const { data, error } = await supabase
-        .from('external_suppliers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error(`Error updating supplier with ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  async disconnectSupplier(id: string): Promise<{ remoteLogoutConfirmed: boolean }> {
-    const supplier = await this.getSupplierSummaryById(id);
-
-    if (supplier.type !== 'cj_dropshipping') {
-      await this.deleteSupplier(id);
-      return { remoteLogoutConfirmed: false };
-    }
-
-    const session = (await supabase.auth.getSession()).data.session;
-    if (!session?.access_token) throw new Error('Authentication required');
-
-    const response = await axios.post(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-disconnect`,
-      { supplierId: id },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-connect`;
+      const response = await axios.post(
+        apiUrl,
+        {
+          name: supplier.name,
+          apiKey: supplier.apiKey,
         },
-      },
-    );
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
-    if (response.data?.success !== true) {
-      throw new Error(response.data?.error || 'Supplier disconnect failed');
+      if (response.data?.success !== true || !response.data?.supplier) {
+        throw new Error(response.data?.error || 'CJ connection failed');
+      }
+      return response.data.supplier as SupplierSummary;
     }
 
-    return {
-      remoteLogoutConfirmed: response.data?.remoteLogoutConfirmed === true,
-    };
+    throw new Error('Secure supplier creation is not implemented for this provider yet');
+  },
+
+  async updateSupplier(
+    id: string,
+    updates: Partial<ExternalSupplier>
+  ): Promise<SupplierSummary> {
+    const current = await this.getSupplierSummaryById(id);
+    if (current.type === 'cj_dropshipping') {
+      if (!updates.apiKey) {
+        throw new Error('CJ API key is required to update this connection securely');
+      }
+
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Authentication required');
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cj-connect`;
+      const response = await axios.post(
+        apiUrl,
+        {
+          supplierId: id,
+          name: updates.name ?? current.name,
+          apiKey: updates.apiKey,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (response.data?.success !== true || !response.data?.supplier) {
+        throw new Error(response.data?.error || 'CJ connection update failed');
+      }
+      return response.data.supplier as SupplierSummary;
+    }
+
+    throw new Error('Secure supplier update is not implemented for this provider yet');
   },
 
   async deleteSupplier(id: string): Promise<void> {
